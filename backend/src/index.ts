@@ -89,8 +89,8 @@ const documentRepo = new DocumentRepository({
 
 const valString = (Automerge as any).save(doc);
 
+logger.log('info', ``);
 logger.log('info', `⏳ Jot Starting... ⏳`);
-
 
 const app = express();
 const expressWs = expressWsFactory(app);
@@ -108,10 +108,11 @@ const redisPublisher = config.REDIS_URL ? createClient(config.REDIS_URL) : creat
 logger.log('verbose', '🛠️ Redis Publisher setup');
 const redisSubscriber = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
 logger.log('verbose', '🛠️ Redis Subscriber setup');
-logger.log('debug', '🛠️ Connected to Redis instance');
+logger.log('verbose', '🛠️ Connected to Redis instance');
 
 // rest api
 app.use('/api/v0', v0ApiRouterFactory(documentRepo, logger));
+logger.log('verbose', '🛠️ REST API /api/v0 endpoint setup');
 
 const wss = expressWs.getWss();
 const webSocketNode = new WebSocketNode({
@@ -122,7 +123,7 @@ const webSocketNode = new WebSocketNode({
 (app as any).ws('/ws', (ws: any, req: any, next: any) =>
   webSocketNode.connectionHandler(ws, req, next)
 );
-logger.log('verbose', '🛠️ Websocket endpoint configured');
+logger.log('verbose', '🛠️ Websocket /ws endpoint setup');
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   const err = new Error('Not Found') as any;
@@ -154,9 +155,10 @@ const setupProcessCleanup = () => {
 };
 setupProcessCleanup();
 
-logger.log('info', `✅ Jot configured successfully, ready to start`);
+logger.log('debug', `✅ Jot configured successfully, ready to start`);
 
 
 app.listen(config.PORT, () => {
   logger.log('info', `✍️ Jot started on port ${config.PORT}`);
+  logger.log('info', ``);
 });
