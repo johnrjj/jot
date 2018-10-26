@@ -4,7 +4,6 @@ import { Logger } from 'winston';
 import Automerge from 'automerge';
 import { fromJS } from 'immutable';
 import { DocumentRepository } from './document-repository';
-import { ConsoleLoggerFactory } from '../util/logger';
 
 interface ConnectionContext {
   socket: WebSocket;
@@ -131,7 +130,21 @@ export class WebSocketNode {
               'verbose',
               'websocket node connection received message from automerge-connection-send'
             );
-            connection && connection.receiveMsg((data as any).payload.message);
+
+            if ((data as any).payload.message.changes) {
+              console.log('wow !! changes rec', (data as any).payload.message.changes);
+            }
+
+            const updatedState = connection && connection.receiveMsg((data as any).payload.message);
+
+            console.log('applied ', JSON.stringify(updatedState));
+
+            // if (updatedState) {
+            //   this.log('debug', 'updating docrepo docset');
+            //   this.documentRepository.setDocSet(updatedState);
+            // }
+
+            // console.log(this.documentRepository.docSet.getDoc('1'));
           }, 2000);
 
           break;
@@ -139,11 +152,10 @@ export class WebSocketNode {
         case 'send-operation':
           this.log('debug', 'applying operation', data);
 
-          // autocon.receiveMsg((data as any).payload);
-
-          this.documentRepository
+          const appliedChanges = this.documentRepository
             .getDocSet()
             .applyChanges('1', fromJS((data as any).payload.changes));
+          console.log(appliedChanges);
           // console.log('is this anything', JSON.stringify(x));
 
           // const docNew = x;

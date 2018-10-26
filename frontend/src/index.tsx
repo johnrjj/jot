@@ -7,13 +7,70 @@ import { toJSON } from './lib/slate-custom-tojson';
 import assign from 'assign-deep';
 import { applySlateOperationsHelper } from './lib/apply-slate-operations';
 import Websocket from './components/Websocket';
-import { automergeJsonToSlate } from './adapter/slateAutomergeBridge';
+import { automergeJsonToSlate, applyAutomergeOperations } from './adapter/slateAutomergeBridge';
+import styled from 'styled-components';
+import uuid from 'uuid/v4';
+import './reset.css';
+import { convertAutomergeToSlateOps } from './adapter/applyAutomergeOperations';
 
-class Foo extends Component<any, any> {
+const AppContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+`;
+
+const NavBar = styled.div`
+  height: 64px;
+  width: 100%;
+  background-image: linear-gradient(134deg, #ff8d94 0%, #fdcbbc 100%);
+`;
+
+const MainContainer = styled.div`
+  display: flex;
+  flex: 1;
+`;
+
+const ContentContainer = styled.div`
+  display: flex;
+  flex: 1;
+  border: 1px solid black;
+`;
+
+const SideBarContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 0;
+  min-width: 16rem;
+  border: 1px solid black;
+`;
+
+const SidebarTitleContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+`;
+
+const SidebarContentContainer = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: scroll;
+`;
+
+const EditorContainer = styled.div`
+  display: flex;
+`;
+
+const HistoryContainer = styled.div``;
+
+class Main extends Component<any, any> {
   doc: any;
   docSet: any;
   websocket: any;
   connection: any;
+  editor: any;
   constructor(props) {
     super(props);
     this.docSet = new Automerge.DocSet();
@@ -21,8 +78,13 @@ class Foo extends Component<any, any> {
     this.state = {
       loaded: false,
       value: null,
+      clientId: uuid(),
+      docId: '1',
+      clientUpdateCount: 0,
+      serverUpdateCount: 0,
     };
     this.websocket = React.createRef();
+    this.editor = React.createRef();
   }
 
   async componentDidMount() {
@@ -60,12 +122,15 @@ class Foo extends Component<any, any> {
       const message = JSON.stringify({
         type: 'automerge-connection-send',
         payload: {
-          clientId: 'client1',
-          docId: '1',
+          clientId: this.state.clientId,
+          docId: this.state.docId,
           message: data,
         },
       });
-      this.websocket.current.sendMessage(message);
+
+      setTimeout(() => {
+        this.websocket.current.sendMessage(message);
+      }, 1000);
       // if (!hasBootstrapped) {
       //   hasBootstrapped = true;
       //   this.connection.receiveMsg(msg);
@@ -76,7 +141,6 @@ class Foo extends Component<any, any> {
       // }
     });
 
-    this.connection.open();
     // this.docSet.setDoc(this.props.docId, this.doc)
     // this.props.sendMessage(this.props.clientId, {
     //     docId: this.props.docId,
@@ -90,41 +154,104 @@ class Foo extends Component<any, any> {
           JSON.stringify({
             type: 'join-document',
             payload: {
-              docId: '1',
-              clientId: 'client1',
+              docId: this.state.docId,
+              clientId: this.state.clientId,
             },
           })
-        ),
+        ) || this.connection.open(),
       1000
     );
   }
 
-  onChange = ({ value, operations }) => {
+  onChange = ({ value, operations, ...rest }) => {
+    console.log(rest);
+    console.log('');
+    console.log('ONCHANGE', value.toJS());
     this.setState({ value });
-    console.log(operations.toJS());
-    const clientId = '1';
+    // console.log(operations.toJS());
+    const clientId = this.state.clientId;
     const message = clientId ? `Client ${clientId}` : 'Change log';
+
+    if (rest.fromRemote) {
+      console.log('YAY IT WORKED!!');
+      return;
+    }
+
     const docNew = Automerge.change(this.doc, message, doc => {
       // Use the Slate operations to modify the Automerge document.
       applySlateOperationsHelper(doc, operations);
     });
-    const diff = Automerge.diff(this.doc, docNew);
-    console.log(diff);
-    console.log(Automerge.getHistory(docNew));
-    console.log(Automerge.save(docNew).length);
 
-    this.doc = docNew;
-    const x = docNew;
+    // const prevDoc = this.docSet.getDoc(this.state.docId);
+    // const opSetDiff = Automerge.diff(prevDoc, docNew);
+    // if (opSetDiff.length !== 0) {
+    //   this.doc = docNew;
 
     // THIS TRIGGERS THE CONNECTION THING
-    this.docSet.setDoc('1', x);
+    this.docSet.setDoc(this.state.docId, docNew);
+    this.doc = docNew;
+    // }
+
+    // const diff = Automerge.diff(this.doc, docNew);
+    // console.log(diff);
+    // console.log(Automerge.getHistory(docNew));
+    // console.log(Automerge.save(docNew).length);
   };
   handleMessage = msg => {
     const msgJson = JSON.parse(msg);
     console.log(' got a msg', msgJson);
     if (msgJson.type === 'server-update') {
-      this.connection.receiveMsg(msgJson.payload);
+      const docNew = this.connection.receiveMsg(msgJson.payload);
       console.log('synced, handshake done');
+
+      if (msgJson.payload.changes) {
+        console.log('has changes!!!!!');
+
+        // // Instead of...
+        // const { value } = this.state
+        // const change = value.change()
+        // ...
+        // this.onChange(change)
+
+        // // You now would do...
+        // this.editor.change(change => {
+        //   const { value } = change
+        //   ...
+        // })
+
+        const currentDoc = this.doc;
+        const opSetDiff = Automerge.diff(currentDoc, docNew);
+        if (opSetDiff.length !== 0) {
+          //
+          const slateOps = convertAutomergeToSlateOps(opSetDiff);
+          console.log('slateOps', slateOps);
+
+          this.editor.current.change(change => {
+            console.log('HERE1');
+            const appliedChanges = change.applyOperations(slateOps);
+            appliedChanges.fromRemote = true;
+            // console.log(changes);
+            // console.log('prob will error after this');
+            // this.doc = this.docSet.getDoc(this.state.docId);
+            // this.docSet.setDoc(this.state.docId); // maybe set doc here...
+            return appliedChanges;
+          });
+
+          const updatedDoc = this.docSet.getDoc(this.state.docId);
+          console.log(updatedDoc);
+          console.log('HERE2');
+          this.doc = updatedDoc;
+          // this.docSet.setDoc(this.state.docId)
+
+          // Apply the operation
+
+          // let change = this.state.value.change()
+          // change = applyAutomergeOperations(opSetDiff, change, () => { console.log('merge failed womp womp') });
+          // if (change) {
+          //     this.setState({ value: change.value })
+          // }
+        }
+      }
     }
   };
 
@@ -133,26 +260,54 @@ class Foo extends Component<any, any> {
     if (!loaded) {
       return <div>loading...</div>;
     }
+
+    const { doc } = this;
+    const history = Automerge.getHistory(doc);
+
+    // console.log(history);
     return (
-      <div>
-        <Websocket
-          ref={this.websocket}
-          debug={true}
-          url={'ws://localhost:3001/ws'}
-          onMessage={this.handleMessage}
-          onOpen={e => console.log(e)}
-          onClose={() => {}}
-        />
-        <Editor
-          placeholder="Enter some plain text..."
-          value={this.state.value}
-          onChange={this.onChange}
-        />
-      </div>
+      <AppContainer>
+        <NavBar>crazy experiment navbar</NavBar>
+
+        <MainContainer>
+          <ContentContainer>
+            <Websocket
+              ref={this.websocket}
+              debug={true}
+              url={'ws://localhost:3001/ws'}
+              onMessage={this.handleMessage}
+              onOpen={e => console.log(e)}
+              onClose={() => {}}
+            />
+            <Editor
+              ref={this.editor}
+              placeholder="Enter some plain text..."
+              value={this.state.value}
+              onChange={this.onChange}
+            />
+          </ContentContainer>
+
+          <SideBarContainer>
+            <SidebarTitleContainer>sidebar title</SidebarTitleContainer>
+            <SidebarContentContainer>
+              {history.map(historyUnit => {
+                const { change, snapshot } = historyUnit;
+                const { actor, deps, message, ops, seq } = change;
+                return (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div>history edit</div>
+                    <div>actor: {actor}</div>
+                    <div>message: {message}</div>
+                    <div>seq: {seq}</div>
+                  </div>
+                );
+              })}
+            </SidebarContentContainer>
+          </SideBarContainer>
+        </MainContainer>
+      </AppContainer>
     );
   }
 }
 
-const Demo = () => <div>sup</div>;
-
-ReactDOM.render(<Foo />, document.getElementById('app'));
+ReactDOM.render(<Main />, document.getElementById('app'));

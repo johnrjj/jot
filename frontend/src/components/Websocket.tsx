@@ -95,7 +95,7 @@ class Websocket extends React.Component<WebsocketPropTypes, WebsocketState> {
   };
 
   render() {
-    return <div>websocket div</div>;
+    return <div />;
   }
 }
 

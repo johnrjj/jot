@@ -157,7 +157,6 @@ setupProcessCleanup();
 
 logger.log('debug', `✅ Jot configured successfully, ready to start`);
 
-
 app.listen(config.PORT, () => {
   logger.log('info', `✍️ Jot started on port ${config.PORT}`);
   logger.log('info', ``);

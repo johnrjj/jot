@@ -58,6 +58,11 @@ export class DocumentRepository implements IDocumentRepository {
     // return this.saveDocument(id, doc);
   }
 
+  public setDocSet = (docSet: DocSet) => {
+    this.log('debug', 'updated doc set', docSet);
+    this.docSet = docSet;
+  };
+
   private log(level: string, e: string, metadata?: any) {
     if (!this.logger) {
       return;
@@ -85,12 +90,13 @@ export class DocumentRepository implements IDocumentRepository {
 
   async getDoc(id: string): Promise<CRDTDocument> {
     this.log('debug', `docrepo: request for docID: ${id}`);
-    if (this.docCache.has(id)) {
-      this.log('silly', `docrepo cache hit for docId ${id}`);
-      return this.docCache.get(id) as CRDTDocument;
-    } else {
-      this.log('silly', `docrepo cache miss for docId ${id}, looking up in docSet`);
-    }
+    // cache does not work cuz immutability !!!!
+    // if (this.docCache.has(id)) {
+    //   this.log('silly', `docrepo cache hit for docId ${id}`);
+    //   return this.docCache.get(id) as CRDTDocument;
+    // } else {
+    //   this.log('silly', `docrepo cache miss for docId ${id}, looking up in docSet`);
+    // }
     const doc = this.docSet.getDoc(id);
     if (!doc) {
       this.log('silly', `docrepo docset miss for docId ${id}, creating new one.`);
