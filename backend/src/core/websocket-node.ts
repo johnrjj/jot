@@ -86,6 +86,8 @@ export class WebSocketNode {
   }
 
   private onMessageFromClientSocket(connectionContext: ConnectionContext) {
+    let isClientConnected = false;
+
     return async (message: any) => {
       // initialize
       if (!connectionContext.initialized) {
@@ -119,32 +121,35 @@ export class WebSocketNode {
         case 'automerge-connection-send':
           this.log('verbose', 'automerge-connection-send', (data as any).payload);
 
-          setTimeout(() => {
-            console.log('todo fix this, timeout 1s trying now to connect');
+          let delay = 0;
+          if (isClientConnected) {
             // const { clientId, docId, message } = (data as any).payload;
             const connection = this.connectionAutomerge.get((data as any).payload.clientId);
-            console.log(connection ? 'validconenction' : 'notvalidconnection');
-
-            // console.log(')
             this.log(
               'verbose',
               'websocket node connection received message from automerge-connection-send'
             );
+            const updatedDoc = connection && connection.receiveMsg((data as any).payload.message);
+          } else {
+            setTimeout(() => {
+              // const { clientId, docId, message } = (data as any).payload;
+              const connection = this.connectionAutomerge.get((data as any).payload.clientId);
+              this.log(
+                'verbose',
+                'websocket node connection received message from automerge-connection-send'
+              );
+              const updatedDoc = connection && connection.receiveMsg((data as any).payload.message);
+            }, 1000);
+          }
 
-            // if ((data as any).payload.message.changes) {
-            //   // console.log('wow !! changes rec', (data as any).payload.message.changes);
-            // }
-
-            const updatedState = connection && connection.receiveMsg((data as any).payload.message);
-
-            // console.log('applied ', JSON.stringify(updatedState));
-
-            // if (updatedState) {
-            //   this.log('debug', 'updating docrepo docset');
-            //   this.documentRepository.setDocSet(updatedState);
-            // }
-
-            // console.log(this.documentRepository.docSet.getDoc('1'));
+          setTimeout(() => {
+            // const { clientId, docId, message } = (data as any).payload;
+            const connection = this.connectionAutomerge.get((data as any).payload.clientId);
+            this.log(
+              'verbose',
+              'websocket node connection received message from automerge-connection-send'
+            );
+            const updatedDoc = connection && connection.receiveMsg((data as any).payload.message);
           }, 1000);
 
           break;

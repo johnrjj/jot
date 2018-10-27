@@ -78,6 +78,7 @@ class Main extends Component<any, any> {
     this.state = {
       loaded: false,
       value: null,
+      isConnectedToDocument: false,
       clientId: uuid(),
       docId: '1',
       clientUpdateCount: 0,
@@ -128,9 +129,15 @@ class Main extends Component<any, any> {
         },
       });
 
-      setTimeout(() => {
+      if (this.state.isConnectedToDocument) {
         this.websocket.current.sendMessage(message);
-      }, 1000);
+      } else {
+        setTimeout(() => {
+          // wait a second while we connect...
+          this.websocket.current.sendMessage(message);
+        }, 1000);
+      }
+
       // if (!hasBootstrapped) {
       //   hasBootstrapped = true;
       //   this.connection.receiveMsg(msg);
@@ -202,6 +209,13 @@ class Main extends Component<any, any> {
     console.log(' got a msg', msgJson);
     if (msgJson.type === 'server-update') {
       const docNew = this.connection.receiveMsg(msgJson.payload);
+
+      if (!this.state.isConnectedToDocument) {
+        this.setState({
+          isConnectedToDocument: true,
+        });
+      }
+
       console.log('synced, handshake done');
 
       if (msgJson.payload.changes) {
