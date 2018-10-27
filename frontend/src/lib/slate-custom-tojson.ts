@@ -24,7 +24,6 @@ export const toJSON = (value, options = {}) => {
   }
 
   let object = value.object;
-  console.log('yeet', object);
   switch (object) {
     case 'block':
       return {
@@ -99,20 +98,15 @@ export const toJSON = (value, options = {}) => {
       return valueJSON(value, options);
     default:
       if (typeof value.toJSON === 'function') {
-        console.log('true i guess', value);
         return value.toJSON();
       } else {
-        console.log('not true');
         const keys = Object.keys(value);
-        console.log(keys);
         let val = {};
         keys.forEach(key => {
           if (!value.key) {
             return;
           }
-          console.log(key);
           if (key === '_head') {
-            console.log('YEAH');
             return;
           }
           if (typeof value.key.toJSON === 'function') {

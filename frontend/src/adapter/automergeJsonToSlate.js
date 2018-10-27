@@ -13,7 +13,6 @@ const createLeaf = leaf => {
 };
 
 const fromJSON = value => {
-  console.log('converting ', value);
   if (value === undefined || value === null) {
     return null;
   }
@@ -33,7 +32,6 @@ const fromJSON = value => {
   });
 
   if (value.object === 'text') {
-    console.log('is leaf text');
     newJson.leaves = value.leaves.map(leaf => createLeaf(leaf));
   }
 

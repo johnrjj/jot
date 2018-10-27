@@ -262,7 +262,7 @@ class Main extends Component<any, any> {
     }
 
     const { doc } = this;
-    const history = Automerge.getHistory(doc);
+    // const history = Automerge.getHistory(doc);
 
     // console.log(history);
     return (
@@ -282,6 +282,9 @@ class Main extends Component<any, any> {
             <Editor
               ref={this.editor}
               placeholder="Enter some plain text..."
+              autoCorrect={false}
+              autoFocus={true}
+              spellCheck={false}
               value={this.state.value}
               onChange={this.onChange}
             />
@@ -290,7 +293,7 @@ class Main extends Component<any, any> {
           <SideBarContainer>
             <SidebarTitleContainer>sidebar title</SidebarTitleContainer>
             <SidebarContentContainer>
-              {history.map(historyUnit => {
+              {/* {history.map(historyUnit => {
                 const { change, snapshot } = historyUnit;
                 const { actor, deps, message, ops, seq } = change;
                 return (
@@ -301,7 +304,7 @@ class Main extends Component<any, any> {
                     <div>seq: {seq}</div>
                   </div>
                 );
-              })}
+              })} */}
             </SidebarContentContainer>
           </SideBarContainer>
         </MainContainer>

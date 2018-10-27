@@ -120,7 +120,7 @@ export class WebSocketNode {
           this.log('verbose', 'automerge-connection-send', (data as any).payload);
 
           setTimeout(() => {
-            console.log('todo fix this, timeout 2s trying now to connect');
+            console.log('todo fix this, timeout 1s trying now to connect');
             // const { clientId, docId, message } = (data as any).payload;
             const connection = this.connectionAutomerge.get((data as any).payload.clientId);
             console.log(connection ? 'validconenction' : 'notvalidconnection');
@@ -131,13 +131,13 @@ export class WebSocketNode {
               'websocket node connection received message from automerge-connection-send'
             );
 
-            if ((data as any).payload.message.changes) {
-              console.log('wow !! changes rec', (data as any).payload.message.changes);
-            }
+            // if ((data as any).payload.message.changes) {
+            //   // console.log('wow !! changes rec', (data as any).payload.message.changes);
+            // }
 
             const updatedState = connection && connection.receiveMsg((data as any).payload.message);
 
-            console.log('applied ', JSON.stringify(updatedState));
+            // console.log('applied ', JSON.stringify(updatedState));
 
             // if (updatedState) {
             //   this.log('debug', 'updating docrepo docset');
@@ -145,7 +145,7 @@ export class WebSocketNode {
             // }
 
             // console.log(this.documentRepository.docSet.getDoc('1'));
-          }, 2000);
+          }, 1000);
 
           break;
 
@@ -155,7 +155,7 @@ export class WebSocketNode {
           const appliedChanges = this.documentRepository
             .getDocSet()
             .applyChanges('1', fromJS((data as any).payload.changes));
-          console.log(appliedChanges);
+          // console.log(appliedChanges);
           // console.log('is this anything', JSON.stringify(x));
 
           // const docNew = x;

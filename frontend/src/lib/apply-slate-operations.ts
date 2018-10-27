@@ -145,7 +145,6 @@ export const applySlateOperationsHelper = (doc, operations) => {
           if (currentNode.nodes[index + 1].object !== 'text') {
             let propertiesJSON = slateCustomToJson(properties);
             Object.keys(propertiesJSON).forEach(key => {
-              console.log(key);
               if (propertiesJSON.key) {
                 currentNode.nodes[index + 1][key] = propertiesJSON.key;
               }

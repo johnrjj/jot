@@ -87,7 +87,6 @@ class Websocket extends React.Component<WebsocketPropTypes, WebsocketState> {
   };
 
   waitForConnection = (callback, interval = 1000) => {
-    console.log('waiting');
     const ws = this.state.ws;
     return ws.readyState === ws.OPEN
       ? callback()
