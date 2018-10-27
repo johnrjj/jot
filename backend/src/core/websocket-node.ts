@@ -3,6 +3,7 @@ import { Request, NextFunction } from 'express';
 import { Logger } from 'winston';
 import Automerge from 'automerge';
 import { fromJS } from 'immutable';
+import uuid from 'uuid/v4';
 import { DocumentRepository } from './document-repository';
 
 interface ConnectionContext {
@@ -13,9 +14,9 @@ interface ConnectionContext {
   subscriptionIdMap: Map<string, number>;
 }
 
-type MessageType = 'update' | 'snapshot' | 'fill' | 'keepalive';
-
-type ChannelType = 'orderbook' | 'keepalive';
+// todo type
+type MessageType = 'keepalive';
+type ChannelType = 'keepalive';
 
 export interface WebSocketMessage<T> {
   type: MessageType;
@@ -51,7 +52,7 @@ export class WebSocketNode {
     this.documentRepository = documentRepository;
     this.connections = new Set();
     this.connectionAutomerge = new Map();
-    this.id = '1-websocket-node';
+    this.id = `ws-node-${uuid()}`;
     this.log('verbose', `WebSocket Server node ${this.id} online`);
   }
 
@@ -121,7 +122,6 @@ export class WebSocketNode {
         case 'automerge-connection-send':
           this.log('verbose', 'automerge-connection-send', (data as any).payload);
 
-          let delay = 0;
           if (isClientConnected) {
             // const { clientId, docId, message } = (data as any).payload;
             const connection = this.connectionAutomerge.get((data as any).payload.clientId);
@@ -141,39 +141,12 @@ export class WebSocketNode {
               const updatedDoc = connection && connection.receiveMsg((data as any).payload.message);
             }, 1000);
           }
-
-          setTimeout(() => {
-            // const { clientId, docId, message } = (data as any).payload;
-            const connection = this.connectionAutomerge.get((data as any).payload.clientId);
-            this.log(
-              'verbose',
-              'websocket node connection received message from automerge-connection-send'
-            );
-            const updatedDoc = connection && connection.receiveMsg((data as any).payload.message);
-          }, 1000);
-
           break;
-
         case 'send-operation':
           this.log('debug', 'applying operation', data);
-
           const appliedChanges = this.documentRepository
             .getDocSet()
             .applyChanges('1', fromJS((data as any).payload.changes));
-          // console.log(appliedChanges);
-          // console.log('is this anything', JSON.stringify(x));
-
-          // const docNew = x;
-          // const curDoc = await this.documentRepository.getDoc('1');
-          // const opSetDiff = (Automerge as any).diff(curDoc, docNew);
-
-          // console.log(JSON.stringify(curDoc));
-          // console.log('MEOWWWWWW', opSetDiff);
-
-          // this.handleRecieveOperationFromClient();
-          // // let {clientId, docId, msg} = data
-          // let docId = Number(data.docId)
-          // connections[clientId].receiveMsg(msg)
           break;
         case 'join-document':
           this.log('debug', `WebSocket subscribe request received`, data);
@@ -185,9 +158,8 @@ export class WebSocketNode {
             // doc will autocreate a new doc for us!
             doc = await this.documentRepository.getDoc(docId);
           } catch (e) {
-            this.log('error', 'error-join-document', e);
+            this.log('error', `error:join-document getting doc id ${docId}`, e);
           }
-
           if (!this.connectionAutomerge.has(clientId)) {
             this.log('silly', `connectionAutomerge adding ${clientId}`);
             this.connectionAutomerge.set(
@@ -209,7 +181,6 @@ export class WebSocketNode {
             this.log('silly', `connectionAutomerge opening connection for ${clientId}`);
             (this.connectionAutomerge.get(clientId) as AutomergeConnection).open();
           }
-          // this.handleJoinDocumentRequest(connectionContext, subscribeRequest);
           break;
         default:
           this.log(
@@ -232,32 +203,6 @@ export class WebSocketNode {
         }: ${this.getConnectionsCount()} total active connections remaining. (removed 1)`
       );
     };
-  }
-
-  private handleSubscriptionRequest(
-    context: ConnectionContext,
-    subscriptionRequest: WebSocketMessage<any>
-  ) {
-    // const { channel, type, payload } = subscriptionRequest;
-    // const { baseTokenAddress, quoteTokenAddress, limit, snapshot: snapshotRequested } = payload;
-    // const subscriptionChannel = `${baseTokenAddress}-${quoteTokenAddress}`;
-    // const channelId = context.subscriptionCount++;
-    // context.subscriptionIdMap.set(subscriptionChannel, channelId);
-    // context.subscriptions.push(subscriptionChannel);
-    // if (snapshotRequested) {
-    //   this.relay
-    //     .getOrderbook(baseTokenAddress, quoteTokenAddress)
-    //     .then(snapshot => {
-    //       const message: WebSocketMessage<OrderbookSnapshot> = {
-    //         type: 'snapshot',
-    //         channel: 'orderbook',
-    //         channelId,
-    //         payload: snapshot,
-    //       };
-    //       this.sendMessage(context, message);
-    //     })
-    //     .catch(e => this.log('error', `Error getting snapshot for ${subscriptionChannel}`));
-    // }
   }
 
   private sendKeepAlive(connectionContext: ConnectionContext): void {

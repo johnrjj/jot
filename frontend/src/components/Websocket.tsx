@@ -3,7 +3,7 @@ import React from 'react';
 export interface WebsocketPropTypes {
   url: string;
   onMessage: Function;
-  onOpen: Function;
+  onOpen?: Function;
   onClose: Function;
   debug?: boolean;
   reconnect?: boolean;
@@ -48,7 +48,7 @@ class Websocket extends React.Component<WebsocketPropTypes, WebsocketState> {
 
     websocket.onopen = () => {
       this.logging('Websocket connected');
-      if (typeof this.props.onOpen === 'function') this.props.onOpen();
+      this.props.onOpen && this.props.onOpen();
     };
 
     websocket.onmessage = evt => {
