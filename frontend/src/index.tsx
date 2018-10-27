@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Editor } from 'slate-react';
-import { Value } from 'slate';
+import slate, { Mark } from 'slate';
+import { Value, Decoration, Data } from 'slate';
 import Automerge from 'automerge';
 import { toJSON } from './lib/slate-custom-tojson';
 import assign from 'assign-deep';
@@ -11,7 +12,9 @@ import { automergeJsonToSlate, applyAutomergeOperations } from './adapter/slateA
 import styled from 'styled-components';
 import uuid from 'uuid/v4';
 import './reset.css';
+import immutable from 'immutable';
 import { convertAutomergeToSlateOps } from './adapter/applyAutomergeOperations';
+import { string } from 'prop-types';
 
 const AppContainer = styled.div`
   display: flex;
@@ -63,6 +66,10 @@ const EditorContainer = styled.div`
   display: flex;
 `;
 
+const Cursor = styled.span`
+  background-color: green;
+`;
+
 const HistoryContainer = styled.div``;
 
 class Main extends Component<any, any> {
@@ -71,6 +78,8 @@ class Main extends Component<any, any> {
   websocket: any;
   connection: any;
   editor: any;
+  selection: any;
+
   constructor(props) {
     super(props);
     this.docSet = new Automerge.DocSet();
@@ -86,6 +95,8 @@ class Main extends Component<any, any> {
     };
     this.websocket = React.createRef();
     this.editor = React.createRef();
+    this.decorateNode = this.decorateNode.bind(this);
+    this.onChange = this.onChange.bind(this);
   }
 
   async componentDidMount() {
@@ -94,16 +105,10 @@ class Main extends Component<any, any> {
     const { serializedDocument } = json;
     const crdt = Automerge.load(serializedDocument);
     this.doc = crdt;
-    // console.log(crdt);
+
     const initialValue: any = automergeJsonToSlate(this.doc);
 
-    // console.log('FROM THE VERSION', initialValue);
-
-    // console.log('a', Plain.deserialize('text here').toJS());
     const initialSlateValue = Value.fromJSON(initialValue);
-    // console.log('b', initialSlateValue.toJS());
-    // console.log()
-    // this.doc = Automerge.load(s);
 
     this.docSet.setDoc('1', this.doc);
 
@@ -111,13 +116,6 @@ class Main extends Component<any, any> {
       loaded: true,
       value: initialSlateValue,
     });
-
-    // const send = data => {
-    //   this.websocket.current.sendMessage(JSON.stringify({ type: 'send-operation', payload: data }))
-    // }
-    // const autocon = (this.autocon = new Automerge.Connection(this.docSet, send))
-    // autocon.open()
-    // let hasBootstrapped = false;
 
     this.connection = new Automerge.Connection(this.docSet, data => {
       const message = JSON.stringify({
@@ -137,23 +135,7 @@ class Main extends Component<any, any> {
           this.websocket.current.sendMessage(message);
         }, 1000);
       }
-
-      // if (!hasBootstrapped) {
-      //   hasBootstrapped = true;
-      //   this.connection.receiveMsg(msg);
-      // }
-
-      // if (msg.changes) {
-      //   send(msg);
-      // }
     });
-
-    // this.docSet.setDoc(this.props.docId, this.doc)
-    // this.props.sendMessage(this.props.clientId, {
-    //     docId: this.props.docId,
-    //     clock: Immutable.Map(),
-    // })
-    // this.props.connectionHandler(this.props.clientId, true)
 
     setTimeout(
       () =>
@@ -170,10 +152,66 @@ class Main extends Component<any, any> {
     );
   }
 
-  onChange = ({ value, operations, ...rest }) => {
+  onChange = ({ value, operations, withoutSaving, setValue, ...rest }) => {
     console.log(rest);
     console.log('');
+    console.log(value.selection.toJS());
+    this.selection = value.selection.toJS();
     console.log('ONCHANGE', value.toJS());
+
+    let decorations = value.decorations;
+    const selection = value.selection;
+    // decorations = decorations.push({
+    //   anchor: {
+    //     key: selection.start.key,
+    //     offset: selection.start.offset,
+    //   },
+    //   focus: {
+    //     key: selection.start.key,
+    //     offset: selection.start.offset,
+    //   },
+    //   mark: {
+    //     type: 'bold',
+    //   },
+    // });
+
+    const mark = {
+      type: 'bold',
+    };
+
+    const range = selection;
+
+    // const selection = this.value
+
+    console.log(selection.anchor.key);
+    console.log(selection.focus.key);
+
+    // const range = slate.Range.create({
+    //   anchor: {
+    //     key: 'node-a',
+    //     path: [0, 2, 1],
+    //     offset: 0,
+    //   },
+    //   focus: {
+    //     key: 'node-b',
+    //     path: [0, 3, 2],
+    //     offset: 4,
+    //   },
+    // })
+
+    // const range = {
+    //   anchor: { ...selection.anchor, key:  selection.anchor.key},
+    //   // focus: selection.focus,
+    //   focus: { ...selection.focus, key:  selection.focus.key},
+
+    // }
+
+    // console.log(range);
+    // console.log(range.toJS());
+
+    // const meep = value.change().setValue({ decorations });
+    // console.log('meep', meep);
+
     this.setState({ value });
     // console.log(operations.toJS());
     const clientId = this.state.clientId;
@@ -184,26 +222,32 @@ class Main extends Component<any, any> {
       return;
     }
 
+    this.editor &&
+      this.editor.current &&
+      this.editor.current.change(change => {
+        // console.log(change.toJS());
+        const appliedChanges = change.addMarkAtRange(range, mark);
+        // we can tack on anything to the changes object so the onchange() handler
+        // knows not to apply these changes again (as it will get called
+        // immedietly after we return this a couple lines down.
+        appliedChanges.fromRemote = true;
+        return appliedChanges;
+      });
+
+    // if (inputValue && hasValidAncestors(change.value)) {
+
+    // withoutSaving(() => setValue({ decorations }))
+
     const docNew = Automerge.change(this.doc, message, doc => {
       // Use the Slate operations to modify the Automerge document.
       applySlateOperationsHelper(doc, operations);
     });
 
-    // const prevDoc = this.docSet.getDoc(this.state.docId);
-    // const opSetDiff = Automerge.diff(prevDoc, docNew);
-    // if (opSetDiff.length !== 0) {
-    //   this.doc = docNew;
-
     // THIS TRIGGERS THE CONNECTION THING
     this.docSet.setDoc(this.state.docId, docNew);
     this.doc = docNew;
-    // }
-
-    // const diff = Automerge.diff(this.doc, docNew);
-    // console.log(diff);
-    // console.log(Automerge.getHistory(docNew));
-    // console.log(Automerge.save(docNew).length);
   };
+
   handleMessage = msg => {
     const msgJson = JSON.parse(msg);
     console.log(' got a msg', msgJson);
@@ -216,23 +260,7 @@ class Main extends Component<any, any> {
         });
       }
 
-      console.log('synced, handshake done');
-
       if (msgJson.payload.changes) {
-        console.log('has changes!!!!!');
-
-        // // Instead of...
-        // const { value } = this.state
-        // const change = value.change()
-        // ...
-        // this.onChange(change)
-
-        // // You now would do...
-        // this.editor.change(change => {
-        //   const { value } = change
-        //   ...
-        // })
-
         const currentDoc = this.doc;
         const opSetDiff = Automerge.diff(currentDoc, docNew);
         if (opSetDiff.length !== 0) {
@@ -241,31 +269,171 @@ class Main extends Component<any, any> {
           console.log('slateOps', slateOps);
 
           this.editor.current.change(change => {
-            console.log('HERE1');
             const appliedChanges = change.applyOperations(slateOps);
+            // we can tack on anything to the changes object so the onchange() handler
+            // knows not to apply these changes again (as it will get called
+            // immedietly after we return this a couple lines down.
             appliedChanges.fromRemote = true;
-            // console.log(changes);
-            // console.log('prob will error after this');
-            // this.doc = this.docSet.getDoc(this.state.docId);
-            // this.docSet.setDoc(this.state.docId); // maybe set doc here...
             return appliedChanges;
           });
 
           const updatedDoc = this.docSet.getDoc(this.state.docId);
-          console.log(updatedDoc);
-          console.log('HERE2');
           this.doc = updatedDoc;
-          // this.docSet.setDoc(this.state.docId)
-
-          // Apply the operation
-
-          // let change = this.state.value.change()
-          // change = applyAutomergeOperations(opSetDiff, change, () => { console.log('merge failed womp womp') });
-          // if (change) {
-          //     this.setState({ value: change.value })
-          // }
         }
       }
+    }
+  };
+
+  handleSelect = (event, editor) => {
+    console.log(editor.value.toJS());
+
+    console.log(editor.value.selection.toJS());
+    const { value } = editor;
+    const { selection } = value;
+    const { anchor, focus, ...rest } = selection;
+    this.selection = selection.toJS();
+    // this.setState({
+    //   selection,
+    // })
+
+    // this.setState({
+    //   value: editor.value,
+    // });
+  };
+
+  /**
+   * Decorate code blocks with Prism.js highlighting.
+   *
+   * @param {Node} node
+   * @return {Array}
+   */
+
+  decorateNode = (node, next): Range[] => {
+    console.log('siiiiit');
+
+    // return this.state.selection;
+
+    // return next();
+    const others = next() || [];
+    // if (node.type != 'line') return others
+
+    // const language = node.data.get('language')
+    // const texts = node.getTexts().toArray()
+    // const string = texts.map(t => t.text).join('\n')
+    // const grammar = Prism.languages[language]
+    // const tokens = Prism.tokenize(string, grammar)
+    const decorations = [];
+    console.log(this.selection);
+    // let startText = texts.shift()
+    // let endText = startText
+    // let startOffset = 0
+    // let endOffset = 0
+    // let start = 0
+
+    // for (const token of tokens) {
+    //   startText = endText
+    //   startOffset = endOffset
+
+    //   const content = getContent(token)
+    //   const newlines = content.split('\n').length - 1
+    //   const length = content.length - newlines
+    //   const end = start + length
+
+    //   let available = startText.text.length - startOffset
+    //   let remaining = length
+
+    //   endOffset = startOffset + remaining
+
+    //   while (available < remaining && texts.length > 0) {
+    //     endText = texts.shift()
+    //     remaining = length - available
+    //     available = endText.text.length
+    //     endOffset = remaining
+    //   }
+
+    //   if (typeof token != 'string') {
+
+    if (this.selection && this.selection.anchor) {
+      // const { selection } = this.state;
+      const { anchor, focus } = this.selection;
+
+      console.log('inside if');
+
+      // object: "mark"
+      // type: "bold"
+
+      const dec: Decoration = slate.Decoration.create({
+        anchor,
+        focus,
+        mark: Mark.create({
+          data: slate.Data.create({}),
+          type: 'bold',
+        }),
+        object: 'decoration',
+
+        // mark: {
+        //   data: new slate.Data(),
+        //   object: "mark",
+        //   type: "bold",
+        // },
+      });
+      console.log('pushing decorated');
+      decorations.push(dec);
+    }
+
+    //   start = end
+    // }
+
+    // return next();
+    return [...others, ...decorations];
+  };
+
+  /**
+   * Render a Slate mark.
+   *
+   * @param {Object} props
+   * @return {Element}
+   */
+
+  renderMark = (props, next) => {
+    const { children, mark, attributes } = props;
+    console.log(children, mark, attributes);
+
+    switch (mark.type) {
+      case 'bold':
+        return <Cursor {...attributes}>{children}</Cursor>;
+      case 'code':
+        return <code {...attributes}>{children}</code>;
+      case 'italic':
+        return <em {...attributes}>{children}</em>;
+      case 'underlined':
+        return <u {...attributes}>{children}</u>;
+      case 'comment':
+        return (
+          <span {...attributes} style={{ opacity: '0.33' }}>
+            {children}
+          </span>
+        );
+      case 'bold':
+        return (
+          <span {...attributes} style={{ fontWeight: 'bold' }}>
+            {children}
+          </span>
+        );
+      case 'tag':
+        return (
+          <span {...attributes} style={{ fontWeight: 'bold' }}>
+            {children}
+          </span>
+        );
+      case 'punctuation':
+        return (
+          <span {...attributes} style={{ opacity: '0.75' }}>
+            {children}
+          </span>
+        );
+      default:
+        return next();
     }
   };
 
@@ -275,8 +443,10 @@ class Main extends Component<any, any> {
       return <div>loading...</div>;
     }
 
+    console.log('hererererererere', this.state.value.toJS());
+
     const { doc } = this;
-    // const history = Automerge.getHistory(doc);
+    const history = Automerge.getHistory(doc);
 
     // console.log(history);
     return (
@@ -301,24 +471,27 @@ class Main extends Component<any, any> {
               spellCheck={false}
               value={this.state.value}
               onChange={this.onChange}
+              // onSelect={this.handleSelect}
+              renderMark={this.renderMark}
+              decorateNode={this.decorateNode}
             />
           </ContentContainer>
 
           <SideBarContainer>
             <SidebarTitleContainer>sidebar title</SidebarTitleContainer>
             <SidebarContentContainer>
-              {/* {history.map(historyUnit => {
+              {history.map(historyUnit => {
                 const { change, snapshot } = historyUnit;
                 const { actor, deps, message, ops, seq } = change;
                 return (
-                  <div style={{ marginBottom: '1rem' }}>
+                  <div key={actor + seq} style={{ marginBottom: '1rem' }}>
                     <div>history edit</div>
                     <div>actor: {actor}</div>
                     <div>message: {message}</div>
                     <div>seq: {seq}</div>
                   </div>
                 );
-              })} */}
+              })}
             </SidebarContentContainer>
           </SideBarContainer>
         </MainContainer>
