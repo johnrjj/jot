@@ -139,6 +139,7 @@ export class WebSocketNode {
                 'websocket node connection received message from automerge-connection-send'
               );
               const updatedDoc = connection && connection.receiveMsg((data as any).payload.message);
+              isClientConnected = true;
             }, 1000);
           }
           break;

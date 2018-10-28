@@ -1609,29 +1609,6 @@ babylon-walk@^1.0.2:
     babel-types "^6.15.0"
     lodash.clone "^4.5.0"
 
-"backend@file:backend":
-  version "1.0.0"
-  dependencies:
-    automerge "^0.9.1"
-    body-parser "^1.18.3"
-    compression "^1.7.3"
-    cors "^2.8.4"
-    date-fns "^1.29.0"
-    dotenv "^6.1.0"
-    express "^4.16.4"
-    express-winston "^3.0.1"
-    express-ws "^4.0.0"
-    helmet "^3.14.0"
-    immutable "^3.8.2"
-    morgan "^1.9.1"
-    pg "^7.5.0"
-    redis "^2.8.0"
-    slate "^0.42.2"
-    slate-plain-serializer "^0.6.11"
-    uuid "^3.3.2"
-    winston "^3.1.0"
-    ws "^6.1.0"
-
 balanced-match@^0.4.2:
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-0.4.2.tgz#cb3f3e3c732dc0f01ee70b403f302e61d7709838"
@@ -2059,23 +2036,6 @@ cli-table2@^0.2.0:
 cli-width@^2.0.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/cli-width/-/cli-width-2.2.0.tgz#ff19ede8a9a5e579324147b0c11f0fbcbabed639"
-
-"client@file:frontend":
-  version "1.0.0"
-  dependencies:
-    assign-deep "^1.0.0"
-    automerge "^0.9.1"
-    emotion "^9.2.12"
-    immutable "^3.8.2"
-    react "^16.5.2"
-    react-dom "^16.5.2"
-    react-emotion "^9.2.12"
-    react-slate "^0.5.1"
-    slate "^0.42.6"
-    slate-plain-serializer "^0.6.11"
-    slate-react "^0.19.3"
-    styled-components "^4.0.2"
-    uuid "^3.3.2"
 
 cliui@^4.0.0:
   version "4.1.0"
@@ -6511,6 +6471,10 @@ react-emotion@^9.2.12:
   dependencies:
     babel-plugin-emotion "^9.2.11"
     create-emotion-styled "^9.2.8"
+
+react-feather@^1.1.4:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/react-feather/-/react-feather-1.1.4.tgz#d0143da95f9d52843cf13a553091573a7c617897"
 
 react-immutable-proptypes@^2.1.0:
   version "2.1.0"

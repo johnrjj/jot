@@ -275,10 +275,7 @@ class Main extends Component<any, any> {
     if (!loaded) {
       return <div>loading...</div>;
     }
-
-    const { doc } = this;
-    const history = Automerge.getHistory(doc);
-
+    // const history = Automerge.getHistory(this.doc);
     return (
       <AppContainer>
         <NavBar>crazy experiment ~~~~</NavBar>
@@ -307,7 +304,7 @@ class Main extends Component<any, any> {
           <SideBarContainer>
             <SidebarTitleContainer>sidebar title</SidebarTitleContainer>
             <SidebarContentContainer>
-              {history.map(historyUnit => {
+              {/* {history.map(historyUnit => {
                 const { change, snapshot } = historyUnit;
                 const { actor, deps, message, ops, seq } = change;
                 return (
@@ -318,7 +315,7 @@ class Main extends Component<any, any> {
                     <div>seq: {seq}</div>
                   </div>
                 );
-              })}
+              })} */}
             </SidebarContentContainer>
           </SideBarContainer>
         </MainContainer>

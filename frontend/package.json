@@ -18,6 +18,7 @@
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "react-emotion": "^9.2.12",
+    "react-feather": "^1.1.4",
     "react-slate": "^0.5.1",
     "slate": "^0.42.6",
     "slate-plain-serializer": "^0.6.11",
