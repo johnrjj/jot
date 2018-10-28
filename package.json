@@ -1,0 +1,42 @@
+{
+  "name": "root",
+  "private": true,
+  "scripts": {
+    "build": "lerna run build --stream --parallel",
+    "prettier": "lerna run prettier --stream"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.17.0",
+    "@types/compression": "^0.0.36",
+    "@types/cors": "^2.8.4",
+    "@types/express": "^4.16.0",
+    "@types/express-ws": "^3.0.0",
+    "@types/helmet": "^0.0.42",
+    "@types/morgan": "^1.7.35",
+    "@types/node": "^10.12.0",
+    "@types/pg": "^7.4.11",
+    "@types/react": "^16.4.15",
+    "@types/react-dom": "^16.0.8",
+    "@types/slate": "^0.40.1",
+    "@types/slate-react": "^0.18.0",
+    "@types/uuid": "^3.4.4",
+    "@types/ws": "^6.0.1",
+    "lerna": "^3.4.3",
+    "parcel-bundler": "^1.10.2",
+    "prettier": "^1.14.3",
+    "react-pose": "^3.3.6",
+    "react-typist": "^2.0.4",
+    "styled-components": "^3.4.9",
+    "surge": "^0.20.1",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.1.1"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "dependencies": {
+    "backend": "file:backend",
+    "client": "file:frontend"
+  }
+}
