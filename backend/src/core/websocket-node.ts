@@ -205,10 +205,9 @@ export class WebSocketNode {
       this.log('verbose', `WebSocket connection closed with code ${code}`, reason);
       // Close automerge connection, or else will throw error
       this.log('silly', `connectionAutomerge close connection for ${context.agentId}`);
-      if (context.agentId) {
+      if (context.agentId && this.connectionAutomerge.has(context.agentId)) {
+        this.log('silly', `Cleaning up agentId ${context.agentId} automerge connection`);
         (this.connectionAutomerge.get(context.agentId) as AutomergeConnection).close();
-      } else {
-        this.log('silly', `agentId ${context.agentId} not subscribed to anything`);
       }
       this.connections.delete(context);
       this.log(

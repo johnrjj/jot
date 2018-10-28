@@ -6,6 +6,7 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
+import { Search, Plus, Folder, File } from 'react-feather';
 import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
@@ -13,18 +14,13 @@ import {
 } from './adapter/slate-automerge-bridge';
 import './reset.css';
 import './global.css';
+import { theme, colors } from './theme';
 
 const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-`;
-
-const NavBar = styled.div`
-  height: 64px;
-  width: 100%;
-  background-image: linear-gradient(134deg, #ff8d94 0%, #fdcbbc 100%);
 `;
 
 const MainContainer = styled.div`
@@ -35,22 +31,118 @@ const MainContainer = styled.div`
 const ContentContainer = styled.div`
   display: flex;
   flex: 1;
-  border: 1px solid black;
 `;
 
 const SideBarContainer = styled.div`
   display: flex;
   flex-direction: column;
-  flex: 0;
-  min-width: 16rem;
-  border: 1px solid black;
+  flex: 5;
+  max-width: 24rem;
+  padding-top: ${theme.sidebar.leftPadding};
+  background-color: ${theme.sidebar.backgroundColor};
 `;
 
-const SidebarTitleContainer = styled.div`
+const SidebarIdentitySection = styled.div`
+  margin-left: ${theme.sidebar.leftPadding};
+  margin-bottom: ${theme.sidebar.paddingBetweenSections};
   display: flex;
   flex-direction: row;
-  justify-content: center;
+`;
+
+const SidebarIdentityLogo = styled.div`
+  height: 56px;
+  width: 56px;
+  border-radius: 8px;
+  background-image: linear-gradient(
+    -56deg,
+    #8cdcfb 0%,
+    #6bbafd 25%,
+    #53a0fe 35%,
+    #93a1f0 49%,
+    #8e8eef 61%,
+    #5d5cee 100%
+  );
+`;
+
+const SidebarIdentityUserInfoContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  /* background-color: ${colors.lightBlue.normal}; */
+`;
+
+const SidebarSearchContainer = styled.div`
+  margin-left: ${theme.sidebar.leftPadding};
+  margin-bottom: ${theme.sidebar.paddingBetweenSections};
+  display: flex;
+  flex-direction: row;
   align-items: center;
+`;
+
+const SidebarSearchIcon = styled(Search)`
+  height: 24px;
+  width: 24px;
+  color: ${colors.gray.dark};
+  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
+`;
+const SidebarSearchText = styled.span`
+  color: ${colors.gray.dark};
+`;
+
+const SidebarAddFileLinkContainer = styled.div`
+  margin-left: ${theme.sidebar.leftPadding};
+  margin-bottom: ${theme.sidebar.paddingBetweenSections};
+  display: flex;
+  flex-grow: 0;
+  flex-direction: row;
+  align-items: center;
+`;
+
+//https://www.flaticon.com/free-icon/notepad_148972#term=write&page=1&position=23
+// i really liek these icons
+
+const SidebarAddFileLinkIcon = styled(Plus)`
+  color: ${theme.sidebar.actionLinkColor};
+  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
+`;
+const SidebarAddFileLinkText = styled.span`
+  color: ${theme.sidebar.actionLinkColor};
+  line-height: 24px;
+`;
+
+const SidebarFolderLinkContainer = styled.div`
+  margin-left: ${theme.sidebar.leftPadding};
+  margin-bottom: ${theme.sidebar.paddingBetweenItemsInSection};
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+`;
+
+const SidebarFolderLinkIcon = styled(Folder)`
+  color: ${theme.sidebar.actionLinkColor};
+  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
+`;
+const SidebarFolderLinkText = styled.span`
+  color: ${theme.sidebar.folderLinkColor};
+  font-weight: 600;
+  line-height: 24px;
+`;
+
+const SidebarFileLinkContainer = styled.div`
+  margin-left: calc(${theme.sidebar.leftPadding} + 2rem);
+  margin-bottom: ${theme.sidebar.paddingBetweenSections};
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+`;
+
+const SidebarFileLinkIcon = styled(File)`
+  color: ${theme.sidebar.fileColor};
+  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
+`;
+const SidebarFileLinkText = styled.span`
+  color: ${theme.sidebar.folderLinkColor};
+  line-height: 24px;
 `;
 
 const SidebarContentContainer = styled.div`
@@ -58,10 +150,6 @@ const SidebarContentContainer = styled.div`
   flex: 1;
   flex-direction: column;
   overflow-y: scroll;
-`;
-
-const EditorContainer = styled.div`
-  display: flex;
 `;
 
 const Cursor = styled.span`
@@ -281,8 +369,33 @@ class Main extends Component<any, any> {
     // const history = Automerge.getHistory(this.doc);
     return (
       <AppContainer>
-        <NavBar>crazy experiment ~~~~</NavBar>
         <MainContainer>
+          <SideBarContainer>
+            <SidebarIdentitySection>
+              <SidebarIdentityLogo />
+              <SidebarIdentityUserInfoContainer />
+            </SidebarIdentitySection>
+            <SidebarSearchContainer>
+              <SidebarSearchIcon />
+              <SidebarSearchText>Search Files or Folders</SidebarSearchText>
+            </SidebarSearchContainer>
+            <SidebarAddFileLinkContainer>
+              <SidebarAddFileLinkIcon />
+              <SidebarAddFileLinkText>Add File or Folder</SidebarAddFileLinkText>
+            </SidebarAddFileLinkContainer>
+            <SidebarFolderLinkContainer>
+              <SidebarFolderLinkIcon />
+              <SidebarFolderLinkText>Sample Document Folder</SidebarFolderLinkText>
+            </SidebarFolderLinkContainer>
+
+            <SidebarFileLinkContainer>
+              <SidebarFileLinkIcon />
+              <SidebarFileLinkText>Sample File</SidebarFileLinkText>
+            </SidebarFileLinkContainer>
+
+            <SidebarContentContainer />
+          </SideBarContainer>
+
           <ContentContainer>
             <Websocket
               ref={this.websocket}
@@ -303,24 +416,6 @@ class Main extends Component<any, any> {
               renderMark={this.renderMark as any}
             />
           </ContentContainer>
-
-          <SideBarContainer>
-            <SidebarTitleContainer>sidebar title</SidebarTitleContainer>
-            <SidebarContentContainer>
-              {/* {history.map(historyUnit => {
-                const { change, snapshot } = historyUnit;
-                const { actor, deps, message, ops, seq } = change;
-                return (
-                  <div key={actor + seq} style={{ marginBottom: '1rem' }}>
-                    <div>history edit</div>
-                    <div>actor: {actor}</div>
-                    <div>message: {message}</div>
-                    <div>seq: {seq}</div>
-                  </div>
-                );
-              })} */}
-            </SidebarContentContainer>
-          </SideBarContainer>
         </MainContainer>
       </AppContainer>
     );

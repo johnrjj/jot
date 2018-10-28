@@ -1,20 +1,21 @@
 const palette = {
   white: '#FFFFFF',
   ghostWhite: '#F9FAFB',
+  darkerGhostWhite: '#F7F8FA',
   offblack: '#31323B',
-  platinum: 'DDE4EA',
-  darkGray: 'A7A7A9',
-  dimGray: '73656',
-  paleSilver: 'C5B2AC',
-  skyBlue: '8AD0DE',
-  carminePink: 'F84B4B',
-  uclaGold: 'FFB305',
-  papayaWhip: 'FFF4D7',
-  mediumSlateBlue: '6C79EB',
-  aliceBlue: 'F1F2FF',
-  emerald: '53C278',
-  honeydew: 'E2FFED',
-  paynesGrey: '393E53',
+  platinum: '#DDE4EA',
+  darkGray: '#A7A7A9',
+  dimGray: '#73656',
+  paleSilver: '#C5B2AC',
+  skyBlue: '#8AD0DE',
+  carminePink: '#F84B4B',
+  uclaGold: '#FFB305',
+  papayaWhip: '#FFF4D7',
+  mediumSlateBlue: '#6C79EB',
+  aliceBlue: '#F1F2FF',
+  emerald: '#53C278',
+  honeydew: '#E2FFED',
+  paynesGrey: '#393E53',
 };
 
 const colors = {
@@ -42,6 +43,7 @@ const colors = {
     light: palette.honeydew,
   },
   gray: {
+    veryLightGray: palette.darkerGhostWhite,
     light: palette.platinum,
     dark: palette.darkGray,
     darker: palette.dimGray,
@@ -68,6 +70,16 @@ const fontSizing = {
 const theme = {
   editor: {
     primaryTextColor: colors.black.light,
+  },
+  sidebar: {
+    backgroundColor: colors.gray.veryLightGray,
+    leftPadding: spacing.medium,
+    paddingBetweenSections: spacing.medium,
+    paddingBetweenItemsInSection: spacing.small,
+    spaceBetweenIconAndText: '0.75rem',
+    actionLinkColor: '#81C1F8',
+    folderLinkColor: colors.black.light,
+    fileColor: colors.yellow.normal,
   },
 };
 
