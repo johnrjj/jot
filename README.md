@@ -1,6 +1,6 @@
 # ✍️ Jot 
 
-[![CircleCI](https://circleci.com/gh/johnrjj/jot.svg?style=svg&circle-token=f3d5f772f89eee9e33f32c1c273e7164d3635567)](https://circleci.com/gh/johnrjj/jot) 
+[![CircleCI](https://circleci.com/gh/johnrjj/jot.svg?style=svg&circle-token=f3d5f772f89eee9e33f32c1c273e7164d3635567)](https://circleci.com/gh/johnrjj/jot) [![Greenkeeper badge](https://badges.greenkeeper.io/johnrjj/jot.svg?token=c7ecb37b97912ada6cb220f095fcf1e64193d4bb32db380702b3cb6e2550ce4e&ts=1540698479566)](https://greenkeeper.io/) 
 
 ## Overview
 
