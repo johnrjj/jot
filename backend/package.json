@@ -25,7 +25,7 @@
     "morgan": "^1.9.1",
     "pg": "^7.5.0",
     "redis": "^2.8.0",
-    "slate": "^0.42.2",
+    "slate": "^0.43.0",
     "slate-plain-serializer": "^0.6.11",
     "uuid": "^3.3.2",
     "winston": "^3.1.0",
