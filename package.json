@@ -17,7 +17,7 @@
     "@types/pg": "^7.4.11",
     "@types/react": "^16.4.15",
     "@types/react-dom": "^16.0.8",
-    "@types/slate": "^0.40.1",
+    "@types/slate": "^0.43.0",
     "@types/slate-react": "^0.18.0",
     "@types/uuid": "^3.4.4",
     "@types/ws": "^6.0.1",
@@ -26,7 +26,7 @@
     "prettier": "^1.14.3",
     "react-pose": "^3.3.6",
     "react-typist": "^2.0.4",
-    "styled-components": "^3.4.9",
+    "styled-components": "^4.0.2",
     "surge": "^0.20.1",
     "ts-node": "^7.0.1",
     "typescript": "^3.1.1"
