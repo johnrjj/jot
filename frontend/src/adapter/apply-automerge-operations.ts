@@ -2,7 +2,7 @@
  * This converts Automerge operations to Slate operations.
  */
 
-import automergeJsonToSlate from './automergeJsonToSlate';
+import automergeJsonToSlate from './automerge-json-to-slate';
 
 /**
  * @function applyAutomergeOperations

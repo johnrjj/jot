@@ -5,10 +5,12 @@ import { Value } from 'slate';
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
-import { applySlateOperationsHelper } from './lib/apply-slate-operations';
 import Websocket from './components/Websocket';
-import { automergeJsonToSlate } from './adapter/slateAutomergeBridge';
-import { convertAutomergeToSlateOps } from './adapter/applyAutomergeOperations';
+import {
+  automergeJsonToSlate,
+  applySlateOperationsHelper,
+  convertAutomergeToSlateOps,
+} from './adapter/slate-automerge-bridge';
 import './reset.css';
 import './global.css';
 

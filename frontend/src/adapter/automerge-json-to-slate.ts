@@ -17,7 +17,7 @@ const fromJSON = value => {
     return null;
   }
 
-  let newJson = {};
+  let newJson = {} as any;
 
   Object.keys(value).forEach(key => {
     if (Array.isArray(value[key])) {

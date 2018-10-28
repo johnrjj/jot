@@ -5,7 +5,7 @@
  * creates more operations than slateOpsToAutomerge.
  */
 
-import slateCustomToJson from './slateCustomToJson';
+import slateCustomToJson from './slate-custom-tojson';
 
 const getPath = op => {
   return op
