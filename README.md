@@ -33,7 +33,7 @@ yarn start:frontend
 
 The dev backend server is hosted at [`http://localhost:3001`](`http://localhost:3001`). It does not live reload yet.
 
-To make sure it is working, make a GET request to [`http://localhost:3000/api/v0/healthcheck`](http://localhost:3000/api/v0/healthcheck).
+To make sure it is working, make a GET request to [`http://localhost:3001/api/v0/healthcheck`](http://localhost:3001/api/v0/healthcheck).
 
 
 ##### Frontend
