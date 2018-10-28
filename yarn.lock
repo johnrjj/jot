@@ -1267,17 +1267,11 @@
     "@types/slate" "*"
     immutable "^3.8.2"
 
-"@types/slate@*":
+"@types/slate@*", "@types/slate@^0.43.0":
   version "0.43.0"
   resolved "https://registry.yarnpkg.com/@types/slate/-/slate-0.43.0.tgz#40ef0204e69397d54dc06f3d145dea8c48d8286d"
   dependencies:
     "@types/react" "*"
-    immutable "^3.8.2"
-
-"@types/slate@^0.40.1":
-  version "0.40.1"
-  resolved "https://registry.yarnpkg.com/@types/slate/-/slate-0.40.1.tgz#bf0f132d85ed840bd1a3da20408bd6eba502f654"
-  dependencies:
     immutable "^3.8.2"
 
 "@types/uuid@^3.4.4":
@@ -1608,6 +1602,29 @@ babylon-walk@^1.0.2:
     babel-runtime "^6.11.6"
     babel-types "^6.15.0"
     lodash.clone "^4.5.0"
+
+"backend@file:backend":
+  version "1.0.0"
+  dependencies:
+    automerge "^0.9.1"
+    body-parser "^1.18.3"
+    compression "^1.7.3"
+    cors "^2.8.4"
+    date-fns "^1.29.0"
+    dotenv "^6.1.0"
+    express "^4.16.4"
+    express-winston "^3.0.1"
+    express-ws "^4.0.0"
+    helmet "^3.14.0"
+    immutable "^3.8.2"
+    morgan "^1.9.1"
+    pg "^7.5.0"
+    redis "^2.8.0"
+    slate "0.42.6"
+    slate-plain-serializer "^0.6.11"
+    uuid "^3.3.2"
+    winston "^3.1.0"
+    ws "^6.1.0"
 
 balanced-match@^0.4.2:
   version "0.4.2"
@@ -2036,6 +2053,24 @@ cli-table2@^0.2.0:
 cli-width@^2.0.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/cli-width/-/cli-width-2.2.0.tgz#ff19ede8a9a5e579324147b0c11f0fbcbabed639"
+
+"client@file:frontend":
+  version "1.0.0"
+  dependencies:
+    assign-deep "^1.0.0"
+    automerge "^0.9.1"
+    emotion "^9.2.12"
+    immutable "^3.8.2"
+    react "^16.5.2"
+    react-dom "^16.5.2"
+    react-emotion "^9.2.12"
+    react-feather "^1.1.4"
+    react-slate "^0.5.1"
+    slate "0.42.6"
+    slate-plain-serializer "^0.6.11"
+    slate-react "^0.19.3"
+    styled-components "^4.0.2"
+    uuid "^3.3.2"
 
 cliui@^4.0.0:
   version "4.1.0"
@@ -7092,7 +7127,7 @@ slate-react@^0.19.3:
     tiny-invariant "^1.0.1"
     tiny-warning "^0.0.3"
 
-slate@^0.42.2, slate@^0.42.6:
+slate@0.42.6:
   version "0.42.6"
   resolved "https://registry.yarnpkg.com/slate/-/slate-0.42.6.tgz#b597a8414a27dac378e56a7da24faf4ae5f35be6"
   dependencies:
