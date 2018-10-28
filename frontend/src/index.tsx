@@ -10,6 +10,7 @@ import Websocket from './components/Websocket';
 import { automergeJsonToSlate } from './adapter/slateAutomergeBridge';
 import { convertAutomergeToSlateOps } from './adapter/applyAutomergeOperations';
 import './reset.css';
+import './global.css';
 
 const AppContainer = styled.div`
   display: flex;

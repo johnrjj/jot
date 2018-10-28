@@ -1,25 +1,74 @@
+const palette = {
+  white: '#FFFFFF',
+  ghostWhite: '#F9FAFB',
+  offblack: '#31323B',
+  platinum: 'DDE4EA',
+  darkGray: 'A7A7A9',
+  dimGray: '73656',
+  paleSilver: 'C5B2AC',
+  skyBlue: '8AD0DE',
+  carminePink: 'F84B4B',
+  uclaGold: 'FFB305',
+  papayaWhip: 'FFF4D7',
+  mediumSlateBlue: '6C79EB',
+  aliceBlue: 'F1F2FF',
+  emerald: '53C278',
+  honeydew: 'E2FFED',
+  paynesGrey: '393E53',
+};
+
 const colors = {
-  white: '#ffffff',
-  offWhite: '#f5f8fc',
-  greyBorder: '#d0d1d8',
-  grayBackground: '#d6dfe3',
-  lightGrey: '#e6ebf1',
-  grey: '#d2d2d2',
-  darkGrey: '#6b7c93',
-  darkBlue: '#374458',
+  white: {
+    normal: palette.white,
+    lightGrayWhite: palette.ghostWhite,
+  },
+  black: {
+    normal: palette.offblack,
+    light: palette.paynesGrey,
+  },
+  pink: {
+    normal: palette.carminePink,
+  },
+  yellow: {
+    normal: palette.uclaGold,
+    light: palette.papayaWhip,
+  },
+  purple: {
+    normal: palette.mediumSlateBlue,
+    light: palette.aliceBlue,
+  },
+  green: {
+    normal: palette.emerald,
+    light: palette.honeydew,
+  },
+  gray: {
+    light: palette.platinum,
+    dark: palette.darkGray,
+    darker: palette.dimGray,
+  },
+  lightBlue: {
+    normal: palette.skyBlue,
+  },
 };
 
-const sizing = {
-  headerHeight: '6rem',
-  footerHeight: '3.5rem',
-  smallMediaQuery: '600px',
-  mediumMediaQuery: '1280px',
-  titleFontSize: '2rem',
-  spacingSmall: '1rem',
-  spacingMedium: '2rem',
-  spacingLarge: '4rem',
+const spacing = {
+  xsmall: '0.5rem',
+  small: '1rem',
+  medium: '2rem',
+  large: '4rem',
+  xlarge: '6rem',
 };
 
-export default sizing;
+const fontSizing = {
+  medium: '2rem',
+  large: '3rem',
+  xlarge: '4rem',
+};
 
-export { colors };
+const theme = {
+  editor: {
+    primaryTextColor: colors.black.light,
+  },
+};
+
+export { spacing, theme, fontSizing, colors };
