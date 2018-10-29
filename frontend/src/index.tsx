@@ -117,7 +117,7 @@ const SidebarAddFileLinkText = styled.span`
 
 const SidebarFolderLinkContainer = styled.div`
   margin-left: ${theme.sidebar.leftPadding};
-  margin-bottom: ${theme.sidebar.paddingBetweenItemsInSection};
+  margin-bottom: 16px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -134,19 +134,24 @@ const SidebarFolderLinkText = styled.span`
 `;
 
 const SidebarFileLinkContainer = styled.div`
-  margin-left: calc(${theme.sidebar.leftPadding} + 2rem);
-  margin-bottom: ${theme.sidebar.paddingBetweenSections};
+  padding-left: calc(${theme.sidebar.leftPadding} + 2rem);
+  padding-top: 8px;
+  padding-bottom: 8px;
   display: flex;
   flex-direction: row;
   align-items: center;
+  background-color: ${props => (props.selected ? colors.lightBlue.normal : 'inherit')};
 `;
 
 const SidebarFileLinkIcon = styled(File)`
-  color: ${theme.sidebar.fileColor};
+  color: ${props => (props.selected ? '#fff' : theme.sidebar.fileColor)};
+
   margin-right: ${theme.sidebar.spaceBetweenIconAndText};
 `;
 const SidebarFileLinkText = styled.span`
-  color: ${theme.sidebar.folderLinkColor};
+  color: ${props => (props.selected ? '#fff' : theme.sidebar.folderLinkColor)};
+  font-weight: ${props => (props.selected ? '600' : '500')};
+
   line-height: 24px;
 `;
 
@@ -174,7 +179,7 @@ const EditorToolbar = styled.div`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #f5f5f5;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 `;
 
 const EditorToolbarLeftGroup = styled.div`
@@ -236,6 +241,7 @@ const SlateEditorContainer = styled.div`
   line-height: 2;
   color: ${theme.editor.primaryTextColor};
   font-size: 20px;
+  letter-spacing: 0.25;
 `;
 
 const HistoryContainer = styled.div``;
@@ -477,12 +483,26 @@ class Main extends Component<any, any> {
               <SidebarFolderLinkIcon />
               <SidebarFolderLinkText>Sample Document Folder</SidebarFolderLinkText>
             </SidebarFolderLinkContainer>
-
             <SidebarFileLinkContainer>
               <SidebarFileLinkIcon />
-              <SidebarFileLinkText>Sample File</SidebarFileLinkText>
+              <SidebarFileLinkText>Quick notes</SidebarFileLinkText>
             </SidebarFileLinkContainer>
-
+            <SidebarFileLinkContainer selected>
+              <SidebarFileLinkIcon selected />
+              <SidebarFileLinkText selected>Welcome to the Jot Editor</SidebarFileLinkText>
+            </SidebarFileLinkContainer>
+            <SidebarFileLinkContainer style={{ marginBottom: '16px' }}>
+              <SidebarFileLinkIcon />
+              <SidebarFileLinkText>Interesting facts about snakes</SidebarFileLinkText>
+            </SidebarFileLinkContainer>
+            <SidebarFolderLinkContainer>
+              <SidebarFolderLinkIcon />
+              <SidebarFolderLinkText>Favorite recipes</SidebarFolderLinkText>
+            </SidebarFolderLinkContainer>
+            <SidebarFolderLinkContainer>
+              <SidebarFolderLinkIcon />
+              <SidebarFolderLinkText>Book reviews</SidebarFolderLinkText>
+            </SidebarFolderLinkContainer>
             <SidebarContentContainer />
           </SideBarContainer>
 
@@ -516,7 +536,7 @@ class Main extends Component<any, any> {
                 <FakeTitle>Welcome to the Jot Editor</FakeTitle>
                 <Editor
                   ref={this.editor}
-                  placeholder="Enter some plain text..."
+                  placeholder="Go ahead and jot something down..."
                   autoCorrect={false}
                   autoFocus={true}
                   spellCheck={false}

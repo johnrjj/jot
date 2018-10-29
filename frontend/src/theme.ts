@@ -49,7 +49,7 @@ const colors = {
     darker: palette.dimGray,
   },
   lightBlue: {
-    normal: palette.skyBlue,
+    normal: '#95DADD', //palette.skyBlue,
   },
 };
 
