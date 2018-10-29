@@ -6,9 +6,6 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-// import { library } from '@fortawesome/fontawesome-svg-core';
-// import { FontAwesomeIcon, faFile } from '@fortawesome/react-fontawesome';
-// library.add(faFile);
 
 import {
   automergeJsonToSlate,
@@ -183,14 +180,13 @@ class Main extends Component<any, any> {
   }
 
   onChange = ({ value, operations, ...rest }) => {
+    this.setState({ value });
     this.selection = value.selection.toJS();
-    // console.log('ONCHANGE', value.toJS());
     const selection = value.selection;
     const mark = {
       type: 'bold',
     };
     const range = selection;
-    this.setState({ value });
     const clientId = this.state.clientId;
     const message = clientId ? `Client ${clientId}` : 'Change log';
 
