@@ -6,7 +6,10 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-import { X } from 'react-feather';
+// import { library } from '@fortawesome/fontawesome-svg-core';
+// import { FontAwesomeIcon, faFile } from '@fortawesome/react-fontawesome';
+// library.add(faFile);
+
 import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
@@ -59,6 +62,7 @@ import {
   HistoryDetailContentText,
   HistoryDetailContentSeconaryText,
   HistoryDetailContentMetaText,
+  AvatarStatusIcon,
 } from './components/History';
 
 const FullViewportAppContainer = styled.div`
@@ -82,8 +86,6 @@ const ContentContainer = styled.div`
   box-shadow: -4px 0 10px 4px rgba(126, 122, 122, 0.1);
 `;
 
-// #SECTION EDITOR [END]
-
 const Cursor = styled.span`
   background-color: green;
 `;
@@ -98,8 +100,6 @@ class Main extends Component<any, any> {
 
   constructor(props) {
     super(props);
-    this.docSet = new Automerge.DocSet();
-
     this.state = {
       loaded: false,
       error: null,
@@ -110,6 +110,9 @@ class Main extends Component<any, any> {
       clientUpdateCount: 0,
       serverUpdateCount: 0,
     };
+
+    this.docSet = new Automerge.DocSet();
+
     this.websocket = React.createRef();
     this.editor = React.createRef();
   }
@@ -117,8 +120,6 @@ class Main extends Component<any, any> {
   async componentDidMount() {
     try {
       const res = await fetch('http://localhost:3001/api/v0/doc/1');
-      console.log(res.status);
-
       if (res.status >= 400) {
         return this.setState({
           error: new Error(
@@ -126,9 +127,7 @@ class Main extends Component<any, any> {
           ),
         });
       }
-
       const json = await res.json();
-
       const { serializedDocument } = json;
       const crdt = Automerge.load(serializedDocument);
       this.doc = crdt;
@@ -399,7 +398,9 @@ class Main extends Component<any, any> {
             <HistoryDetail>
               <AvatarContainer>
                 <AvatarImg src={'https://randomuser.me/api/portraits/men/1.jpg'} />
-                <AvatarStatus />
+                <AvatarStatus>
+                  <AvatarStatusIcon />
+                </AvatarStatus>
               </AvatarContainer>
               <HistoryDetailContent>
                 <HistoryDetailContentText>

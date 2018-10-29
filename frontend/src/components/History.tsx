@@ -2,12 +2,18 @@ import React, { Component } from 'react';
 import styled from 'styled-components';
 import { X } from 'react-feather';
 import { colors } from '../theme';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFile, faPen, faComment } from '@fortawesome/free-solid-svg-icons';
+
+const FileIcon = props => <FontAwesomeIcon icon={faFile} {...props} />;
+const PenIcon = props => <FontAwesomeIcon icon={faPen} {...props} />;
+const CommentIcon = props => <FontAwesomeIcon icon={faComment} {...props} />;
 
 export const HistoryContainer = styled.div`
   flex-basis: 360px;
   border-left: 1px solid #f5f5f5;
   flex-direction: column;
-  widht: 100%;
+  width: 100%;
 `;
 
 export const HistoryHeaderContainer = styled.div`
@@ -71,14 +77,21 @@ export const AvatarImg = styled.img`
   border-radius: 100%;
 `;
 
+export const AvatarStatusIcon = styled(FileIcon)`
+  color: ${colors.yellow.normal};
+`;
+
 export const AvatarStatus = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 20%;
-  height: 20%;
-  background-color: ${colors.green.normal};
+  bottom: -20%;
+  right: -20%;
+  width: 50%;
+  height: 50%;
+  background-color: ${colors.yellow.light};
   z-index: 1;
   border-radius: 100%;
-  border: 1px solid ${colors.white.normal};
+  border: 2px solid ${colors.white.normal};
 `;

@@ -116,7 +116,6 @@ export const SidebarFileLinkIcon = styled(File)`
 export const SidebarFileLinkText = styled.span`
   color: ${props => (props.selected ? '#fff' : theme.sidebar.folderLinkColor)};
   font-weight: ${props => (props.selected ? '600' : '500')};
-
   line-height: 24px;
 `;
 
