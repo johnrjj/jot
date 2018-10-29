@@ -6,17 +6,62 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-import { Search, Plus, Folder, File, ChevronLeft, Clock, MoreHorizontal, X } from 'react-feather';
+import { X } from 'react-feather';
 import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
   convertAutomergeToSlateOps,
 } from './adapter/slate-automerge-bridge';
+import {
+  EditorContainer,
+  EditorToolbar,
+  EditorToolbarLeftGroup,
+  EditorToolbarBackIcon,
+  EditorToolbarBackText,
+  EditorToolbarRightGroup,
+  EditorToolbarButtonContainer,
+  EditorToolbarHistoryButtonIcon,
+  EditorToolbarMoreButtonIcon,
+  SlateEditorContainer,
+  FakeTitle,
+} from './components/Editor';
+import {
+  SideBarContainer,
+  SidebarIdentitySection,
+  SidebarIdentityLogo,
+  SidebarIdentityUserInfoContainer,
+  SidebarSearchContainer,
+  SidebarSearchIcon,
+  SidebarSearchText,
+  SidebarAddFileLinkContainer,
+  SidebarAddFileLinkIcon,
+  SidebarAddFileLinkText,
+  SidebarFolderLinkContainer,
+  SidebarFolderLinkIcon,
+  SidebarFolderLinkText,
+  SidebarFileLinkContainer,
+  SidebarFileLinkIcon,
+  SidebarFileLinkText,
+  SidebarContentContainer,
+} from './components/Sidebar';
 import './reset.css';
 import './global.css';
-import { theme, colors } from './theme';
+import {
+  HistoryContainer,
+  HistoryHeaderContainer,
+  HistoryHeaderText,
+  HistoryCloseButton,
+  HistoryDetail,
+  AvatarContainer,
+  AvatarImg,
+  AvatarStatus,
+  HistoryDetailContent,
+  HistoryDetailContentText,
+  HistoryDetailContentSeconaryText,
+  HistoryDetailContentMetaText,
+} from './components/History';
 
-const AppContainer = styled.div`
+const FullViewportAppContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -35,284 +80,6 @@ const ContentContainer = styled.div`
   justify-content: center;
   z-index: 1;
   box-shadow: -4px 0 10px 4px rgba(126, 122, 122, 0.1);
-`;
-
-// #SECTION SIDEBAR [START]
-const SideBarContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 5;
-  max-width: 24rem;
-  padding-top: ${theme.sidebar.leftPadding};
-  background-color: ${theme.sidebar.backgroundColor};
-`;
-
-const SidebarIdentitySection = styled.div`
-  margin-left: ${theme.sidebar.leftPadding};
-  margin-bottom: ${theme.sidebar.paddingBetweenSections};
-  display: flex;
-  flex-direction: row;
-`;
-
-const SidebarIdentityLogo = styled.div`
-  height: 56px;
-  width: 56px;
-  border-radius: 8px;
-  background-image: linear-gradient(
-    56deg,
-    #8cdcfb 0%,
-    #6bbafd 25%,
-    #53a0fe 35%,
-    #93a1f0 49%,
-    #8e8eef 61%,
-    #5d5cee 100%
-  );
-`;
-
-const SidebarIdentityUserInfoContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  /* background-color: ${colors.lightBlue.normal}; */
-`;
-
-const SidebarSearchContainer = styled.div`
-  margin-left: ${theme.sidebar.leftPadding};
-  margin-bottom: ${theme.sidebar.paddingBetweenSections};
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-`;
-
-const SidebarSearchIcon = styled(Search)`
-  height: 24px;
-  width: 24px;
-  color: ${colors.gray.dark};
-  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
-`;
-const SidebarSearchText = styled.span`
-  color: ${colors.gray.dark};
-`;
-
-const SidebarAddFileLinkContainer = styled.div`
-  margin-left: ${theme.sidebar.leftPadding};
-  margin-bottom: ${theme.sidebar.paddingBetweenSections};
-  display: flex;
-  flex-grow: 0;
-  flex-direction: row;
-  align-items: center;
-`;
-
-//https://www.flaticon.com/free-icon/notepad_148972#term=write&page=1&position=23
-// i really liek these icons
-
-const SidebarAddFileLinkIcon = styled(Plus)`
-  color: ${theme.sidebar.actionLinkColor};
-  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
-`;
-const SidebarAddFileLinkText = styled.span`
-  color: ${theme.sidebar.actionLinkColor};
-  line-height: 24px;
-`;
-
-const SidebarFolderLinkContainer = styled.div`
-  margin-left: ${theme.sidebar.leftPadding};
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-`;
-
-const SidebarFolderLinkIcon = styled(Folder)`
-  color: ${theme.sidebar.actionLinkColor};
-  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
-`;
-const SidebarFolderLinkText = styled.span`
-  color: ${theme.sidebar.folderLinkColor};
-  font-weight: 600;
-  line-height: 24px;
-`;
-
-const SidebarFileLinkContainer = styled.div`
-  padding-left: calc(${theme.sidebar.leftPadding} + 2rem);
-  padding-top: 8px;
-  padding-bottom: 8px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  background-color: ${props => (props.selected ? colors.lightBlue.normal : 'inherit')};
-`;
-
-const SidebarFileLinkIcon = styled(File)`
-  color: ${props => (props.selected ? '#fff' : theme.sidebar.fileColor)};
-
-  margin-right: ${theme.sidebar.spaceBetweenIconAndText};
-`;
-const SidebarFileLinkText = styled.span`
-  color: ${props => (props.selected ? '#fff' : theme.sidebar.folderLinkColor)};
-  font-weight: ${props => (props.selected ? '600' : '500')};
-
-  line-height: 24px;
-`;
-
-const SidebarContentContainer = styled.div`
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  overflow-y: scroll;
-`;
-// #SECTION SIDEBAR [END]
-
-// #SECTION EDITOR [START]
-const EditorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  max-width: 64rem;
-  flex-basis: 64rem;
-  margin-right: 4rem;
-  margin-left: 4rem;
-`;
-
-const EditorToolbar = styled.div`
-  height: 6rem;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f5f5f5;
-  margin-bottom: 2rem;
-`;
-
-const EditorToolbarLeftGroup = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
-const EditorToolbarBackIcon = styled(ChevronLeft)`
-  color: ${colors.black.light};
-  margin-right: 0.5rem;
-  opacity: 0.87;
-`;
-const EditorToolbarBackText = styled.span`
-  color: ${colors.black.light};
-`;
-
-const EditorToolbarRightGroup = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
-const EditorToolbarButtonContainer = styled.div`
-  padding: 0.5rem 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid ${colors.gray.light};
-  border-radius: 8px;
-  color: ${colors.gray.darker};
-  margin: 0 0.25rem;
-`;
-
-const EditorToolbarHistoryButtonIcon = styled(Clock)`
-  color: ${colors.gray.darker};
-  height: 16px;
-  width: 16px;
-  padding-right: 8px;
-`;
-
-const EditorToolbarMoreButtonIcon = styled(MoreHorizontal)`
-  color: ${colors.gray.darker};
-  height: 16px;
-  width: 16px;
-  padding-left: 8px;
-`;
-
-const FakeTitle = styled.div`
-  font-family: 'Playfair Display', serif;
-  font-size: 3rem;
-  color: ${theme.editor.primaryTextColor};
-  font-weight: 700;
-  line-height: 1.5;
-  margin-bottom: 2rem;
-  letter-spacing: 1px;
-`;
-
-const SlateEditorContainer = styled.div`
-  overflow-y: scroll;
-  line-height: 2;
-  color: ${theme.editor.primaryTextColor};
-  font-size: 20px;
-  letter-spacing: 0.25;
-`;
-
-const HistoryContainer = styled.div`
-  flex-basis: 360px;
-  border-left: 1px solid #f5f5f5;
-  flex-direction: column;
-  widht: 100%;
-`;
-
-const HistoryHeaderContainer = styled.div`
-  height: 6rem;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const HistoryHeaderText = styled.span`
-  padding-left: 24px;
-  padding-right: 24px;
-  font-size: 1.25rem;
-`;
-
-const HistoryCloseButton = styled(X)`
-  padding-right: 24px;
-`;
-
-const HistoryDetail = styled.div`
-  display: flex;
-  padding-left: 24px;
-  padding-right: 24px;
-  margin-bottom: 2rem;
-`;
-
-const HistoryDetailContent = styled.div`
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  margin-left: 20px;
-  padding: 4px 0;
-`;
-
-const HistoryDetailContentText = styled.span`
-  font-size: 18px;
-  line-height: 1.25;
-`;
-
-const AvatarContainer = styled.div`
-  width: 56px;
-  height: 56px;
-  position: relative;
-`;
-
-const AvatarImg = styled.img`
-  height: 100%;
-  width: 100%;
-  border-radius: 100%;
-`;
-
-const AvatarStatus = styled.div`
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 20%;
-  height: 20%;
-  background-color: ${colors.green.normal};
-  z-index: 1;
-  border-radius: 100%;
-  border: 1px solid ${colors.white.normal};
 `;
 
 // #SECTION EDITOR [END]
@@ -335,53 +102,72 @@ class Main extends Component<any, any> {
 
     this.state = {
       loaded: false,
+      error: null,
       value: null,
       isConnectedToDocument: false,
       clientId: uuid(),
-      docId: '1',
+      docId: null,
       clientUpdateCount: 0,
       serverUpdateCount: 0,
     };
     this.websocket = React.createRef();
     this.editor = React.createRef();
-    this.onChange = this.onChange.bind(this);
   }
 
   async componentDidMount() {
-    const res = await fetch('http://localhost:3001/api/v0/doc/1');
-    const json = await res.json();
-    const { serializedDocument } = json;
-    const crdt = Automerge.load(serializedDocument);
-    this.doc = crdt;
+    try {
+      const res = await fetch('http://localhost:3001/api/v0/doc/1');
+      console.log(res.status);
 
-    const initialValueJSON: any = automergeJsonToSlate(this.doc);
-    const initialSlateValue = Value.fromJSON(initialValueJSON);
-    this.docSet.setDoc('1', this.doc);
+      if (res.status >= 400) {
+        return this.setState({
+          error: new Error(
+            `api fetch for sample doc got a ${res.status} [${res.statusText}]\n is your backend on`
+          ),
+        });
+      }
 
-    this.setState({
-      loaded: true,
-      value: initialSlateValue,
-    });
+      const json = await res.json();
 
-    this.connection = new Automerge.Connection(this.docSet, data => {
-      const message = JSON.stringify({
-        type: 'automerge-connection-send',
-        payload: {
-          clientId: this.state.clientId,
-          docId: this.state.docId,
-          message: data,
-        },
+      const { serializedDocument } = json;
+      const crdt = Automerge.load(serializedDocument);
+      this.doc = crdt;
+      const initialValueJSON: any = automergeJsonToSlate(this.doc);
+      const initialSlateValue = Value.fromJSON(initialValueJSON);
+      this.docSet.setDoc('1', this.doc);
+
+      this.setState({
+        loaded: true,
+        value: initialSlateValue,
+        docId: '1',
       });
 
-      if (this.state.isConnectedToDocument) {
-        this.websocket.current.sendMessage(message);
-      } else {
-        setTimeout(() => {
-          // wait a second while we connect...
+      this.connection = new Automerge.Connection(this.docSet, data => {
+        const message = JSON.stringify({
+          type: 'automerge-connection-send',
+          payload: {
+            clientId: this.state.clientId,
+            docId: this.state.docId,
+            message: data,
+          },
+        });
+
+        if (this.state.isConnectedToDocument) {
           this.websocket.current.sendMessage(message);
-        }, 1000);
+        } else {
+          setTimeout(() => {
+            // wait a second while we connect...
+            this.websocket.current.sendMessage(message);
+          }, 1000);
+        }
+      });
+    } catch (error) {
+      if (error.message === 'Failed to fetch') {
+        return this.setState({
+          error: 'Error fetching sample document. Is the API up? Make sure it is running.',
+        });
       }
-    });
+    }
 
     setTimeout(
       () =>
@@ -398,10 +184,16 @@ class Main extends Component<any, any> {
     );
   }
 
+  componentDidCatch(e, stack) {
+    console.error(e, stack);
+    this.setState({
+      error: e,
+    });
+  }
+
   onChange = ({ value, operations, ...rest }) => {
     this.selection = value.selection.toJS();
-    console.log('ONCHANGE', value.toJS());
-    let decorations = value.decorations;
+    // console.log('ONCHANGE', value.toJS());
     const selection = value.selection;
     const mark = {
       type: 'bold',
@@ -443,7 +235,7 @@ class Main extends Component<any, any> {
 
   handleMessage = msg => {
     const msgJson = JSON.parse(msg);
-    console.log(' got a msg', msgJson);
+    // console.log(' got a msg', msgJson);
     if (msgJson.type === 'server-update') {
       const docNew = this.connection.receiveMsg(msgJson.payload);
       if (!this.state.isConnectedToDocument) {
@@ -478,13 +270,6 @@ class Main extends Component<any, any> {
     this.selection = selection.toJS();
   };
 
-  /**
-   * Render a Slate mark.
-   *
-   * @param {Object} props
-   * @return {Element}
-   */
-
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
     console.log(children, mark, attributes);
@@ -509,13 +294,20 @@ class Main extends Component<any, any> {
   };
 
   render() {
-    const { loaded } = this.state;
+    const { loaded, error } = this.state;
+    if (error) {
+      return (
+        <div>
+          error <pre>{JSON.stringify(error)}</pre>
+        </div>
+      );
+    }
     if (!loaded) {
       return <div>loading...</div>;
     }
     // const history = Automerge.getHistory(this.doc);
     return (
-      <AppContainer>
+      <FullViewportAppContainer>
         <MainContainer>
           <SideBarContainer>
             <SidebarIdentitySection>
@@ -611,35 +403,62 @@ class Main extends Component<any, any> {
               </AvatarContainer>
               <HistoryDetailContent>
                 <HistoryDetailContentText>
-                  John Johnson created the document - Aug 10
+                  John Johnson{' '}
+                  <HistoryDetailContentSeconaryText>
+                    created the document{' '}
+                  </HistoryDetailContentSeconaryText>
+                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
                 </HistoryDetailContentText>
               </HistoryDetailContent>
             </HistoryDetail>
             <HistoryDetail>
               <AvatarContainer>
-                <AvatarImg src={'https://randomuser.me/api/portraits/men/1.jpg'} />
+                <AvatarImg src={'https://randomuser.me/api/portraits/men/3.jpg'} />
                 <AvatarStatus />
               </AvatarContainer>
               <HistoryDetailContent>
                 <HistoryDetailContentText>
-                  John Johnson created the document - Aug 10
+                  Matt Ryan{' '}
+                  <HistoryDetailContentSeconaryText>
+                    edited the document{' '}
+                  </HistoryDetailContentSeconaryText>
+                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
                 </HistoryDetailContentText>
               </HistoryDetailContent>
             </HistoryDetail>
             <HistoryDetail>
               <AvatarContainer>
-                <AvatarImg src={'https://randomuser.me/api/portraits/men/1.jpg'} />
+                <AvatarImg src={'https://randomuser.me/api/portraits/women/2.jpg'} />
                 <AvatarStatus />
               </AvatarContainer>
               <HistoryDetailContent>
                 <HistoryDetailContentText>
-                  John Johnson created the document - Aug 10
+                  Samantha Smith{' '}
+                  <HistoryDetailContentSeconaryText>
+                    left a comment{' '}
+                  </HistoryDetailContentSeconaryText>
+                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
+                </HistoryDetailContentText>
+              </HistoryDetailContent>
+            </HistoryDetail>
+            <HistoryDetail>
+              <AvatarContainer>
+                <AvatarImg src={'https://randomuser.me/api/portraits/men/2.jpg'} />
+                <AvatarStatus />
+              </AvatarContainer>
+              <HistoryDetailContent>
+                <HistoryDetailContentText>
+                  Andrea Smith{' '}
+                  <HistoryDetailContentSeconaryText>
+                    edited the document{' '}
+                  </HistoryDetailContentSeconaryText>
+                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
                 </HistoryDetailContentText>
               </HistoryDetailContent>
             </HistoryDetail>
           </HistoryContainer>
         </MainContainer>
-      </AppContainer>
+      </FullViewportAppContainer>
     );
   }
 }
