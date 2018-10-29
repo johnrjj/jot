@@ -4,6 +4,7 @@ import { X } from 'react-feather';
 import { colors } from '../theme';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faPen, faComment } from '@fortawesome/free-solid-svg-icons';
+import { string } from 'prop-types';
 
 const FileIcon = props => <FontAwesomeIcon icon={faFile} {...props} />;
 const PenIcon = props => <FontAwesomeIcon icon={faPen} {...props} />;
@@ -66,8 +67,8 @@ export const HistoryDetailContentMetaText = styled.span`
 `;
 
 export const AvatarContainer = styled.div`
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   position: relative;
 `;
 
@@ -77,8 +78,16 @@ export const AvatarImg = styled.img`
   border-radius: 100%;
 `;
 
-export const AvatarStatusIcon = styled(FileIcon)`
+export const CreatedFileIcon = styled(FileIcon)`
   color: ${colors.yellow.normal};
+`;
+
+export const EditedFileIcon = styled(PenIcon)`
+  color: ${colors.purple.normal};
+`;
+
+export const CommentedFileIcon = styled(CommentIcon)`
+  color: ${colors.green.normal};
 `;
 
 export const AvatarStatus = styled.div`
@@ -86,8 +95,8 @@ export const AvatarStatus = styled.div`
   justify-content: center;
   align-items: center;
   position: absolute;
-  bottom: -20%;
-  right: -20%;
+  bottom: -22%;
+  right: -22%;
   width: 50%;
   height: 50%;
   background-color: ${colors.yellow.light};
@@ -95,3 +104,47 @@ export const AvatarStatus = styled.div`
   border-radius: 100%;
   border: 2px solid ${colors.white.normal};
 `;
+// 'https://randomuser.me/api/portraits/men/3.jpg'
+
+export interface HistoryItemProps {
+  avatarSrc: string;
+  name: string;
+  date: string;
+  type: 'edited' | 'created' | 'commented';
+}
+
+export const HistoryItem = ({ avatarSrc, name, date, type }: HistoryItemProps) => {
+  const IconToUse =
+    type === 'edited' ? EditedFileIcon : type === 'commented' ? CommentedFileIcon : CreatedFileIcon;
+
+  const avatarStatusBackgroundColor =
+    type === 'edited'
+      ? colors.purple.light
+      : type === 'commented'
+        ? colors.green.light
+        : colors.yellow.light;
+
+  return (
+    <HistoryDetail>
+      <AvatarContainer>
+        <AvatarImg src={avatarSrc} />
+        <AvatarStatus style={{ backgroundColor: avatarStatusBackgroundColor }}>
+          <IconToUse />
+        </AvatarStatus>
+      </AvatarContainer>
+      <HistoryDetailContent>
+        <HistoryDetailContentText>
+          {name + ' '}
+          <HistoryDetailContentSeconaryText>
+            {type === 'edited'
+              ? 'edited the document'
+              : type === 'commented'
+                ? 'commented on the document'
+                : 'created the document '}
+          </HistoryDetailContentSeconaryText>
+          <HistoryDetailContentMetaText>• {date}</HistoryDetailContentMetaText>
+        </HistoryDetailContentText>
+      </HistoryDetailContent>
+    </HistoryDetail>
+  );
+};

@@ -54,15 +54,7 @@ import {
   HistoryHeaderContainer,
   HistoryHeaderText,
   HistoryCloseButton,
-  HistoryDetail,
-  AvatarContainer,
-  AvatarImg,
-  AvatarStatus,
-  HistoryDetailContent,
-  HistoryDetailContentText,
-  HistoryDetailContentSeconaryText,
-  HistoryDetailContentMetaText,
-  AvatarStatusIcon,
+  HistoryItem,
 } from './components/History';
 
 const FullViewportAppContainer = styled.div`
@@ -265,7 +257,7 @@ class Main extends Component<any, any> {
   handleSelect = (_event, editor) => {
     const { value } = editor;
     const { selection } = value;
-    const { anchor, focus, ...rest } = selection;
+    const { anchor, focus } = selection;
     this.selection = selection.toJS();
   };
 
@@ -395,68 +387,30 @@ class Main extends Component<any, any> {
               <HistoryHeaderText>History</HistoryHeaderText>
               <HistoryCloseButton />
             </HistoryHeaderContainer>
-            <HistoryDetail>
-              <AvatarContainer>
-                <AvatarImg src={'https://randomuser.me/api/portraits/men/1.jpg'} />
-                <AvatarStatus>
-                  <AvatarStatusIcon />
-                </AvatarStatus>
-              </AvatarContainer>
-              <HistoryDetailContent>
-                <HistoryDetailContentText>
-                  John Johnson{' '}
-                  <HistoryDetailContentSeconaryText>
-                    created the document{' '}
-                  </HistoryDetailContentSeconaryText>
-                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
-                </HistoryDetailContentText>
-              </HistoryDetailContent>
-            </HistoryDetail>
-            <HistoryDetail>
-              <AvatarContainer>
-                <AvatarImg src={'https://randomuser.me/api/portraits/men/3.jpg'} />
-                <AvatarStatus />
-              </AvatarContainer>
-              <HistoryDetailContent>
-                <HistoryDetailContentText>
-                  Matt Ryan{' '}
-                  <HistoryDetailContentSeconaryText>
-                    edited the document{' '}
-                  </HistoryDetailContentSeconaryText>
-                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
-                </HistoryDetailContentText>
-              </HistoryDetailContent>
-            </HistoryDetail>
-            <HistoryDetail>
-              <AvatarContainer>
-                <AvatarImg src={'https://randomuser.me/api/portraits/women/2.jpg'} />
-                <AvatarStatus />
-              </AvatarContainer>
-              <HistoryDetailContent>
-                <HistoryDetailContentText>
-                  Samantha Smith{' '}
-                  <HistoryDetailContentSeconaryText>
-                    left a comment{' '}
-                  </HistoryDetailContentSeconaryText>
-                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
-                </HistoryDetailContentText>
-              </HistoryDetailContent>
-            </HistoryDetail>
-            <HistoryDetail>
-              <AvatarContainer>
-                <AvatarImg src={'https://randomuser.me/api/portraits/men/2.jpg'} />
-                <AvatarStatus />
-              </AvatarContainer>
-              <HistoryDetailContent>
-                <HistoryDetailContentText>
-                  Andrea Smith{' '}
-                  <HistoryDetailContentSeconaryText>
-                    edited the document{' '}
-                  </HistoryDetailContentSeconaryText>
-                  <HistoryDetailContentMetaText>• Aug 10</HistoryDetailContentMetaText>
-                </HistoryDetailContentText>
-              </HistoryDetailContent>
-            </HistoryDetail>
+            <HistoryItem
+              name={'John Johnson'}
+              date={'Aug 10'}
+              type={'created'}
+              avatarSrc={'https://randomuser.me/api/portraits/men/1.jpg'}
+            />
+            <HistoryItem
+              name={'Matt Ryan'}
+              date={'Aug 10'}
+              type={'edited'}
+              avatarSrc={'https://randomuser.me/api/portraits/men/3.jpg'}
+            />
+            <HistoryItem
+              name={'Samantha Smith'}
+              date={'Aug 10'}
+              type={'commented'}
+              avatarSrc={'https://randomuser.me/api/portraits/women/2.jpg'}
+            />
+            <HistoryItem
+              name={'Andrea Smith'}
+              date={'Aug 10'}
+              type={'edited'}
+              avatarSrc={'https://randomuser.me/api/portraits/men/2.jpg'}
+            />
           </HistoryContainer>
         </MainContainer>
       </FullViewportAppContainer>
