@@ -6,7 +6,7 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-import { Search, Plus, Folder, File, ChevronLeft, Clock, MoreHorizontal } from 'react-feather';
+import { Search, Plus, Folder, File, ChevronLeft, Clock, MoreHorizontal, X } from 'react-feather';
 import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
@@ -170,6 +170,8 @@ const EditorContainer = styled.div`
   flex: 1;
   max-width: 64rem;
   flex-basis: 64rem;
+  margin-right: 4rem;
+  margin-left: 4rem;
 `;
 
 const EditorToolbar = styled.div`
@@ -244,7 +246,74 @@ const SlateEditorContainer = styled.div`
   letter-spacing: 0.25;
 `;
 
-const HistoryContainer = styled.div``;
+const HistoryContainer = styled.div`
+  flex-basis: 360px;
+  border-left: 1px solid #f5f5f5;
+  flex-direction: column;
+  widht: 100%;
+`;
+
+const HistoryHeaderContainer = styled.div`
+  height: 6rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const HistoryHeaderText = styled.span`
+  padding-left: 24px;
+  padding-right: 24px;
+  font-size: 1.25rem;
+`;
+
+const HistoryCloseButton = styled(X)`
+  padding-right: 24px;
+`;
+
+const HistoryDetail = styled.div`
+  display: flex;
+  padding-left: 24px;
+  padding-right: 24px;
+  margin-bottom: 2rem;
+`;
+
+const HistoryDetailContent = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-left: 20px;
+  padding: 4px 0;
+`;
+
+const HistoryDetailContentText = styled.span`
+  font-size: 18px;
+  line-height: 1.25;
+`;
+
+const AvatarContainer = styled.div`
+  width: 56px;
+  height: 56px;
+  position: relative;
+`;
+
+const AvatarImg = styled.img`
+  height: 100%;
+  width: 100%;
+  border-radius: 100%;
+`;
+
+const AvatarStatus = styled.div`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20%;
+  height: 20%;
+  background-color: ${colors.green.normal};
+  z-index: 1;
+  border-radius: 100%;
+  border: 1px solid ${colors.white.normal};
+`;
 
 // #SECTION EDITOR [END]
 
@@ -428,27 +497,9 @@ class Main extends Component<any, any> {
         return <em {...attributes}>{children}</em>;
       case 'underlined':
         return <u {...attributes}>{children}</u>;
-      case 'comment':
-        return (
-          <span {...attributes} style={{ opacity: '0.33' }}>
-            {children}
-          </span>
-        );
       case 'bold':
         return (
           <span {...attributes} style={{ fontWeight: 'bold' }}>
-            {children}
-          </span>
-        );
-      case 'tag':
-        return (
-          <span {...attributes} style={{ fontWeight: 'bold' }}>
-            {children}
-          </span>
-        );
-      case 'punctuation':
-        return (
-          <span {...attributes} style={{ opacity: '0.75' }}>
             {children}
           </span>
         );
@@ -518,7 +569,6 @@ class Main extends Component<any, any> {
                     <EditorToolbarHistoryButtonIcon />
                     <span>History</span>
                   </EditorToolbarButtonContainer>
-
                   <EditorToolbarButtonContainer>
                     <span>More</span>
                     <EditorToolbarMoreButtonIcon />
@@ -548,6 +598,46 @@ class Main extends Component<any, any> {
               </SlateEditorContainer>
             </EditorContainer>
           </ContentContainer>
+
+          <HistoryContainer>
+            <HistoryHeaderContainer>
+              <HistoryHeaderText>History</HistoryHeaderText>
+              <HistoryCloseButton />
+            </HistoryHeaderContainer>
+            <HistoryDetail>
+              <AvatarContainer>
+                <AvatarImg src={'https://randomuser.me/api/portraits/men/1.jpg'} />
+                <AvatarStatus />
+              </AvatarContainer>
+              <HistoryDetailContent>
+                <HistoryDetailContentText>
+                  John Johnson created the document - Aug 10
+                </HistoryDetailContentText>
+              </HistoryDetailContent>
+            </HistoryDetail>
+            <HistoryDetail>
+              <AvatarContainer>
+                <AvatarImg src={'https://randomuser.me/api/portraits/men/1.jpg'} />
+                <AvatarStatus />
+              </AvatarContainer>
+              <HistoryDetailContent>
+                <HistoryDetailContentText>
+                  John Johnson created the document - Aug 10
+                </HistoryDetailContentText>
+              </HistoryDetailContent>
+            </HistoryDetail>
+            <HistoryDetail>
+              <AvatarContainer>
+                <AvatarImg src={'https://randomuser.me/api/portraits/men/1.jpg'} />
+                <AvatarStatus />
+              </AvatarContainer>
+              <HistoryDetailContent>
+                <HistoryDetailContentText>
+                  John Johnson created the document - Aug 10
+                </HistoryDetailContentText>
+              </HistoryDetailContent>
+            </HistoryDetail>
+          </HistoryContainer>
         </MainContainer>
       </AppContainer>
     );
