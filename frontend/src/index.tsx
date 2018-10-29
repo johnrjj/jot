@@ -6,7 +6,6 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-
 import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
@@ -44,8 +43,6 @@ import {
   SidebarFileLinkText,
   SidebarContentContainer,
 } from './components/Sidebar';
-import './reset.css';
-import './global.css';
 import {
   HistoryContainer,
   HistoryHeaderContainer,
@@ -53,6 +50,8 @@ import {
   HistoryCloseButton,
   HistoryItem,
 } from './components/History';
+import './reset.css';
+import './global.css';
 
 const FullViewportAppContainer = styled.div`
   display: flex;
@@ -199,16 +198,16 @@ class Main extends Component<any, any> {
       return;
     }
 
-    this.editor &&
-      this.editor.current &&
-      this.editor.current.change(change => {
-        const appliedChanges = change.addMarkAtRange(range, mark);
-        // we can tack on anything to the changes object so the onchange() handler
-        // knows not to apply these changes again (as it will get called
-        // immedietly after we return this a couple lines down.
-        appliedChanges.fromRemote = true;
-        return appliedChanges;
-      });
+    // this.editor &&
+    //   this.editor.current &&
+    //   this.editor.current.change(change => {
+    //     const appliedChanges = change.addMarkAtRange(range, mark);
+    //     // we can tack on anything to the changes object so the onchange() handler
+    //     // knows not to apply these changes again (as it will get called
+    //     // immedietly after we return this a couple lines down.
+    //     appliedChanges.fromRemote = true;
+    //     return appliedChanges;
+    //   });
 
     const docNew = Automerge.change(this.doc, message, doc => {
       // Use the Slate operations to modify the Automerge document.
