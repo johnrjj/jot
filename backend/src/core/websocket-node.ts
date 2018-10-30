@@ -89,7 +89,8 @@ export class WebSocketNode {
   }
 
   private onMessageFromClientSocket(connectionContext: ConnectionContext) {
-    let isClientConnected = false;
+    let isClientConnected: boolean = false;
+    let agentId: string | null = null;
 
     return async (message: any) => {
       // initialize
@@ -151,25 +152,46 @@ export class WebSocketNode {
             .getDocSet()
             .applyChanges('1', fromJS((data as any).payload.changes));
           break;
+
+        case 'remote-agent-setselection':
+          this.log('debug', `Received remote-agent-setselection from agentId ${agentId}`, data);
+          console.log(isClientConnected, agentId);
+
+          const setSelectionMessage = data as WebSocketMessage<any>;
+
+          if (isClientConnected && agentId) {
+            this.log('verbose', `${agentId} connected, going to broadcast cursor selection`);
+            this.connections.forEach(c => {
+              c.socket.send(
+                JSON.stringify({
+                  type: 'remote-agent-setselection-from-server',
+                  payload: setSelectionMessage.payload,
+                })
+              );
+            });
+          }
+
         case 'join-document':
           this.log('debug', `WebSocket subscribe request received`, data);
           const subscribeRequest = data as WebSocketMessage<any>;
           let { docId, clientId } = subscribeRequest.payload;
           // todo, change clientId to agentId on the client side.
-          const agentId = clientId;
-
+          // closured variable at the top.
+          agentId = clientId;
+          // ts being silly...(we just set it above but it thinks it can be null)
+          let agentIdString = agentId as string;
           this.log(
             'debug',
-            `join-request, for docId: ${docId} , agentId(sent as clientId): ${agentId}`
+            `join-request, for docId: ${docId} , agentId(sent as clientId): ${agentIdString}`
           );
           let doc;
           try {
             // doc will autocreate a new doc for us!
-            doc = await this.documentRepository.getDoc(agentId);
+            doc = await this.documentRepository.getDoc('1');
           } catch (e) {
             this.log('error', `error:join-document getting doc id ${agentId}`, e);
           }
-          if (!this.connectionAutomerge.has(agentId)) {
+          if (!this.connectionAutomerge.has(agentIdString)) {
             this.log('silly', `connectionAutomerge adding ${agentId}`);
             const connection = new (Automerge as any).Connection(
               this.documentRepository.getDocSet(),
@@ -184,16 +206,17 @@ export class WebSocketNode {
                 );
               }
             );
-            this.connectionAutomerge.set(agentId, connection);
+            this.connectionAutomerge.set(agentIdString, connection);
             this.log('silly', `connectionAutomerge opening connection for ${agentId}`);
-            (this.connectionAutomerge.get(agentId) as AutomergeConnection).open();
-            connectionContext.agentId = agentId;
+            (this.connectionAutomerge.get(agentIdString) as AutomergeConnection).open();
+            connectionContext.agentId = agentIdString;
           }
           break;
         default:
           this.log(
             'debug',
-            `Unrecognized message type ${data.type} received from client websocket`
+            `Unrecognized message type ${data.type} received from client websocket`,
+            data
           );
           break;
       }

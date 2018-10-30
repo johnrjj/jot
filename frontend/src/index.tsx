@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Editor } from 'slate-react';
+import slate from 'slate';
 import { Value } from 'slate';
+
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
@@ -10,6 +12,7 @@ import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
   convertAutomergeToSlateOps,
+  slateCustomToJson,
 } from './adapter/slate-automerge-bridge';
 import {
   EditorContainer,
@@ -178,17 +181,26 @@ class Main extends Component<any, any> {
     });
   }
 
-  onChange = ({ value, operations, ...rest }) => {
+  onChange = ({ value, operations, setDecorations, ...rest }) => {
     this.setState({ value });
     this.selection = value.selection.toJS();
-    const selection = value.selection;
-    const mark = {
-      type: 'bold',
-    };
-    const range = selection;
     const clientId = this.state.clientId;
     const message = clientId ? `Client ${clientId}` : 'Change log';
 
+    // if (key == 'properties' && type == 'set_selection') {
+    //   const v = {}
+    //   if ('anchor' in value) v.anchor = value.anchor.toJSON()
+    //   if ('focus' in value) v.focus = value.focus.toJSON()
+    //   if ('isFocused' in value) v.isFocused = value.isFocused
+    //   if ('marks' in value) v.marks = value.marks && value.marks.toJSON()
+    //   value = v
+    // }
+
+    if (rest.specialCase) {
+      console.log('ere', value.toJS(), operations.toJS());
+    }
+
+    console.log(operations.toJS());
     if (rest.fromRemote) {
       // needed for programatic updates...
       // without this we get into a loop.
@@ -198,17 +210,77 @@ class Main extends Component<any, any> {
       return;
     }
 
-    // this.editor &&
-    //   this.editor.current &&
-    //   this.editor.current.change(change => {
-    //     const appliedChanges = change.addMarkAtRange(range, mark);
-    //     // we can tack on anything to the changes object so the onchange() handler
-    //     // knows not to apply these changes again (as it will get called
-    //     // immedietly after we return this a couple lines down.
-    //     appliedChanges.fromRemote = true;
-    //     return appliedChanges;
-    //   });
+    const selectionOps = operations.filter(op => op.type === 'set_selection').map(op =>
+      op.merge({
+        // OVERLOADING TARGET. Do this until i can PR slate
+        target: `remote-agent-setselection-${this.state.clientId}`,
+      })
+    );
 
+    if (selectionOps.count) {
+
+
+    this.editor &&
+      this.editor.current &&
+      this.editor.current.change(change => {
+
+        const selection = value.selection;
+        const mark = {
+          type: `remote-agent-setselection-${this.state.clientId}`,
+          key: `remote-agent-setselection-${this.state.clientId}`,
+        };
+        const range = selection;
+
+        const appliedChanges = change.addMarkAtRange(range, mark);
+        change = change.fromRemote = true;
+        return     this.editor &&
+        this.editor.current && this.editor.current.setDecorations([{
+          anchor: range.anchor,
+          focus: range.focus,
+          mark,
+        }]);
+        // we can tack on anything to the changes object so the onchange() handler
+        // knows not to apply these changes again (as it will get called
+        // immedietly after we return this a couple lines down.
+        appliedChanges.fromRemote = true;
+        appliedChanges.specialCase = true;
+        return appliedChanges;
+      });
+
+
+
+
+      // this.
+
+      if (this.state.isConnectedToDocument) {
+        const message = JSON.stringify({
+          type: 'remote-agent-setselection',
+          payload: {
+            clientId: this.state.clientId,
+            docId: this.state.docId,
+            message: {
+              range: value.selection.toJS(),
+              mark: {
+                type: `remote-agent-setselection-${this.state.clientId}`,
+              },
+            },
+          },
+        });
+
+        this.websocket.current.sendMessage(message);
+      } else {
+        console.log('not connected to a doc, not sending cursor/selection to webseockt');
+      }
+    }
+
+    // console.log(selectionOps.toJS());
+
+    //   const selections = selectionOps
+    //    console.log(selections.toJS());
+    // }
+
+
+    // We need to apply local changes to the automerge document
     const docNew = Automerge.change(this.doc, message, doc => {
       // Use the Slate operations to modify the Automerge document.
       applySlateOperationsHelper(doc, operations);
@@ -246,6 +318,97 @@ class Main extends Component<any, any> {
           this.doc = updatedDoc;
         }
       }
+    } else if (msgJson.type === 'remote-agent-setselection-from-server') {
+      console.log(msgJson.payload);
+      const { payload } = msgJson;
+      const clientId = payload.clientId;
+
+
+      if (clientId === this.state.clientId ) {
+        return;
+      }
+      let { mark, range } = payload.message;
+      mark = { ...mark, type: `${mark.type}` };
+
+      console.log('meep', mark, range);
+
+
+      this.editor &&
+      this.editor.current &&
+      this.editor.current.change(change => {
+
+        // const selection = value.selection;
+        // const mark = {
+        //   type: `remote-agent-setselection-${this.state.clientId}_zz`,
+        // };
+        // const range = selection;
+
+        const { 
+          anchor, 
+          focus } = range;
+
+        const realRange = slate.Range.create({
+          anchor, 
+          focus,
+          // anchor: {
+          //   key: 'node-a',
+          //   path: [0, 2, 1],
+          //   offset: 0,
+          // },
+          // focus: {
+          //   key: 'node-b',
+          //   path: [0, 3, 2],
+          //   offset: 4,
+          // },
+        });
+        console.log(realRange.toJS());
+        // const foo = change.removeMark(mark.type);
+
+        const decoration = {
+          anchor,
+          focus,
+          mark,
+      };
+        const properties = Value.createProperties({ [decoration] });
+        // const { value } = editor
+
+
+
+
+
+        // const appliedChanges = change.applyOperations([{
+        //   {
+        //     //   type: 'set_value',
+        //     //   properties,
+        //     //   value,
+        //     // }
+        // }]);
+
+      
+        // // editor.applyOperation({
+        // //   type: 'set_value',
+        // //   properties,
+        // //   value,
+        // // })
+
+
+        change = change.fromRemote = true;
+        // return     this.editor &&
+        // this.editor.current &&this.editor.current.setDecorations([decoration]);
+
+        // const appliedChanges = change.addMarkAtRange(realRange, mark);
+        // we can tack on anything to the changes object so the onchange() handler
+        // knows not to apply these changes again (as it will get called
+        // immedietly after we return this a couple lines down.
+        // appliedChanges.fromRemote = true;
+        // return appliedChanges;
+      });
+
+
+
+    } else {
+      console.log('dont know msg type', msgJson, msg);
+
     }
   };
 
@@ -259,9 +422,27 @@ class Main extends Component<any, any> {
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
     console.log(children, mark, attributes);
+
+    if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
+      console.log('it me');
+      return <Cursor {...attributes}>{children}</Cursor>;
+
+      // return <span dataidskirtskirt={42} {...attributes}>{children}</span>;
+      // return next();
+    }
+
+    if (mark.type.startsWith('remote-agent-setselection-')) {
+      // next();
+      console.log('yay here');
+     return  <span {...attributes} style={{ fontWeight: 'bold' }}>
+      {children}
+    </span>
+      // return <code {...attributes}>{children}</code>;
+
+      // return <span style={{backgroundColor: 'yellow'}} {...attributes}>{children}></span>;
+    }
+
     switch (mark.type) {
-      case 'bold':
-        return <Cursor {...attributes}>{children}</Cursor>;
       case 'code':
         return <code {...attributes}>{children}</code>;
       case 'italic':
@@ -291,6 +472,8 @@ class Main extends Component<any, any> {
     if (!loaded) {
       return <div>loading...</div>;
     }
+
+    console.log(this.state.value.toJS());
     // const history = Automerge.getHistory(this.doc);
     return (
       <FullViewportAppContainer>
