@@ -94,11 +94,13 @@ class Main extends Component<any, any> {
       loaded: false,
       error: null,
       value: null,
-      isConnectedToDocument: false,
       clientId: uuid(),
       docId: null,
       clientUpdateCount: 0,
       serverUpdateCount: 0,
+      isConnectedToDocument: false,
+      isSidebarOpen: false,
+      isHistorySidebarOpen: false,
     };
 
     this.docSet = new Automerge.DocSet();
@@ -129,7 +131,6 @@ class Main extends Component<any, any> {
         loaded: true,
         value: initialSlateValue,
         docId: '1',
-        isHistorySidebarOpen: true,
       });
 
       this.connection = new Automerge.Connection(this.docSet, data => {
@@ -188,10 +189,9 @@ class Main extends Component<any, any> {
     const message = clientId ? `Client ${clientId}` : 'Change log';
 
     if (rest.fromSetSelectionSelf) {
-      console.log('HEREHRHEEH', value.toJS());
     }
 
-    console.log(operations.toJS());
+    // console.log(operations.toJS());
     if (rest.fromRemote) {
       // needed for programatic updates...
       // without this we get into a loop.
@@ -300,7 +300,7 @@ class Main extends Component<any, any> {
         }
       }
     } else if (msgJson.type === 'remote-agent-setselection-from-server') {
-      console.log(msgJson.payload);
+      // console.log(msgJson.payload);
       const { payload } = msgJson;
       const clientId = payload.clientId;
 
@@ -311,7 +311,7 @@ class Main extends Component<any, any> {
       let decoration = payload.message;
       let { mark, anchor, focus } = decoration;
       const decorations = [decoration];
-      console.log('meep', mark, anchor, focus);
+      // console.log('meep', mark, anchor, focus);
       this.editor &&
         this.editor.current &&
         this.editor.current.change(change => {
@@ -329,6 +329,7 @@ class Main extends Component<any, any> {
 
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
+    // console.log(mark, attributes);
 
     if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
       return (
@@ -340,8 +341,41 @@ class Main extends Component<any, any> {
     }
 
     if (mark.type.startsWith('remote-agent-setselection-')) {
+      // console.log('____is this ever the case for single');
       return (
-        <span {...attributes} style={{ fontWeight: 'bold' }}>
+        <span
+          {...attributes}
+          style={{
+            position: 'relative',
+            backgroundColor: 'rgba(138,208,222,0.3)',
+          }}
+        >
+          <div
+            style={{
+              // borderLeft: `2px solid red`,
+              // height: '100%',
+              position: 'absolute',
+              width: '100px',
+              height: '10px',
+              top: '-20px',
+              left: 0,
+              fontSize: '12px',
+              userSelect: 'none',
+            }}
+          >
+            Other user
+          </div>
+
+          <span
+            style={{
+              opacity: 0.4,
+              height: '100%',
+              position: 'absolute',
+              width: '100%',
+              top: 0,
+              left: 0,
+            }}
+          />
           {children}
         </span>
       );
@@ -381,7 +415,7 @@ class Main extends Component<any, any> {
     return (
       <FullViewportAppContainer>
         <MainContainer>
-          <SideBarContainer>
+          {/* <SideBarContainer>
             <SidebarIdentitySection>
               <SidebarIdentityLogo />
               <SidebarIdentityUserInfoContainer />
@@ -419,7 +453,7 @@ class Main extends Component<any, any> {
               <SidebarFolderLinkText>Book reviews</SidebarFolderLinkText>
             </SidebarFolderLinkContainer>
             <SidebarContentContainer />
-          </SideBarContainer>
+          </SideBarContainer> */}
 
           <ContentContainer>
             <EditorContainer>
