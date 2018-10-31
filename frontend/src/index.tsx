@@ -200,6 +200,10 @@ class Main extends Component<any, any> {
       console.log('ere', value.toJS(), operations.toJS());
     }
 
+    if (rest.fromSetSelectionSelf) {
+      console.log('HEREHRHEEH', value.toJS());
+    }
+
     console.log(operations.toJS());
     if (rest.fromRemote) {
       // needed for programatic updates...
@@ -218,39 +222,27 @@ class Main extends Component<any, any> {
     );
 
     if (selectionOps.count) {
+      const selection = value.selection;
 
-
-    this.editor &&
-      this.editor.current &&
-      this.editor.current.change(change => {
-
-        const selection = value.selection;
-        const mark = {
+      const decoration = {
+        anchor: selection.anchor,
+        focus: selection.focus,
+        mark: {
           type: `remote-agent-setselection-${this.state.clientId}`,
-          key: `remote-agent-setselection-${this.state.clientId}`,
-        };
-        const range = selection;
+        },
+      };
+      const decorations = [decoration];
 
-        const appliedChanges = change.addMarkAtRange(range, mark);
-        change = change.fromRemote = true;
-        return     this.editor &&
-        this.editor.current && this.editor.current.setDecorations([{
-          anchor: range.anchor,
-          focus: range.focus,
-          mark,
-        }]);
-        // we can tack on anything to the changes object so the onchange() handler
-        // knows not to apply these changes again (as it will get called
-        // immedietly after we return this a couple lines down.
-        appliedChanges.fromRemote = true;
-        appliedChanges.specialCase = true;
-        return appliedChanges;
-      });
-
-
-
-
-      // this.
+      this.editor &&
+        this.editor.current &&
+        this.editor.current.change(change => {
+          return change.withoutSaving(() => {
+            let c = change.setValue({ decorations });
+            c = change.fromRemote = true;
+            c = change.fromSetSelectionSelf = true;
+            return c;
+          });
+        });
 
       if (this.state.isConnectedToDocument) {
         const message = JSON.stringify({
@@ -259,26 +251,18 @@ class Main extends Component<any, any> {
             clientId: this.state.clientId,
             docId: this.state.docId,
             message: {
-              range: value.selection.toJS(),
+              ...decoration,
               mark: {
                 type: `remote-agent-setselection-${this.state.clientId}`,
               },
             },
           },
         });
-
         this.websocket.current.sendMessage(message);
       } else {
         console.log('not connected to a doc, not sending cursor/selection to webseockt');
       }
     }
-
-    // console.log(selectionOps.toJS());
-
-    //   const selections = selectionOps
-    //    console.log(selections.toJS());
-    // }
-
 
     // We need to apply local changes to the automerge document
     const docNew = Automerge.change(this.doc, message, doc => {
@@ -323,92 +307,26 @@ class Main extends Component<any, any> {
       const { payload } = msgJson;
       const clientId = payload.clientId;
 
-
-      if (clientId === this.state.clientId ) {
+      if (clientId === this.state.clientId) {
+        console.log('received our own message from the server, skipping');
         return;
       }
-      let { mark, range } = payload.message;
-      mark = { ...mark, type: `${mark.type}` };
-
-      console.log('meep', mark, range);
-
-
+      let decoration = payload.message;
+      let { mark, anchor, focus } = decoration;
+      const decorations = [decoration];
+      console.log('meep', mark, anchor, focus);
       this.editor &&
-      this.editor.current &&
-      this.editor.current.change(change => {
-
-        // const selection = value.selection;
-        // const mark = {
-        //   type: `remote-agent-setselection-${this.state.clientId}_zz`,
-        // };
-        // const range = selection;
-
-        const { 
-          anchor, 
-          focus } = range;
-
-        const realRange = slate.Range.create({
-          anchor, 
-          focus,
-          // anchor: {
-          //   key: 'node-a',
-          //   path: [0, 2, 1],
-          //   offset: 0,
-          // },
-          // focus: {
-          //   key: 'node-b',
-          //   path: [0, 3, 2],
-          //   offset: 4,
-          // },
+        this.editor.current &&
+        this.editor.current.change(change => {
+          return change.withoutSaving(() => {
+            let c = change.setValue({ decorations });
+            c = change.fromRemote = true;
+            c = change.fromSetSelectionSelf = true;
+            return c;
+          });
         });
-        console.log(realRange.toJS());
-        // const foo = change.removeMark(mark.type);
-
-        const decoration = {
-          anchor,
-          focus,
-          mark,
-      };
-        const properties = Value.createProperties({ [decoration] });
-        // const { value } = editor
-
-
-
-
-
-        // const appliedChanges = change.applyOperations([{
-        //   {
-        //     //   type: 'set_value',
-        //     //   properties,
-        //     //   value,
-        //     // }
-        // }]);
-
-      
-        // // editor.applyOperation({
-        // //   type: 'set_value',
-        // //   properties,
-        // //   value,
-        // // })
-
-
-        change = change.fromRemote = true;
-        // return     this.editor &&
-        // this.editor.current &&this.editor.current.setDecorations([decoration]);
-
-        // const appliedChanges = change.addMarkAtRange(realRange, mark);
-        // we can tack on anything to the changes object so the onchange() handler
-        // knows not to apply these changes again (as it will get called
-        // immedietly after we return this a couple lines down.
-        // appliedChanges.fromRemote = true;
-        // return appliedChanges;
-      });
-
-
-
     } else {
       console.log('dont know msg type', msgJson, msg);
-
     }
   };
 
@@ -425,29 +343,30 @@ class Main extends Component<any, any> {
 
     if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
       console.log('it me');
-      return <Cursor {...attributes}>{children}</Cursor>;
-
-      // return <span dataidskirtskirt={42} {...attributes}>{children}</span>;
-      // return next();
+      return next();
     }
 
     if (mark.type.startsWith('remote-agent-setselection-')) {
       // next();
       console.log('yay here');
-     return  <span {...attributes} style={{ fontWeight: 'bold' }}>
-      {children}
-    </span>
+      return (
+        <span {...attributes} style={{ fontWeight: 'bold' }}>
+          {children}
+        </span>
+      );
       // return <code {...attributes}>{children}</code>;
 
       // return <span style={{backgroundColor: 'yellow'}} {...attributes}>{children}></span>;
     }
+    console.log(mark.type, 'right here');
+    console.log(this.state.value.toJS());
 
     switch (mark.type) {
       case 'code':
         return <code {...attributes}>{children}</code>;
       case 'italic':
         return <em {...attributes}>{children}</em>;
-      case 'underlined':
+      case 'underline':
         return <u {...attributes}>{children}</u>;
       case 'bold':
         return (
