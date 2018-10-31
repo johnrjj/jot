@@ -47,7 +47,7 @@ export const HistoryDetailContent = styled.div`
   flex: 1;
   flex-direction: column;
   margin-left: 20px;
-  padding: 4px 0;
+  padding: 1px 0;
 `;
 
 export const HistoryDetailContentText = styled.span`
@@ -67,8 +67,8 @@ export const HistoryDetailContentMetaText = styled.span`
 `;
 
 export const AvatarContainer = styled.div`
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   position: relative;
 `;
 
