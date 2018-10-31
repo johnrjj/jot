@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { Editor } from 'slate-react';
 import slate from 'slate';
 import { Value } from 'slate';
-
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
@@ -130,6 +129,7 @@ class Main extends Component<any, any> {
         loaded: true,
         value: initialSlateValue,
         docId: '1',
+        isHistorySidebarOpen: true,
       });
 
       this.connection = new Automerge.Connection(this.docSet, data => {
@@ -186,19 +186,6 @@ class Main extends Component<any, any> {
     this.selection = value.selection.toJS();
     const clientId = this.state.clientId;
     const message = clientId ? `Client ${clientId}` : 'Change log';
-
-    // if (key == 'properties' && type == 'set_selection') {
-    //   const v = {}
-    //   if ('anchor' in value) v.anchor = value.anchor.toJSON()
-    //   if ('focus' in value) v.focus = value.focus.toJSON()
-    //   if ('isFocused' in value) v.isFocused = value.isFocused
-    //   if ('marks' in value) v.marks = value.marks && value.marks.toJSON()
-    //   value = v
-    // }
-
-    if (rest.specialCase) {
-      console.log('ere', value.toJS(), operations.toJS());
-    }
 
     if (rest.fromSetSelectionSelf) {
       console.log('HEREHRHEEH', value.toJS());
@@ -275,6 +262,16 @@ class Main extends Component<any, any> {
     this.doc = docNew;
   };
 
+  closeHistorySidebar = () => {
+    this.setState({
+      isHistorySidebarOpen: false,
+    });
+  };
+
+  toggleHistorySidebar = () => {
+    this.setState(prevState => ({ isHistorySidebarOpen: !prevState.isHistorySidebarOpen }));
+  };
+
   handleMessage = msg => {
     const msgJson = JSON.parse(msg);
     // console.log(' got a msg', msgJson);
@@ -330,37 +327,25 @@ class Main extends Component<any, any> {
     }
   };
 
-  handleSelect = (_event, editor) => {
-    const { value } = editor;
-    const { selection } = value;
-    const { anchor, focus } = selection;
-    this.selection = selection.toJS();
-  };
-
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
-    console.log(children, mark, attributes);
 
     if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
-      console.log('it me');
-      return next();
+      return (
+        <span {...attributes} data--uuid={this.state.clientId}>
+          {children}
+        </span>
+      );
+      // return next();
     }
 
     if (mark.type.startsWith('remote-agent-setselection-')) {
-      // next();
-      console.log('yay here');
       return (
         <span {...attributes} style={{ fontWeight: 'bold' }}>
           {children}
         </span>
       );
-      // return <code {...attributes}>{children}</code>;
-
-      // return <span style={{backgroundColor: 'yellow'}} {...attributes}>{children}></span>;
     }
-    console.log(mark.type, 'right here');
-    console.log(this.state.value.toJS());
-
     switch (mark.type) {
       case 'code':
         return <code {...attributes}>{children}</code>;
@@ -380,7 +365,7 @@ class Main extends Component<any, any> {
   };
 
   render() {
-    const { loaded, error } = this.state;
+    const { loaded, error, isHistorySidebarOpen } = this.state;
     if (error) {
       return (
         <div>
@@ -391,7 +376,6 @@ class Main extends Component<any, any> {
     if (!loaded) {
       return <div>loading...</div>;
     }
-
     console.log(this.state.value.toJS());
     // const history = Automerge.getHistory(this.doc);
     return (
@@ -445,7 +429,7 @@ class Main extends Component<any, any> {
                   <EditorToolbarBackText>Back</EditorToolbarBackText>
                 </EditorToolbarLeftGroup>
                 <EditorToolbarRightGroup>
-                  <EditorToolbarButtonContainer>
+                  <EditorToolbarButtonContainer onClick={this.toggleHistorySidebar}>
                     <EditorToolbarHistoryButtonIcon />
                     <span>History</span>
                   </EditorToolbarButtonContainer>
@@ -479,36 +463,38 @@ class Main extends Component<any, any> {
             </EditorContainer>
           </ContentContainer>
 
-          <HistoryContainer>
-            <HistoryHeaderContainer>
-              <HistoryHeaderText>History</HistoryHeaderText>
-              <HistoryCloseButton />
-            </HistoryHeaderContainer>
-            <HistoryItem
-              name={'John Johnson'}
-              date={'Aug 10'}
-              type={'created'}
-              avatarSrc={'https://randomuser.me/api/portraits/men/1.jpg'}
-            />
-            <HistoryItem
-              name={'Matt Ryan'}
-              date={'Aug 10'}
-              type={'edited'}
-              avatarSrc={'https://randomuser.me/api/portraits/men/3.jpg'}
-            />
-            <HistoryItem
-              name={'Samantha Smith'}
-              date={'Aug 10'}
-              type={'commented'}
-              avatarSrc={'https://randomuser.me/api/portraits/women/2.jpg'}
-            />
-            <HistoryItem
-              name={'Andrea Smith'}
-              date={'Aug 10'}
-              type={'edited'}
-              avatarSrc={'https://randomuser.me/api/portraits/men/2.jpg'}
-            />
-          </HistoryContainer>
+          {isHistorySidebarOpen && (
+            <HistoryContainer>
+              <HistoryHeaderContainer>
+                <HistoryHeaderText>History</HistoryHeaderText>
+                <HistoryCloseButton onClick={this.closeHistorySidebar} />
+              </HistoryHeaderContainer>
+              <HistoryItem
+                name={'John Johnson'}
+                date={'Aug 10'}
+                type={'created'}
+                avatarSrc={'https://randomuser.me/api/portraits/men/1.jpg'}
+              />
+              <HistoryItem
+                name={'Matt Ryan'}
+                date={'Aug 10'}
+                type={'edited'}
+                avatarSrc={'https://randomuser.me/api/portraits/men/3.jpg'}
+              />
+              <HistoryItem
+                name={'Samantha Smith'}
+                date={'Aug 10'}
+                type={'commented'}
+                avatarSrc={'https://randomuser.me/api/portraits/women/2.jpg'}
+              />
+              <HistoryItem
+                name={'Andrea Smith'}
+                date={'Aug 10'}
+                type={'edited'}
+                avatarSrc={'https://randomuser.me/api/portraits/men/2.jpg'}
+              />
+            </HistoryContainer>
+          )}
         </MainContainer>
       </FullViewportAppContainer>
     );

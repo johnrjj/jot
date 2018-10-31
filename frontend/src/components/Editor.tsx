@@ -43,6 +43,7 @@ export const EditorToolbarRightGroup = styled.div`
 `;
 
 export const EditorToolbarButtonContainer = styled.div`
+  cursor: pointer;
   padding: 0.5rem 1rem;
   display: flex;
   justify-content: center;
