@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Editor } from 'slate-react';
+import slate from 'slate';
 import { Value } from 'slate';
+
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
@@ -10,6 +12,7 @@ import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
   convertAutomergeToSlateOps,
+  slateCustomToJson,
 } from './adapter/slate-automerge-bridge';
 import {
   EditorContainer,
@@ -178,17 +181,30 @@ class Main extends Component<any, any> {
     });
   }
 
-  onChange = ({ value, operations, ...rest }) => {
+  onChange = ({ value, operations, setDecorations, ...rest }) => {
     this.setState({ value });
     this.selection = value.selection.toJS();
-    const selection = value.selection;
-    const mark = {
-      type: 'bold',
-    };
-    const range = selection;
     const clientId = this.state.clientId;
     const message = clientId ? `Client ${clientId}` : 'Change log';
 
+    // if (key == 'properties' && type == 'set_selection') {
+    //   const v = {}
+    //   if ('anchor' in value) v.anchor = value.anchor.toJSON()
+    //   if ('focus' in value) v.focus = value.focus.toJSON()
+    //   if ('isFocused' in value) v.isFocused = value.isFocused
+    //   if ('marks' in value) v.marks = value.marks && value.marks.toJSON()
+    //   value = v
+    // }
+
+    if (rest.specialCase) {
+      console.log('ere', value.toJS(), operations.toJS());
+    }
+
+    if (rest.fromSetSelectionSelf) {
+      console.log('HEREHRHEEH', value.toJS());
+    }
+
+    console.log(operations.toJS());
     if (rest.fromRemote) {
       // needed for programatic updates...
       // without this we get into a loop.
@@ -198,17 +214,57 @@ class Main extends Component<any, any> {
       return;
     }
 
-    // this.editor &&
-    //   this.editor.current &&
-    //   this.editor.current.change(change => {
-    //     const appliedChanges = change.addMarkAtRange(range, mark);
-    //     // we can tack on anything to the changes object so the onchange() handler
-    //     // knows not to apply these changes again (as it will get called
-    //     // immedietly after we return this a couple lines down.
-    //     appliedChanges.fromRemote = true;
-    //     return appliedChanges;
-    //   });
+    const selectionOps = operations.filter(op => op.type === 'set_selection').map(op =>
+      op.merge({
+        // OVERLOADING TARGET. Do this until i can PR slate
+        target: `remote-agent-setselection-${this.state.clientId}`,
+      })
+    );
 
+    if (selectionOps.count) {
+      const selection = value.selection;
+
+      const decoration = {
+        anchor: selection.anchor,
+        focus: selection.focus,
+        mark: {
+          type: `remote-agent-setselection-${this.state.clientId}`,
+        },
+      };
+      const decorations = [decoration];
+
+      this.editor &&
+        this.editor.current &&
+        this.editor.current.change(change => {
+          return change.withoutSaving(() => {
+            let c = change.setValue({ decorations });
+            c = change.fromRemote = true;
+            c = change.fromSetSelectionSelf = true;
+            return c;
+          });
+        });
+
+      if (this.state.isConnectedToDocument) {
+        const message = JSON.stringify({
+          type: 'remote-agent-setselection',
+          payload: {
+            clientId: this.state.clientId,
+            docId: this.state.docId,
+            message: {
+              ...decoration,
+              mark: {
+                type: `remote-agent-setselection-${this.state.clientId}`,
+              },
+            },
+          },
+        });
+        this.websocket.current.sendMessage(message);
+      } else {
+        console.log('not connected to a doc, not sending cursor/selection to webseockt');
+      }
+    }
+
+    // We need to apply local changes to the automerge document
     const docNew = Automerge.change(this.doc, message, doc => {
       // Use the Slate operations to modify the Automerge document.
       applySlateOperationsHelper(doc, operations);
@@ -246,6 +302,31 @@ class Main extends Component<any, any> {
           this.doc = updatedDoc;
         }
       }
+    } else if (msgJson.type === 'remote-agent-setselection-from-server') {
+      console.log(msgJson.payload);
+      const { payload } = msgJson;
+      const clientId = payload.clientId;
+
+      if (clientId === this.state.clientId) {
+        console.log('received our own message from the server, skipping');
+        return;
+      }
+      let decoration = payload.message;
+      let { mark, anchor, focus } = decoration;
+      const decorations = [decoration];
+      console.log('meep', mark, anchor, focus);
+      this.editor &&
+        this.editor.current &&
+        this.editor.current.change(change => {
+          return change.withoutSaving(() => {
+            let c = change.setValue({ decorations });
+            c = change.fromRemote = true;
+            c = change.fromSetSelectionSelf = true;
+            return c;
+          });
+        });
+    } else {
+      console.log('dont know msg type', msgJson, msg);
     }
   };
 
@@ -259,14 +340,33 @@ class Main extends Component<any, any> {
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
     console.log(children, mark, attributes);
+
+    if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
+      console.log('it me');
+      return next();
+    }
+
+    if (mark.type.startsWith('remote-agent-setselection-')) {
+      // next();
+      console.log('yay here');
+      return (
+        <span {...attributes} style={{ fontWeight: 'bold' }}>
+          {children}
+        </span>
+      );
+      // return <code {...attributes}>{children}</code>;
+
+      // return <span style={{backgroundColor: 'yellow'}} {...attributes}>{children}></span>;
+    }
+    console.log(mark.type, 'right here');
+    console.log(this.state.value.toJS());
+
     switch (mark.type) {
-      case 'bold':
-        return <Cursor {...attributes}>{children}</Cursor>;
       case 'code':
         return <code {...attributes}>{children}</code>;
       case 'italic':
         return <em {...attributes}>{children}</em>;
-      case 'underlined':
+      case 'underline':
         return <u {...attributes}>{children}</u>;
       case 'bold':
         return (
@@ -291,6 +391,8 @@ class Main extends Component<any, any> {
     if (!loaded) {
       return <div>loading...</div>;
     }
+
+    console.log(this.state.value.toJS());
     // const history = Automerge.getHistory(this.doc);
     return (
       <FullViewportAppContainer>

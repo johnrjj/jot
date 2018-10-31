@@ -20,6 +20,4 @@ const invariant = (condition: boolean, message?: string) => {
   }
 };
 
-export {
-  invariant,
-}
+export { invariant };
