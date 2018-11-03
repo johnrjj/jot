@@ -17,6 +17,9 @@ import Automerge from 'automerge';
 import slateCustomToJson from './slate-custom-tojson';
 
 const allowedOperations = [
+  'add_mark',
+  'remove_mark',
+  'set_mark',
   'insert_text',
   'remove_text',
   'insert_node',
@@ -64,6 +67,11 @@ export const applySlateOperationsHelper = (doc, operations) => {
     const rest = path.slice(0, -1);
     let currentNode = doc.document;
     switch (op.type) {
+      case "add_mark":
+      case "remove_mark":
+      case "set_mark":  
+        console.log(`SKIPPING: ${op.type}`, op);
+        break;
       // NOTE: Marks are definitely broken as of Slate 0.34
       // case "add_mark":
       //     // Untested

@@ -7,11 +7,10 @@ import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
 import { SlateAutomergeAdapter } from '@jot/shared';
-const {
-  automergeJsonToSlate,
-  applySlateOperationsHelper,
-  convertAutomergeToSlateOps,
-} = SlateAutomergeAdapter;
+import {
+  WebSocketMessage,
+  RemoteAgentSetSelectionPayload,
+} from '@jot/shared/src/types/websocket-types';
 import {
   EditorContainer,
   EditorToolbar,
@@ -53,6 +52,12 @@ import {
 } from './components/History';
 import './reset.css';
 import './global.css';
+import { Toolbar, Button, Icon } from './components/Toolbar';
+const {
+  automergeJsonToSlate,
+  applySlateOperationsHelper,
+  convertAutomergeToSlateOps,
+} = SlateAutomergeAdapter;
 
 const FullViewportAppContainer = styled.div`
   display: flex;
@@ -73,10 +78,6 @@ const ContentContainer = styled.div`
   justify-content: center;
   z-index: 1;
   box-shadow: -4px 0 10px 4px rgba(126, 122, 122, 0.1);
-`;
-
-const Cursor = styled.span`
-  background-color: green;
 `;
 
 class Main extends Component<any, any> {
@@ -231,7 +232,7 @@ class Main extends Component<any, any> {
         });
 
       if (this.state.isConnectedToDocument) {
-        const message = JSON.stringify({
+        const msg: WebSocketMessage<RemoteAgentSetSelectionPayload> = {
           type: 'remote-agent-setselection',
           payload: {
             clientId: this.state.clientId,
@@ -243,7 +244,8 @@ class Main extends Component<any, any> {
               },
             },
           },
-        });
+        };
+        const message = JSON.stringify(msg);
         this.websocket.current.sendMessage(message);
       } else {
         console.log('not connected to a doc, not sending cursor/selection to webseockt');
@@ -308,7 +310,6 @@ class Main extends Component<any, any> {
         return;
       }
       let decoration = payload.message;
-      let { mark, anchor, focus } = decoration;
       const decorations = [decoration];
       // console.log('meep', mark, anchor, focus);
       this.editor &&
@@ -326,18 +327,42 @@ class Main extends Component<any, any> {
     }
   };
 
+  renderNode = (props, next) => {
+    const { attributes, children, node } = props;
+
+    switch (node.type) {
+      case 'block-quote':
+        return <blockquote {...attributes}>{children}</blockquote>;
+      case 'bulleted-list':
+        return <ul {...attributes}>{children}</ul>;
+      case 'heading-one':
+        return <h1 {...attributes}>{children}</h1>;
+      case 'heading-two':
+        return <h2 {...attributes}>{children}</h2>;
+      case 'list-item':
+        return <li {...attributes}>{children}</li>;
+      case 'numbered-list':
+        return <ol {...attributes}>{children}</ol>;
+      default:
+        return next();
+    }
+  };
+
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
 
-    if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
-      return (
-        <span {...attributes} style={{ fontWeight: 'bold' }}>
-          {children}
-        </span>
-      );
-    }
+    // if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
+    //   return (
+    //     <span {...attributes} style={{ fontWeight: 'bold' }}>
+    //       {children}
+    //     </span>
+    //   );
+    // }
 
-    if (mark.type.startsWith('remote-agent-setselection-')) {
+    if (
+      mark.type.startsWith('remote-agent-setselection-') &&
+      mark.type !== `remote-agent-setselection-${this.state.clientId}`
+    ) {
       return (
         <span
           {...attributes}
@@ -357,7 +382,16 @@ class Main extends Component<any, any> {
               userSelect: 'none',
             }}
           >
-            Other user
+            <span
+              style={{
+                position: 'absolute',
+                width: '5px',
+                height: '10px',
+                top: '0',
+                left: '0',
+                backgroundColor: 'green',
+              }}
+            />
           </div>
           <span
             style={{
@@ -374,18 +408,15 @@ class Main extends Component<any, any> {
       );
     }
     switch (mark.type) {
+      case 'bold':
+        return <strong {...attributes}>{children}</strong>;
       case 'code':
         return <code {...attributes}>{children}</code>;
       case 'italic':
         return <em {...attributes}>{children}</em>;
+      case 'underlined':
       case 'underline':
         return <u {...attributes}>{children}</u>;
-      case 'bold':
-        return (
-          <span {...attributes} style={{ fontWeight: 'bold' }}>
-            {children}
-          </span>
-        );
       default:
         return next();
     }
@@ -403,7 +434,6 @@ class Main extends Component<any, any> {
     if (!loaded) {
       return <div>loading...</div>;
     }
-    console.log(this.state.value.toJS());
     // const history = Automerge.getHistory(this.doc);
     return (
       <FullViewportAppContainer>
@@ -466,6 +496,17 @@ class Main extends Component<any, any> {
                   </EditorToolbarButtonContainer>
                 </EditorToolbarRightGroup>
               </EditorToolbar>
+              <Toolbar>
+                {this.renderMarkButton('bold', 'format_bold')}
+                {this.renderMarkButton('italic', 'format_italic')}
+                {this.renderMarkButton('underlined', 'format_underlined')}
+                {this.renderMarkButton('code', 'code')}
+                {/* {this.renderBlockButton('heading-one', 'looks_one')}
+          {this.renderBlockButton('heading-two', 'looks_two')}
+          {this.renderBlockButton('block-quote', 'format_quote')}
+          {this.renderBlockButton('numbered-list', 'format_list_numbered')}
+          {this.renderBlockButton('bulleted-list', 'format_list_bulleted')} */}
+              </Toolbar>
               <SlateEditorContainer>
                 <Websocket
                   ref={this.websocket}
@@ -483,7 +524,7 @@ class Main extends Component<any, any> {
                   spellCheck={false}
                   value={this.state.value}
                   onChange={this.onChange}
-                  // onSelect={this.handleSelect}
+                  renderNode={this.renderNode}
                   renderMark={this.renderMark as any}
                 />
               </SlateEditorContainer>
@@ -526,6 +567,32 @@ class Main extends Component<any, any> {
       </FullViewportAppContainer>
     );
   }
+
+  hasMark = (type: string): boolean => {
+    const { value } = this.state;
+    return value.activeMarks.some(mark => mark.type == type);
+  };
+
+  renderBlockButton(): any {
+    throw new Error('Method not implemented.');
+  }
+
+  onClickMark = (event: Event, type: string) => {
+    event.preventDefault();
+    console.log(this.editor.current);
+
+    this.editor.current.command('toggleMark', type);
+    console.log('added mark');
+  };
+
+  renderMarkButton = (type: string, icon: string) => {
+    const isActive = this.hasMark(type);
+    return (
+      <Button active={isActive} onMouseDown={event => this.onClickMark(event, type)}>
+        <Icon>{icon}</Icon>
+      </Button>
+    );
+  };
 }
 
 ReactDOM.render(<Main />, document.getElementById('app'));
