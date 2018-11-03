@@ -182,7 +182,7 @@ class Main extends Component<any, any> {
     });
   }
 
-  onChange = ({ value, operations, setDecorations, ...rest }) => {
+  onChange = ({ value, operations, ...rest }) => {
     this.setState({ value });
     this.selection = value.selection.toJS();
     const clientId = this.state.clientId;
@@ -333,9 +333,9 @@ class Main extends Component<any, any> {
 
     if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
       return (
-        <span {...attributes} data--uuid={this.state.clientId}>
-          {children}
-        </span>
+        <span {...attributes} style={{ fontWeight: 'bold' }}>
+        {children}
+      </span>
       );
       // return next();
     }
@@ -415,7 +415,7 @@ class Main extends Component<any, any> {
     return (
       <FullViewportAppContainer>
         <MainContainer>
-          {/* <SideBarContainer>
+          <SideBarContainer>
             <SidebarIdentitySection>
               <SidebarIdentityLogo />
               <SidebarIdentityUserInfoContainer />
@@ -453,7 +453,7 @@ class Main extends Component<any, any> {
               <SidebarFolderLinkText>Book reviews</SidebarFolderLinkText>
             </SidebarFolderLinkContainer>
             <SidebarContentContainer />
-          </SideBarContainer> */}
+          </SideBarContainer>
 
           <ContentContainer>
             <EditorContainer>

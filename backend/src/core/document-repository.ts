@@ -90,7 +90,7 @@ export class DocumentRepository implements IDocumentRepository {
 
   async getDoc(id: string): Promise<CRDTDocument> {
     this.log('debug', `docrepo: request for docID: ${id}`);
-    // cache does not work cuz immutability !!!!
+    // todo(jj) figure out  cache - cache does not currently work because of immutability
     // if (this.docCache.has(id)) {
     //   this.log('silly', `docrepo cache hit for docId ${id}`);
     //   return this.docCache.get(id) as CRDTDocument;
