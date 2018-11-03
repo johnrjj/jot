@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Editor } from 'slate-react';
-import { Value, SlateError } from 'slate';
+import { Value } from 'slate';
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
@@ -79,7 +79,10 @@ const ContentContainer = styled.div`
   box-shadow: -4px 0 10px 4px rgba(126, 122, 122, 0.1);
 `;
 
-interface AppProps {}
+interface AppProps {
+  wsEndpoint: string;
+  apiEndpoint: string;
+}
 
 interface AppState {
   loading: boolean;
@@ -94,9 +97,7 @@ interface AppState {
   error?: Error | string;
 }
 
-interface IApp {}
-
-export interface WebsocketRef {}
+const DEFAULT_NODE = 'paragraph';
 
 export default class App extends Component<AppProps, AppState> {
   doc: any;
@@ -376,13 +377,13 @@ export default class App extends Component<AppProps, AppState> {
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
 
-    // if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
-    //   return (
-    //     <span {...attributes} style={{ fontWeight: 'bold' }}>
-    //       {children}
-    //     </span>
-    //   );
-    // }
+    if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
+      return (
+        <span {...attributes} data-self-selection={true}>
+          {children}
+        </span>
+      );
+    }
 
     if (
       mark.type.startsWith('remote-agent-setselection-') &&
@@ -536,11 +537,17 @@ export default class App extends Component<AppProps, AppState> {
                 {this.renderMarkButton('italic', 'format_italic')}
                 {this.renderMarkButton('underlined', 'format_underlined')}
                 {this.renderMarkButton('code', 'code')}
-                {/* {this.renderBlockButton('heading-one', 'looks_one')}
-          {this.renderBlockButton('heading-two', 'looks_two')}
-          {this.renderBlockButton('block-quote', 'format_quote')}
-          {this.renderBlockButton('numbered-list', 'format_list_numbered')}
-          {this.renderBlockButton('bulleted-list', 'format_list_bulleted')} */}
+                {this.renderBlockButton('heading-one', 'looks_one')}
+                {this.renderBlockButton('heading-two', 'looks_two')}
+                {this.renderBlockButton('block-quote', 'format_quote')}
+                {this.renderBlockButton(
+                  'numbered-list',
+                  'format_list_numbered',
+                )}
+                {this.renderBlockButton(
+                  'bulleted-list',
+                  'format_list_bulleted',
+                )}
               </Toolbar>
               <SlateEditorContainer>
                 <Websocket
@@ -608,16 +615,94 @@ export default class App extends Component<AppProps, AppState> {
     return value.activeMarks.some(mark => mark.type == type);
   };
 
-  renderBlockButton(): any {
-    throw new Error('Method not implemented.');
-  }
+  // Check if the any of the currently selected blocks are of `type`.
+  hasBlock = (type: string): boolean => {
+    const { value } = this.state;
+    return value.blocks.some(node => node.type == type);
+  };
+
+  /**
+   * When a block button is clicked, toggle the block type.
+   *
+   * @param {Event} event
+   * @param {String} type
+   */
+
+  onClickBlock = (event, type) => {
+    event.preventDefault();
+
+    const editor = this.editor.current;
+    const { value } = editor;
+    const { document } = value;
+
+    editor.change(change => {
+      const { value } = change;
+      const { document } = value;
+
+      // Handle everything but list buttons.
+      if (type != 'bulleted-list' && type != 'numbered-list') {
+        const isActive = this.hasBlock(type);
+        const isList = this.hasBlock('list-item');
+
+        if (isList) {
+          change
+            .setBlocks(isActive ? DEFAULT_NODE : type)
+            .unwrapBlock('bulleted-list')
+            .unwrapBlock('numbered-list');
+        } else {
+          change.setBlocks(isActive ? DEFAULT_NODE : type);
+        }
+      } else {
+        // Handle the extra wrapping required for list buttons.
+        const isList = this.hasBlock('list-item');
+        const isType = value.blocks.some(block => {
+          return !!document.getClosest(
+            block.key,
+            parent => parent.type == type,
+          );
+        });
+
+        if (isList && isType) {
+          change
+            .setBlocks(DEFAULT_NODE)
+            .unwrapBlock('bulleted-list')
+            .unwrapBlock('numbered-list');
+        } else if (isList) {
+          change
+            .unwrapBlock(
+              type == 'bulleted-list' ? 'numbered-list' : 'bulleted-list',
+            )
+            .wrapBlock(type);
+        } else {
+          change.setBlocks('list-item').wrapBlock(type);
+        }
+      }
+    });
+  };
+
+  renderBlockButton = (type, icon) => {
+    let isActive = this.hasBlock(type);
+
+    if (['numbered-list', 'bulleted-list'].includes(type)) {
+      const { value } = this.state;
+      const parent = value.document.getParent(value.blocks.first().key);
+      isActive =
+        this.hasBlock('list-item') && parent && (parent as any).type === type;
+    }
+
+    return (
+      <Button
+        active={isActive}
+        onMouseDown={event => this.onClickBlock(event, type)}
+      >
+        <Icon>{icon}</Icon>
+      </Button>
+    );
+  };
 
   onClickMark = (event: Event, type: string) => {
     event.preventDefault();
-    console.log(this.editor.current);
-
     this.editor.current.command('toggleMark', type);
-    console.log('added mark');
   };
 
   renderMarkButton = (type: string, icon: string) => {
