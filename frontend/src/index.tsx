@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import App from './app';
+import App from './App';
 
 const API_ENDPOINT_ROOT =
   process.env.NODE_ENV === 'development'
