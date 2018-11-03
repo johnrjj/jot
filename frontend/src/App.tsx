@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
 import { Editor } from 'slate-react';
-import { Value } from 'slate';
+import { Value, SlateError } from 'slate';
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
@@ -80,18 +79,37 @@ const ContentContainer = styled.div`
   box-shadow: -4px 0 10px 4px rgba(126, 122, 122, 0.1);
 `;
 
-export default class App extends Component<any, any> {
+interface AppProps {}
+
+interface AppState {
+  loading: boolean;
+  value: Value;
+  clientId: string;
+  docId: string;
+  clientUpdateCount: number;
+  serverUpdateCount: number;
+  isConnectedToDocument: boolean;
+  isSidebarOpen: boolean;
+  isHistorySidebarOpen: boolean;
+  error?: Error | string;
+}
+
+interface IApp {}
+
+export interface WebsocketRef {}
+
+export default class App extends Component<AppProps, AppState> {
   doc: any;
   docSet: any;
-  websocket: any;
+  websocket: React.RefObject<any>;
   connection: any;
-  editor: any;
+  editor: React.RefObject<any>;
   selection: any;
 
-  constructor(props) {
+  constructor(props: AppProps) {
     super(props);
     this.state = {
-      loaded: false,
+      loading: true,
       error: null,
       value: null,
       clientId: uuid(),
@@ -106,7 +124,7 @@ export default class App extends Component<any, any> {
     this.docSet = new Automerge.DocSet();
 
     this.websocket = React.createRef();
-    this.editor = React.createRef();
+    this.editor = React.createRef<any>();
   }
 
   async componentDidMount() {
@@ -130,7 +148,7 @@ export default class App extends Component<any, any> {
       this.docSet.setDoc('1', this.doc);
 
       this.setState({
-        loaded: true,
+        loading: false,
         value: initialSlateValue,
         docId: '1',
       });
@@ -430,7 +448,7 @@ export default class App extends Component<any, any> {
   };
 
   render() {
-    const { loaded, error, isHistorySidebarOpen } = this.state;
+    const { loading, error, isHistorySidebarOpen } = this.state;
     if (error) {
       return (
         <div>
@@ -438,7 +456,7 @@ export default class App extends Component<any, any> {
         </div>
       );
     }
-    if (!loaded) {
+    if (loading) {
       return <div>loading...</div>;
     }
     // const history = Automerge.getHistory(this.doc);
