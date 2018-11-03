@@ -10,8 +10,6 @@
  * - Currently does not support marks.
  */
 
-import Automerge from 'automerge';
-
 /**
  * @function toJSON
  * @desc Custom toJSON function for Slate data structures

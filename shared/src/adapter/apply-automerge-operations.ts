@@ -3,7 +3,6 @@
  */
 
 import automergeJsonToSlate from './automerge-json-to-slate';
-
 /**
  * @function applyAutomergeOperations
  * @desc Update the client with a list of Automerge operations. If an error
@@ -13,7 +12,7 @@ import automergeJsonToSlate from './automerge-json-to-slate';
  * @param {function} failureCallback - (optional) Function to call if an error occurs
  * @returns {Slate.Change} The Slate Change operation with the applied Automerge operations
  */
-export const applyAutomergeOperations = (opSetDiff, change, failureCallback) => {
+export const applyAutomergeOperations = (opSetDiff: Array<any>, change: any, failureCallback: Function) => {
   try {
     const slateOps = convertAutomergeToSlateOps(opSetDiff);
     // Apply the operation
@@ -35,7 +34,7 @@ export const applyAutomergeOperations = (opSetDiff, change, failureCallback) => 
  * @param {Array} automergeOps - a list of Automerge operations created from Automerge.diff
  * @return {Array} Array of Slate operations
  */
-export const convertAutomergeToSlateOps = automergeOps => {
+export const convertAutomergeToSlateOps = (automergeOps: Array<any>): Array<any> => {
   // To build objects from Automerge operations
   let slateOps = [];
   let objIdMap = {};
@@ -83,7 +82,7 @@ export const convertAutomergeToSlateOps = automergeOps => {
  * @param {Object} objIdMap - Map from the objectId to created object
  * @return {Object} Map from Object Id to Object
  */
-const automergeOpCreate = (op, objIdMap) => {
+const automergeOpCreate = (op: any, objIdMap: any): any => {
   switch (op.type) {
     case 'map':
       objIdMap[op.obj] = {};
@@ -105,7 +104,7 @@ const automergeOpCreate = (op, objIdMap) => {
  * @return {Object} The objIdMap and array of corresponding Slate Operations for
  *     this operation
  */
-const automergeOpRemove = (op, objIdMap) => {
+const automergeOpRemove = (op: any, objIdMap: any): any => {
   let nodePath, slateOps;
   let pathString = op.path.slice(1).join('/');
   const lastObjectPath = op.path[op.path.length - 1];
@@ -236,7 +235,7 @@ const automergeOpInsert = (op, objIdMap) => {
  * @param {Array} slateOps - List of created Slate operations
  * @return {Array} List of list of Slate operations
  */
-const automergeOpInsertText = (deferredOps, objIdMap, slateOps) => {
+const automergeOpInsertText = (deferredOps: Array<any>, objIdMap: any, slateOps: Array<any>): Array<any> => {
   // We know all ops in this list have the following conditions true:
   //  - op.action === `insert`
   //  - pathMap.hasOwnProperty(op.obj)
@@ -296,7 +295,7 @@ const automergeOpInsertText = (deferredOps, objIdMap, slateOps) => {
  * @param {Array} array_of_lists - an array of list of Slate operations
  * @return {Array} Array of Slate operations
  */
-const flattenArray = array_of_lists => {
+const flattenArray = (array_of_lists: Array<any>) => {
   let newList = [];
   array_of_lists.forEach(items => {
     if (items !== null && items !== undefined) {

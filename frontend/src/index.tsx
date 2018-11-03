@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Editor } from 'slate-react';
-import slate from 'slate';
 import { Value } from 'slate';
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
@@ -11,8 +10,7 @@ import {
   automergeJsonToSlate,
   applySlateOperationsHelper,
   convertAutomergeToSlateOps,
-  slateCustomToJson,
-} from './adapter/slate-automerge-bridge';
+} from '@jot/shared';
 import {
   EditorContainer,
   EditorToolbar,

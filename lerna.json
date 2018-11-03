@@ -1,7 +1,8 @@
 {
   "packages": [
     "frontend",
-    "backend"
+    "backend",
+    "shared"
   ],
   "npmClient": "yarn",
   "useWorkspaces": true,

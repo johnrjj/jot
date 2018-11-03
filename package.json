@@ -1,5 +1,5 @@
 {
-  "name": "root",
+  "name": "jot",
   "private": true,
   "scripts": {
     "build": "lerna run build --stream --parallel",
@@ -34,10 +34,12 @@
   },
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "shared"
   ],
   "dependencies": {
+    "@jot/shared": "file:shared",
     "backend": "file:backend",
-    "client": "file:frontend"
+    "frontend": "file:frontend"
   }
 }
