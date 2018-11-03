@@ -112,9 +112,18 @@ export interface HistoryItemProps {
   type: 'edited' | 'created' | 'commented';
 }
 
-export const HistoryItem = ({ avatarSrc, name, date, type }: HistoryItemProps) => {
+export const HistoryItem = ({
+  avatarSrc,
+  name,
+  date,
+  type,
+}: HistoryItemProps) => {
   const IconToUse =
-    type === 'edited' ? EditedFileIcon : type === 'commented' ? CommentedFileIcon : CreatedFileIcon;
+    type === 'edited'
+      ? EditedFileIcon
+      : type === 'commented'
+        ? CommentedFileIcon
+        : CreatedFileIcon;
 
   const avatarStatusBackgroundColor =
     type === 'edited'

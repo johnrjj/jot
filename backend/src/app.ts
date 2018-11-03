@@ -72,7 +72,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
     documentRepository: documentRepo,
   });
   (app as any).ws('/ws', (ws: any, req: any, next: any) =>
-    webSocketNode.connectionHandler(ws, req, next)
+    webSocketNode.connectionHandler(ws, req, next),
   );
   logger.log('verbose', '🛠️ Websocket /ws endpoint setup');
 
@@ -83,10 +83,15 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   });
 
   app.use(
-    (error: ResponseError | Error | any, _req: Request, res: Response, _next: NextFunction) => {
+    (
+      error: ResponseError | Error | any,
+      _req: Request,
+      res: Response,
+      _next: NextFunction,
+    ) => {
       res.status(error.status || 500);
       res.json({ ...error });
-    }
+    },
   );
   logger.log('debug', `✅ Jot configured successfully, ready to start`);
   return app;

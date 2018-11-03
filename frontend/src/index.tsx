@@ -9,10 +9,12 @@ const API_ENDPOINT_ROOT =
 // : 'https://jot.herokuapp.com/api/v0';
 
 const WS_ENDPOINT =
-  process.env.NODE_ENV === 'development' ? 'ws://localhost:3001/ws' : 'ws://localhost:3001/ws';
+  process.env.NODE_ENV === 'development'
+    ? 'ws://localhost:3001/ws'
+    : 'ws://localhost:3001/ws';
 // : 'wss://jot.herokuapp.com/ws';
 
 ReactDOM.render(
   <App apiEndpoint={API_ENDPOINT_ROOT} wsEndpoint={WS_ENDPOINT} />,
-  document.getElementById('app')
+  document.getElementById('app'),
 );

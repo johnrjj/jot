@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { ChevronLeft, Clock, MoreHorizontal } from 'react-feather';
 import { colors, theme } from '../theme';

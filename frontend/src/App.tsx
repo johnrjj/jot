@@ -115,7 +115,9 @@ export default class App extends Component<any, any> {
       if (res.status >= 400) {
         return this.setState({
           error: new Error(
-            `api fetch for sample doc got a ${res.status} [${res.statusText}]\n is your backend on`
+            `api fetch for sample doc got a ${res.status} [${
+              res.statusText
+            }]\n is your backend on`,
           ),
         });
       }
@@ -155,7 +157,8 @@ export default class App extends Component<any, any> {
     } catch (error) {
       if (error.message === 'Failed to fetch') {
         return this.setState({
-          error: 'Error fetching sample document. Is the API up? Make sure it is running.',
+          error:
+            'Error fetching sample document. Is the API up? Make sure it is running.',
         });
       }
     }
@@ -169,9 +172,9 @@ export default class App extends Component<any, any> {
               docId: this.state.docId,
               clientId: this.state.clientId,
             },
-          })
+          }),
         ) || this.connection.open(),
-      1000
+      1000,
     );
   }
 
@@ -201,12 +204,14 @@ export default class App extends Component<any, any> {
       return;
     }
 
-    const selectionOps = operations.filter(op => op.type === 'set_selection').map(op =>
-      op.merge({
-        // OVERLOADING TARGET. Do this until i can PR slate
-        target: `remote-agent-setselection-${this.state.clientId}`,
-      })
-    );
+    const selectionOps = operations
+      .filter(op => op.type === 'set_selection')
+      .map(op =>
+        op.merge({
+          // OVERLOADING TARGET. Do this until i can PR slate
+          target: `remote-agent-setselection-${this.state.clientId}`,
+        }),
+      );
 
     if (selectionOps.count) {
       const selection = value.selection;
@@ -248,7 +253,9 @@ export default class App extends Component<any, any> {
         const message = JSON.stringify(msg);
         this.websocket.current.sendMessage(message);
       } else {
-        console.log('not connected to a doc, not sending cursor/selection to webseockt');
+        console.log(
+          'not connected to a doc, not sending cursor/selection to webseockt',
+        );
       }
     }
 
@@ -270,7 +277,9 @@ export default class App extends Component<any, any> {
   };
 
   toggleHistorySidebar = () => {
-    this.setState(prevState => ({ isHistorySidebarOpen: !prevState.isHistorySidebarOpen }));
+    this.setState(prevState => ({
+      isHistorySidebarOpen: !prevState.isHistorySidebarOpen,
+    }));
   };
 
   handleMessage = msg => {
@@ -447,11 +456,15 @@ export default class App extends Component<any, any> {
             </SidebarSearchContainer>
             <SidebarAddFileLinkContainer>
               <SidebarAddFileLinkIcon />
-              <SidebarAddFileLinkText>Add File or Folder</SidebarAddFileLinkText>
+              <SidebarAddFileLinkText>
+                Add File or Folder
+              </SidebarAddFileLinkText>
             </SidebarAddFileLinkContainer>
             <SidebarFolderLinkContainer>
               <SidebarFolderLinkIcon />
-              <SidebarFolderLinkText>Sample Document Folder</SidebarFolderLinkText>
+              <SidebarFolderLinkText>
+                Sample Document Folder
+              </SidebarFolderLinkText>
             </SidebarFolderLinkContainer>
             <SidebarFileLinkContainer>
               <SidebarFileLinkIcon />
@@ -459,11 +472,15 @@ export default class App extends Component<any, any> {
             </SidebarFileLinkContainer>
             <SidebarFileLinkContainer selected>
               <SidebarFileLinkIcon selected />
-              <SidebarFileLinkText selected>Welcome to the Jot Editor</SidebarFileLinkText>
+              <SidebarFileLinkText selected>
+                Welcome to the Jot Editor
+              </SidebarFileLinkText>
             </SidebarFileLinkContainer>
             <SidebarFileLinkContainer style={{ marginBottom: '16px' }}>
               <SidebarFileLinkIcon />
-              <SidebarFileLinkText>Interesting facts about snakes</SidebarFileLinkText>
+              <SidebarFileLinkText>
+                Interesting facts about snakes
+              </SidebarFileLinkText>
             </SidebarFileLinkContainer>
             <SidebarFolderLinkContainer>
               <SidebarFolderLinkIcon />
@@ -484,7 +501,9 @@ export default class App extends Component<any, any> {
                   <EditorToolbarBackText>Back</EditorToolbarBackText>
                 </EditorToolbarLeftGroup>
                 <EditorToolbarRightGroup>
-                  <EditorToolbarButtonContainer onClick={this.toggleHistorySidebar}>
+                  <EditorToolbarButtonContainer
+                    onClick={this.toggleHistorySidebar}
+                  >
                     <EditorToolbarHistoryButtonIcon />
                     <span>History</span>
                   </EditorToolbarButtonContainer>
@@ -586,7 +605,10 @@ export default class App extends Component<any, any> {
   renderMarkButton = (type: string, icon: string) => {
     const isActive = this.hasMark(type);
     return (
-      <Button active={isActive} onMouseDown={event => this.onClickMark(event, type)}>
+      <Button
+        active={isActive}
+        onMouseDown={event => this.onClickMark(event, type)}
+      >
         <Icon>{icon}</Icon>
       </Button>
     );

@@ -105,7 +105,8 @@ export const SidebarFileLinkContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  background-color: ${props => (props.selected ? colors.lightBlue.normal : 'inherit')};
+  background-color: ${props =>
+    props.selected ? colors.lightBlue.normal : 'inherit'};
 `;
 
 export const SidebarFileLinkIcon = styled(File)`

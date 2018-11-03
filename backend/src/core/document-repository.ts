@@ -69,7 +69,7 @@ export class DocumentRepository implements IDocumentRepository {
   public getDocSet = () => {
     this.log(
       'silly',
-      'DocumentRepository.getDocSet will be deprecated, do not build on top of it.'
+      'DocumentRepository.getDocSet will be deprecated, do not build on top of it.',
     );
     return this.docSet;
   };
@@ -88,7 +88,10 @@ export class DocumentRepository implements IDocumentRepository {
     this.log('debug', `docrepo: request for docID: ${id}`);
     const doc = this.docSet.getDoc(id);
     if (!doc) {
-      this.log('silly', `docrepo docset miss for docId ${id}, creating new one.`);
+      this.log(
+        'silly',
+        `docrepo docset miss for docId ${id}, creating new one.`,
+      );
       return this.createNewDoc(id);
     } else {
       this.log('silly', `docrepo docset hit for docId ${id}`);
