@@ -6,6 +6,16 @@ import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
 import { SlateAutomergeAdapter } from '@jot/shared';
+import { Bold, Italic, Underline, Code } from 'react-feather';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faFont,
+  faQuoteRight,
+  faBold,
+  faItalic,
+  faCode,
+  faUnderline,
+} from '@fortawesome/free-solid-svg-icons';
 import {
   WebSocketMessage,
   RemoteAgentSetSelectionPayload,
@@ -57,6 +67,15 @@ const {
   applySlateOperationsHelper,
   convertAutomergeToSlateOps,
 } = SlateAutomergeAdapter;
+
+const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
+const QuoteIcon = props => <FontAwesomeIcon icon={faQuoteRight} {...props} />;
+const BoldIcon = props => <FontAwesomeIcon icon={faBold} {...props} />;
+const ItalicIcon = props => <FontAwesomeIcon icon={faItalic} {...props} />;
+const CodeIcon = props => <FontAwesomeIcon icon={faCode} {...props} />;
+const UnderlineIcon = props => (
+  <FontAwesomeIcon icon={faUnderline} {...props} />
+);
 
 const FullViewportAppContainer = styled.div`
   display: flex;
@@ -129,8 +148,11 @@ export default class App extends Component<AppProps, AppState> {
   }
 
   async componentDidMount() {
+    const docIdToRequest = '1';
     try {
-      const res = await fetch('http://localhost:3001/api/v0/doc/1');
+      const res = await fetch(
+        `${this.props.apiEndpoint}/doc/${docIdToRequest}`,
+      );
       if (res.status >= 400) {
         return this.setState({
           error: new Error(
@@ -142,16 +164,17 @@ export default class App extends Component<AppProps, AppState> {
       }
       const json = await res.json();
       const { serializedDocument } = json;
+      const docId = docIdToRequest;
       const crdt = Automerge.load(serializedDocument);
       this.doc = crdt;
       const initialValueJSON: any = automergeJsonToSlate(this.doc);
       const initialSlateValue = Value.fromJSON(initialValueJSON);
-      this.docSet.setDoc('1', this.doc);
+      this.docSet.setDoc(docId, this.doc);
 
       this.setState({
         loading: false,
         value: initialSlateValue,
-        docId: '1',
+        docId: docId,
       });
 
       this.connection = new Automerge.Connection(this.docSet, data => {
@@ -223,14 +246,7 @@ export default class App extends Component<AppProps, AppState> {
       return;
     }
 
-    const selectionOps = operations
-      .filter(op => op.type === 'set_selection')
-      .map(op =>
-        op.merge({
-          // OVERLOADING TARGET. Do this until i can PR slate
-          target: `remote-agent-setselection-${this.state.clientId}`,
-        }),
-      );
+    const selectionOps = operations.filter(op => op.type === 'set_selection');
 
     if (selectionOps.count) {
       const selection = value.selection;
@@ -384,7 +400,6 @@ export default class App extends Component<AppProps, AppState> {
         </span>
       );
     }
-
     if (
       mark.type.startsWith('remote-agent-setselection-') &&
       mark.type !== `remote-agent-setselection-${this.state.clientId}`
@@ -433,6 +448,7 @@ export default class App extends Component<AppProps, AppState> {
         </span>
       );
     }
+
     switch (mark.type) {
       case 'bold':
         return <strong {...attributes}>{children}</strong>;
@@ -533,21 +549,21 @@ export default class App extends Component<AppProps, AppState> {
                 </EditorToolbarRightGroup>
               </EditorToolbar>
               <Toolbar>
-                {this.renderMarkButton('bold', 'format_bold')}
-                {this.renderMarkButton('italic', 'format_italic')}
-                {this.renderMarkButton('underlined', 'format_underlined')}
-                {this.renderMarkButton('code', 'code')}
-                {this.renderBlockButton('heading-one', 'looks_one')}
-                {this.renderBlockButton('heading-two', 'looks_two')}
-                {this.renderBlockButton('block-quote', 'format_quote')}
-                {this.renderBlockButton(
+                {this.renderMarkButton('bold', 'bold_icon')}
+                {this.renderMarkButton('italic', 'italic_icon')}
+                {this.renderMarkButton('underlined', 'underline_icon')}
+                {this.renderMarkButton('code', 'code_icon')}
+                {this.renderBlockButton('heading-one', 'h1_icon')}
+                {this.renderBlockButton('heading-two', 'h2_icon')}
+                {this.renderBlockButton('block-quote', 'quote_icon')}
+                {/* {this.renderBlockButton(
                   'numbered-list',
                   'format_list_numbered',
                 )}
                 {this.renderBlockButton(
                   'bulleted-list',
                   'format_list_bulleted',
-                )}
+                )} */}
               </Toolbar>
               <SlateEditorContainer>
                 <Websocket
@@ -695,7 +711,13 @@ export default class App extends Component<AppProps, AppState> {
         active={isActive}
         onMouseDown={event => this.onClickBlock(event, type)}
       >
-        <Icon>{icon}</Icon>
+        {icon === 'h1_icon' ? (
+          <FontIcon size="lg" />
+        ) : icon === 'h2_icon' ? (
+          <FontIcon />
+        ) : (
+          <QuoteIcon />
+        )}
       </Button>
     );
   };
@@ -712,7 +734,15 @@ export default class App extends Component<AppProps, AppState> {
         active={isActive}
         onMouseDown={event => this.onClickMark(event, type)}
       >
-        <Icon>{icon}</Icon>
+        {icon === 'bold_icon' ? (
+          <BoldIcon />
+        ) : icon === 'underline_icon' ? (
+          <UnderlineIcon />
+        ) : icon === 'code_icon' ? (
+          <CodeIcon />
+        ) : (
+          <ItalicIcon />
+        )}
       </Button>
     );
   };
