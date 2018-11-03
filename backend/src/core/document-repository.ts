@@ -1,7 +1,6 @@
 import Automerge from 'automerge';
 import { Logger } from 'winston';
 
-//
 export type CRDTDocument = Automerge.AutomergeRoot;
 
 export interface IDocumentRepositoryConfig {

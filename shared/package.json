@@ -1,10 +1,9 @@
 {
   "name": "@jot/shared",
   "version": "1.0.0",
-  "main": "src/slate-automerge-bridge.ts",
+  "main": "src/index.ts",
   "license": "MIT",
   "files": [
-    "src/slate-automerge-bridge.ts",
     "src/"
   ]
 }

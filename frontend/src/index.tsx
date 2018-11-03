@@ -6,11 +6,12 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-import {
+import { SlateAutomergeAdapter } from '@jot/shared';
+const {
   automergeJsonToSlate,
   applySlateOperationsHelper,
   convertAutomergeToSlateOps,
-} from '@jot/shared';
+} = SlateAutomergeAdapter;
 import {
   EditorContainer,
   EditorToolbar,
@@ -332,8 +333,8 @@ class Main extends Component<any, any> {
     if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
       return (
         <span {...attributes} style={{ fontWeight: 'bold' }}>
-        {children}
-      </span>
+          {children}
+        </span>
       );
       // return next();
     }
