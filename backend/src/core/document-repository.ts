@@ -24,7 +24,6 @@ export interface IDocumentRepository {
 }
 
 export class DocumentRepository implements IDocumentRepository {
-  inMemoryDatabase: Map<string, string>;
   logger?: Logger;
   docSet: DocSet;
   loadDocument: Function;
@@ -49,8 +48,6 @@ export class DocumentRepository implements IDocumentRepository {
     }
     this.docCache = new Map();
     this.onChange = this.onChange.bind(this);
-
-    this.inMemoryDatabase = new Map();
   }
 
   async onChange(id: string, doc: CRDTDocument): Promise<void> {
@@ -89,13 +86,6 @@ export class DocumentRepository implements IDocumentRepository {
 
   async getDoc(id: string): Promise<CRDTDocument> {
     this.log('debug', `docrepo: request for docID: ${id}`);
-    // todo(jj) figure out  cache - cache does not currently work because of immutability
-    // if (this.docCache.has(id)) {
-    //   this.log('silly', `docrepo cache hit for docId ${id}`);
-    //   return this.docCache.get(id) as CRDTDocument;
-    // } else {
-    //   this.log('silly', `docrepo cache miss for docId ${id}, looking up in docSet`);
-    // }
     const doc = this.docSet.getDoc(id);
     if (!doc) {
       this.log('silly', `docrepo docset miss for docId ${id}, creating new one.`);
