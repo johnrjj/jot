@@ -4,6 +4,16 @@ import { Logger } from 'winston';
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import { DocumentRepository } from './document-repository';
+import {
+  WebSocketMessage,
+  MessageType,
+  AutomergeUpdatePayload,
+  RemoteAgentSetSelectionPayload,
+  JoinDocumentRequestPayload,
+  AutomergeUpdateFromServerPayload,
+  KeepalivePayload,
+} from '@jot/shared/src/types/websocket-types';
+import { AutomergeConnection } from '@jot/shared/src/types/automerge';
 
 interface ConnectionContext {
   socket: WebSocket;
@@ -12,51 +22,6 @@ interface ConnectionContext {
   subscriptions: Array<string>;
   subscriptionCount: number;
   subscriptionIdMap: Map<string, number>;
-}
-
-type MessageType =
-  | 'keepalive'
-  | 'automerge-connection-send'
-  | 'remote-agent-setselection'
-  | 'join-document'
-  | 'undefined';
-
-type ChannelType = 'keepalive';
-
-export interface AutomergeUpdatePayload {
-  clientId: string;
-  docId: string;
-  message: string;
-}
-
-export interface RemoteAgentSetSelectionPayload {
-  clientId: string;
-  docId: string;
-  message: {
-    anchor: any;
-    focus: any;
-    mark: any;
-  };
-}
-
-export interface JoinDocumentRequestPayload {
-  clientId: string;
-  docId: string;
-  message: string;
-}
-
-export interface WebSocketMessage<
-  T extends AutomergeUpdatePayload | JoinDocumentRequestPayload | RemoteAgentSetSelectionPayload
-> {
-  type: MessageType;
-  channel?: ChannelType;
-  payload: T;
-}
-
-export interface AutomergeConnection {
-  open: () => void;
-  close: () => void;
-  receiveMsg: (msg: any) => void;
 }
 
 export class WebSocketNode {
@@ -199,14 +164,16 @@ export class WebSocketNode {
     isClientConnected: boolean
   ) {
     if (isClientConnected && agentId) {
-      this.log('verbose', `${agentId} connected, going to broadcast cursor selection`);
+      this.log(
+        'verbose',
+        `${agentId} sent websocket server a set selection, going to broadcast cursor selection`
+      );
       this.connections.forEach(c => {
-        c.socket.send(
-          JSON.stringify({
-            type: 'remote-agent-setselection-from-server',
-            payload: setSelectionMessage.payload,
-          })
-        );
+        const msg: WebSocketMessage<RemoteAgentSetSelectionPayload> = {
+          type: 'remote-agent-setselection-from-server',
+          payload: setSelectionMessage.payload,
+        };
+        c.socket.send(JSON.stringify(msg));
       });
     }
   }
@@ -236,9 +203,11 @@ export class WebSocketNode {
             `websocket node ${this.id}: connectionAutomerge sending message to ${agentId}`,
             message
           );
-          connectionContext.socket.send(
-            JSON.stringify({ type: 'server-update', payload: message })
-          );
+          const msg: WebSocketMessage<AutomergeUpdateFromServerPayload> = {
+            type: 'server-update',
+            payload: message,
+          };
+          connectionContext.socket.send(JSON.stringify(msg));
         }
       );
       this.connectionAutomerge.set(agentId, connection);
@@ -299,7 +268,8 @@ export class WebSocketNode {
   };
 
   private sendKeepAlive(connectionContext: ConnectionContext): void {
-    this.sendMessage(connectionContext, { type: 'keepalive', channel: 'keepalive', payload: {} });
+    const msg: WebSocketMessage<KeepalivePayload> = { type: 'keepalive', payload: {} };
+    this.sendMessage(connectionContext, msg);
   }
 
   private sendMessage(connectionContext: ConnectionContext, message: WebSocketMessage<any>): void {

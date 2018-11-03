@@ -328,7 +328,6 @@ class Main extends Component<any, any> {
 
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
-    // console.log(mark, attributes);
 
     if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
       return (
@@ -336,11 +335,9 @@ class Main extends Component<any, any> {
           {children}
         </span>
       );
-      // return next();
     }
 
     if (mark.type.startsWith('remote-agent-setselection-')) {
-      // console.log('____is this ever the case for single');
       return (
         <span
           {...attributes}
@@ -351,8 +348,6 @@ class Main extends Component<any, any> {
         >
           <div
             style={{
-              // borderLeft: `2px solid red`,
-              // height: '100%',
               position: 'absolute',
               width: '100px',
               height: '10px',
@@ -364,7 +359,6 @@ class Main extends Component<any, any> {
           >
             Other user
           </div>
-
           <span
             style={{
               opacity: 0.4,

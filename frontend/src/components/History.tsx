@@ -4,7 +4,6 @@ import { X } from 'react-feather';
 import { colors } from '../theme';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faPen, faComment } from '@fortawesome/free-solid-svg-icons';
-import { string } from 'prop-types';
 
 const FileIcon = props => <FontAwesomeIcon icon={faFile} {...props} />;
 const PenIcon = props => <FontAwesomeIcon icon={faPen} {...props} />;

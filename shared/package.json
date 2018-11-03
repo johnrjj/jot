@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "license": "MIT",
   "files": [
-    "src/"
+    "src/index.ts",
+    "src/types/**/*.ts"
   ]
 }
