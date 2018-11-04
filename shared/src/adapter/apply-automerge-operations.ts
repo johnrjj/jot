@@ -196,19 +196,25 @@ const automergeOpSet = (op, objIdMap) => {
           console.error('`create`, unsupported type: ', op.type);
       }
 
-      let pathString = op.path.slice(1).join('/');
-      pathString = pathString.match(/\d+/g);
-      let nodePath = pathString.map(x => {
-        return parseInt(x, 10);
-      });
+      // current heuristic for detecing set_node
+      if (op.path) {
 
-      slateOps.push({
-        object: "operation",
-        path: nodePath, // [0]
-        properties: { type: op.value }, //op.value: "heading-one"
-        type: "set_node",
-      });
+        let pathString = op.path.slice(1).join('/');
+        pathString = pathString.match(/\d+/g);
+        let nodePath = pathString.map(x => {
+          return parseInt(x, 10);
+        });
+  
+        slateOps.push({
+          object: "operation",
+          path: nodePath, // [0]
+          properties: { type: op.value }, //op.value: "heading-one"
+          type: "set_node",
+        });
 
+      } else {
+        console.warn('need slate op for adding mark!!')
+      }
       // Is this a problem? probably not
       console.warn('`set`, unable to find objectId (non link path):', op.value);
     }

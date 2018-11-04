@@ -61,14 +61,14 @@ import {
 } from './components/History';
 import './reset.css';
 import './global.css';
-import { Toolbar, Button, Icon } from './components/Toolbar';
+import { Toolbar, Button } from './components/Toolbar';
 const {
   automergeJsonToSlate,
   applySlateOperationsHelper,
   convertAutomergeToSlateOps,
 } = SlateAutomergeAdapter;
 
-const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
+const FontIcon = props => <FontAwesomeIcon  icon={faFont} {...props} />;
 const QuoteIcon = props => <FontAwesomeIcon icon={faQuoteRight} {...props} />;
 const BoldIcon = props => <FontAwesomeIcon icon={faBold} {...props} />;
 const ItalicIcon = props => <FontAwesomeIcon icon={faItalic} {...props} />;
@@ -147,63 +147,47 @@ export default class App extends Component<AppProps, AppState> {
     this.editor = React.createRef<any>();
   }
 
+  async fetchDocument(docId: string) {
+    const res = await fetch(`${this.props.apiEndpoint}/doc/${docId}`);
+    const json = await res.json();
+    return json;
+  }
+
   async componentDidMount() {
     const docIdToRequest = '1';
-    try {
-      const res = await fetch(
-        `${this.props.apiEndpoint}/doc/${docIdToRequest}`,
-      );
-      if (res.status >= 400) {
-        return this.setState({
-          error: new Error(
-            `api fetch for sample doc got a ${res.status} [${
-              res.statusText
-            }]\n is your backend on`,
-          ),
-        });
-      }
-      const json = await res.json();
-      const { serializedDocument } = json;
-      const docId = docIdToRequest;
-      const crdt = Automerge.load(serializedDocument);
-      this.doc = crdt;
-      const initialValueJSON: any = automergeJsonToSlate(this.doc);
-      const initialSlateValue = Value.fromJSON(initialValueJSON);
-      this.docSet.setDoc(docId, this.doc);
+    const { serializedDocument } = await this.fetchDocument(docIdToRequest);
+    const docId = docIdToRequest;
+    const crdt = Automerge.load(serializedDocument);
+    this.doc = crdt;
+    const initialValueJSON: any = automergeJsonToSlate(this.doc);
+    const initialSlateValue = Value.fromJSON(initialValueJSON);
+    this.docSet.setDoc(docId, this.doc);
 
-      this.setState({
-        loading: false,
-        value: initialSlateValue,
-        docId: docId,
+    this.setState({
+      loading: false,
+      value: initialSlateValue,
+      docId: docId,
+    });
+
+    this.connection = new Automerge.Connection(this.docSet, data => {
+      const message = JSON.stringify({
+        type: 'automerge-connection-send',
+        payload: {
+          clientId: this.state.clientId,
+          docId: this.state.docId,
+          message: data,
+        },
       });
 
-      this.connection = new Automerge.Connection(this.docSet, data => {
-        const message = JSON.stringify({
-          type: 'automerge-connection-send',
-          payload: {
-            clientId: this.state.clientId,
-            docId: this.state.docId,
-            message: data,
-          },
-        });
-
-        if (this.state.isConnectedToDocument) {
+      if (this.state.isConnectedToDocument) {
+        this.websocket.current.sendMessage(message);
+      } else {
+        setTimeout(() => {
+          // wait a second while we connect...
           this.websocket.current.sendMessage(message);
-        } else {
-          setTimeout(() => {
-            // wait a second while we connect...
-            this.websocket.current.sendMessage(message);
-          }, 1000);
-        }
-      });
-    } catch (error) {
-      if (error.message === 'Failed to fetch') {
-        return this.setState({
-          error:
-            'Error fetching sample document. Is the API up? Make sure it is running.',
-        });
+        }, 1000);
       }
-    }
+    });
 
     setTimeout(
       () =>
@@ -228,10 +212,11 @@ export default class App extends Component<AppProps, AppState> {
   }
 
   onChange = ({ value, operations, ...rest }) => {
+    console.warn('DRAFT:onChange:value.toJS()', value.toJS());
     console.log(
       'onChange:operations',
       operations && operations.toJS(),
-      `from remote: ${rest.fromRemote}`,
+      `from remote: ${rest.fromRemote ? 'true' : 'false'}`,
     );
     this.setState({ value });
     this.selection = value.selection.toJS();
@@ -301,6 +286,7 @@ export default class App extends Component<AppProps, AppState> {
 
     // We need to apply local changes to the automerge document
     const docNew = Automerge.change(this.doc, message, doc => {
+      console.log('AUTOMERGE:doc.toJS()', this.doc);
       // Use the Slate operations to modify the Automerge document.
       applySlateOperationsHelper(doc, operations);
     });
@@ -322,9 +308,9 @@ export default class App extends Component<AppProps, AppState> {
     }));
   };
 
-  handleMessage = msg => {
+  handleMessage = (msg: string) => {
+    console.log(this.doc);
     const msgJson = JSON.parse(msg);
-    // console.log(' got a msg', msgJson);
     if (msgJson.type === 'server-update') {
       const docNew = this.connection.receiveMsg(msgJson.payload);
       if (!this.state.isConnectedToDocument) {
@@ -335,6 +321,8 @@ export default class App extends Component<AppProps, AppState> {
       if (msgJson.payload.changes) {
         const currentDoc = this.doc;
         const opSetDiff = Automerge.diff(currentDoc, docNew);
+        console.log(docNew, msgJson.payload);
+        console.log('automerge:new updates from remote server:opSetdiff', opSetDiff);
         if (opSetDiff.length !== 0) {
           const slateOps = convertAutomergeToSlateOps(opSetDiff);
           this.editor.current.change(change => {

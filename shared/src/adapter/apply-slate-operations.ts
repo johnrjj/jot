@@ -15,6 +15,7 @@
 
 import Automerge from 'automerge';
 import slateCustomToJson from './slate-custom-tojson';
+import { number } from 'prop-types';
 
 const allowedOperations = [
   'add_mark',
@@ -67,28 +68,79 @@ export const applySlateOperationsHelper = (doc, operations) => {
     const rest = path.slice(0, -1);
     let currentNode = doc.document;
     switch (op.type) {
-      case "add_mark":
+
       case "remove_mark":
       case "set_mark":  
         console.log(`SKIPPING: ${op.type}`, op);
         break;
-      // NOTE: Marks are definitely broken as of Slate 0.34
-      // case "add_mark":
-      //     // Untested
-      //     path.forEach(el => {
-      //         currentNode = currentNode.nodes[el];
-      //     })
-      //     currentNode.characters.forEach((char, i) => {
-      //         if (i < offset) return;
-      //         if (i >= offset + length) return;
-      //         const hasMark = char.marks.find((charMark) => {
-      //             return charMark.type === mark.type
-      //         })
-      //         if (!hasMark) {
-      //             char.marks.push(mark)
-      //         }
-      //     })
-      //     break;
+      case "add_mark":
+          console.log('(skipping)applySlateOperationsHelper:ADD_MARK', op.toJS());
+          break;
+          // WIP
+          // Untested
+          // path.forEach(el => {
+          //   console.log(`add mark going deeper to ${el}`)
+          //     currentNode = currentNode.nodes[el];
+          // })
+          // if (currentNode.object === 'text') {
+          //   console.log('were in the right place');
+          // } else {
+          //   console.error('not in text node!!!!! abort!');
+          // }
+          // console.log('are these leaves', currentNode.leaves);
+
+          // console.log('available leaves', currentNode.leaves.length);
+          // currentNode.leaves.insertAt(1, ({
+          //     object: 'leaf',
+          //     text: 'boop'.split(''),
+          //     marks: [{
+          //       data: {},
+          //       object: 'mark',
+          //       type: 'bold',
+          //     }],
+          // }));
+
+          // currentNode.leaves.forEach((leaf, i) => {
+          //   console.log('is only one leaf?', i);
+
+          //   // op = {
+          //   //   length: 4,
+          //   //   mark: {
+          //   //     data: {},
+          //   //     object: 'mark',
+          //   //     type: 'bold',
+          //   //   },
+          //   //   object: 'operation',
+          //   //   offset: 2,
+          //   //   path: [0, 0],
+          //   //   type: 'add_mark'
+          //   // }
+
+          //   // leaf = {
+          //   //   object: 'leaf',
+          //   //   text: '',
+          //   //   marks: [
+          //   //     {
+          //   //       data: {},
+          //   //       object: 'mark',
+          //   //       type: 'bold'
+          //   //     }
+          //   //   ],
+          //   // }
+          // });
+
+
+          // currentNode.characters.forEach((char, i) => {
+          //     if (i < offset) return;
+          //     if (i >= offset + length) return;
+          //     const hasMark = char.marks.find((charMark) => {
+          //         return charMark.type === mark.type
+          //     })
+          //     if (!hasMark) {
+          //         char.marks.push(mark)
+          //     }
+          // })
+          // break;
       // case "remove_mark":
       //     // Untested
       //     path.forEach(el => {

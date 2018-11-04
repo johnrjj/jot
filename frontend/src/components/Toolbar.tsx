@@ -12,13 +12,6 @@ export const Button = styled('span')`
         : '#ccc'};
 `;
 
-const Icon = styled(({ className, ...rest }) => {
-  return <span className={`material-icons ${className}`} {...rest} />;
-})`
-  font-size: 18px;
-  vertical-align: text-bottom;
-`;
-
 const Menu = styled('div')`
   & > * {
     display: inline-block;
@@ -36,4 +29,4 @@ const Toolbar = styled(Menu)`
   border-bottom: 2px solid #eee;
   margin-bottom: 20px;
 `;
-export { Icon, Menu, Toolbar };
+export { Menu, Toolbar };
