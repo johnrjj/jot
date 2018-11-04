@@ -228,6 +228,11 @@ export default class App extends Component<AppProps, AppState> {
   }
 
   onChange = ({ value, operations, ...rest }) => {
+    console.log(
+      'onChange:operations',
+      operations && operations.toJS(),
+      `from remote: ${rest.fromRemote}`,
+    );
     this.setState({ value });
     this.selection = value.selection.toJS();
     const clientId = this.state.clientId;
@@ -378,9 +383,17 @@ export default class App extends Component<AppProps, AppState> {
       case 'bulleted-list':
         return <ul {...attributes}>{children}</ul>;
       case 'heading-one':
-        return <h1 {...attributes}>{children}</h1>;
+        return (
+          <h1 style={{ fontSize: '30px' }} {...attributes}>
+            {children}
+          </h1>
+        );
       case 'heading-two':
-        return <h2 {...attributes}>{children}</h2>;
+        return (
+          <h2 style={{ fontSize: '24px' }} {...attributes}>
+            {children}
+          </h2>
+        );
       case 'list-item':
         return <li {...attributes}>{children}</li>;
       case 'numbered-list':
@@ -451,7 +464,11 @@ export default class App extends Component<AppProps, AppState> {
 
     switch (mark.type) {
       case 'bold':
-        return <strong {...attributes}>{children}</strong>;
+        return (
+          <strong style={{ fontWeight: '700' }} {...attributes}>
+            {children}
+          </strong>
+        );
       case 'code':
         return <code {...attributes}>{children}</code>;
       case 'italic':

@@ -53,7 +53,9 @@ export const convertAutomergeToSlateOps = (automergeOps: Array<any>): Array<any>
         slateOps[idx] = temp.slateOps;
         break;
       case 'set':
-        objIdMap = automergeOpSet(op, objIdMap);
+        temp = automergeOpSet(op, objIdMap);
+        objIdMap = temp.objIdMap;
+        slateOps[idx] = temp.slateOps;        
         break;
       case 'insert':
         temp = automergeOpInsert(op, objIdMap);
@@ -164,6 +166,7 @@ const automergeOpRemove = (op: any, objIdMap: any): any => {
  * @return {Object} Map from Object Id to Object
  */
 const automergeOpSet = (op, objIdMap) => {
+  const slateOps: Array<any> = [];
   if (op.hasOwnProperty('link')) {
     // What's the point of the `link` field? All my experiments
     // have `link` = true
@@ -178,9 +181,39 @@ const automergeOpSet = (op, objIdMap) => {
       }
     }
   } else {
-    objIdMap[op.obj][op.key] = op.value;
+    console.log(op, op.obj, op.key, op.value, objIdMap);
+    if (objIdMap.hasOwnProperty(op.value)) {
+      objIdMap[op.obj][op.key] = objIdMap[op.value];
+    } else {
+      switch (op.type) {
+        case 'map':
+          objIdMap[op.obj] = {};
+          break;
+        case 'list':
+          objIdMap[op.obj] = [];
+          break;
+        default:
+          console.error('`create`, unsupported type: ', op.type);
+      }
+
+      let pathString = op.path.slice(1).join('/');
+      pathString = pathString.match(/\d+/g);
+      let nodePath = pathString.map(x => {
+        return parseInt(x, 10);
+      });
+
+      slateOps.push({
+        object: "operation",
+        path: nodePath, // [0]
+        properties: { type: op.value }, //op.value: "heading-one"
+        type: "set_node",
+      });
+
+      // Is this a problem? probably not
+      console.warn('`set`, unable to find objectId (non link path):', op.value);
+    }
   }
-  return objIdMap;
+  return { objIdMap: objIdMap, slateOps: slateOps };
 };
 
 /**
