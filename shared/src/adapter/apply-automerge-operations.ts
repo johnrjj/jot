@@ -55,7 +55,7 @@ export const convertAutomergeToSlateOps = (automergeOps: Array<any>): Array<any>
       case 'set':
         temp = automergeOpSet(op, objIdMap);
         objIdMap = temp.objIdMap;
-        slateOps[idx] = temp.slateOps;        
+        slateOps[idx] = temp.slateOps;
         break;
       case 'insert':
         temp = automergeOpInsert(op, objIdMap);
@@ -166,7 +166,7 @@ const automergeOpRemove = (op: any, objIdMap: any): any => {
  * @return {Object} Map from Object Id to Object
  */
 const automergeOpSet = (op, objIdMap) => {
-  const slateOps: Array<any> = [];
+  let slateOps:Array<any> = [];
   if (op.hasOwnProperty('link')) {
     // What's the point of the `link` field? All my experiments
     // have `link` = true
@@ -181,11 +181,9 @@ const automergeOpSet = (op, objIdMap) => {
       }
     }
   } else {
-    console.log(op, op.obj, op.key, op.value, objIdMap);
-    if (objIdMap.hasOwnProperty(op.value)) {
-      objIdMap[op.obj][op.key] = objIdMap[op.value];
-    } else {
-      switch (op.type) {
+
+    if (!objIdMap[op.obj]) {
+            switch (op.type) {
         case 'map':
           objIdMap[op.obj] = {};
           break;
@@ -195,7 +193,12 @@ const automergeOpSet = (op, objIdMap) => {
         default:
           console.error('`create`, unsupported type: ', op.type);
       }
+    }
+    objIdMap[op.obj][op.key] = op.value;
 
+    // Best heuristic right now for checking if its a set_node (setting h1 kinda thing)
+    // find something better.
+    if (op.path) {
       let pathString = op.path.slice(1).join('/');
       pathString = pathString.match(/\d+/g);
       let nodePath = pathString.map(x => {
@@ -207,13 +210,10 @@ const automergeOpSet = (op, objIdMap) => {
         path: nodePath, // [0]
         properties: { type: op.value }, //op.value: "heading-one"
         type: "set_node",
-      });
-
-      // Is this a problem? probably not
-      console.warn('`set`, unable to find objectId (non link path):', op.value);
+      });  
     }
   }
-  return { objIdMap: objIdMap, slateOps: slateOps };
+  return { objIdMap, slateOps };
 };
 
 /**
