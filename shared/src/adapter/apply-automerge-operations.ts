@@ -12,7 +12,11 @@ import automergeJsonToSlate from './automerge-json-to-slate';
  * @param {function} failureCallback - (optional) Function to call if an error occurs
  * @returns {Slate.Change} The Slate Change operation with the applied Automerge operations
  */
-export const applyAutomergeOperations = (opSetDiff: Array<any>, change: any, failureCallback: Function) => {
+export const applyAutomergeOperations = (
+  opSetDiff: Array<any>,
+  change: any,
+  failureCallback: Function,
+) => {
   try {
     const slateOps = convertAutomergeToSlateOps(opSetDiff);
     // Apply the operation
@@ -34,11 +38,13 @@ export const applyAutomergeOperations = (opSetDiff: Array<any>, change: any, fai
  * @param {Array} automergeOps - a list of Automerge operations created from Automerge.diff
  * @return {Array} Array of Slate operations
  */
-export const convertAutomergeToSlateOps = (automergeOps: Array<any>): Array<any> => {
+export const convertAutomergeToSlateOps = (
+  automergeOps: Array<any>,
+): Array<any> => {
   // To build objects from Automerge operations
-  let slateOps = [];
-  let objIdMap = {};
-  let deferredOps = [];
+  let slateOps: any[] = [];
+  let objIdMap: any = {};
+  let deferredOps: any[] = [];
   let containsDeferredOps = false;
   let temp;
 
@@ -166,7 +172,7 @@ const automergeOpRemove = (op: any, objIdMap: any): any => {
  * @return {Object} Map from Object Id to Object
  */
 const automergeOpSet = (op, objIdMap) => {
-  let slateOps:Array<any> = [];
+  let slateOps: Array<any> = [];
   if (op.hasOwnProperty('link')) {
     // What's the point of the `link` field? All my experiments
     // have `link` = true
@@ -181,9 +187,8 @@ const automergeOpSet = (op, objIdMap) => {
       }
     }
   } else {
-
     if (!objIdMap[op.obj]) {
-            switch (op.type) {
+      switch (op.type) {
         case 'map':
           objIdMap[op.obj] = {};
           break;
@@ -206,11 +211,11 @@ const automergeOpSet = (op, objIdMap) => {
       });
 
       slateOps.push({
-        object: "operation",
+        object: 'operation',
         path: nodePath, // [0]
         properties: { type: op.value }, //op.value: "heading-one"
-        type: "set_node",
-      });  
+        type: 'set_node',
+      });
     }
   }
   return { objIdMap, slateOps };
@@ -268,7 +273,11 @@ const automergeOpInsert = (op, objIdMap) => {
  * @param {Array} slateOps - List of created Slate operations
  * @return {Array} List of list of Slate operations
  */
-const automergeOpInsertText = (deferredOps: Array<any>, objIdMap: any, slateOps: Array<any>): Array<any> => {
+const automergeOpInsertText = (
+  deferredOps: Array<any>,
+  objIdMap: any,
+  slateOps: Array<any>,
+): Array<any> => {
   // We know all ops in this list have the following conditions true:
   //  - op.action === `insert`
   //  - pathMap.hasOwnProperty(op.obj)
@@ -279,7 +288,7 @@ const automergeOpInsertText = (deferredOps: Array<any>, objIdMap: any, slateOps:
 
     const insertInto = op.path.slice(1).join('/');
     let pathString, nodePath;
-    let slateOp = [];
+    let slateOp: any[] = [];
 
     if (insertInto === 'nodes') {
       // If inserting into the "root" of the tree, the nodePath is []
@@ -329,7 +338,7 @@ const automergeOpInsertText = (deferredOps: Array<any>, objIdMap: any, slateOps:
  * @return {Array} Array of Slate operations
  */
 const flattenArray = (array_of_lists: Array<any>) => {
-  let newList = [];
+  let newList: any[] = [];
   array_of_lists.forEach(items => {
     if (items !== null && items !== undefined) {
       items.forEach(item => {

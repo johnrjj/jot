@@ -5,7 +5,10 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-import { SlateAutomergeAdapter, WebSocketMessageCreator } from '@jot/shared';
+import {
+  SlateAutomergeAdapter,
+  WebSocketClientMessageCreator,
+} from '@jot/shared';
 import { Bold, Italic, Underline, Code } from 'react-feather';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -178,7 +181,7 @@ export default class App extends Component<AppProps, AppState> {
       });
 
       this.connection = new Automerge.Connection(this.docSet, data => {
-        const message = WebSocketMessageCreator.createAutomergeUpdateToServerMessage(
+        const message = WebSocketClientMessageCreator.createAutomergeUpdateToServerMessage(
           {
             clientId: this.state.clientId,
             docId: this.state.docId,
@@ -207,7 +210,7 @@ export default class App extends Component<AppProps, AppState> {
     setTimeout(
       () =>
         this.websocket.current.sendJsonMessage(
-          WebSocketMessageCreator.createJoinDocumentRequestMessage({
+          WebSocketClientMessageCreator.createJoinDocumentRequestMessage({
             docId: this.state.docId,
             clientId: this.state.clientId,
           }),
@@ -275,12 +278,11 @@ export default class App extends Component<AppProps, AppState> {
       if (this.state.isConnectedToDocument) {
         const msg: WebSocketMessage<
           RemoteAgentSetSelectionPayload
-        > = WebSocketMessageCreator.createUpdateClientSelectionMessage({
+        > = WebSocketClientMessageCreator.createUpdateClientSelectionMessage({
           clientId: this.state.clientId,
           docId: this.state.docId,
           decoration,
         });
-
         this.websocket.current.sendJsonMessage(msg);
       } else {
         console.log(

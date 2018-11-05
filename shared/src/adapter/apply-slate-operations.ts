@@ -38,7 +38,12 @@ const allowedOperations = [
  * @param {List} slateOperations - a list of Slate Operations
  * @param {number} clientId - (optional) Id of the client
  */
-export const applySlateOperations = (docSet, docId, slateOperations, clientId) => {
+export const applySlateOperations = (
+  docSet,
+  docId,
+  slateOperations,
+  clientId,
+) => {
   const currentDoc = docSet.getDoc(docId);
   if (currentDoc) {
     const message = clientId ? `Client ${clientId}` : 'Change log';
@@ -62,14 +67,24 @@ export const applySlateOperationsHelper = (doc, operations) => {
     if (allowedOperations.indexOf(op.type) === -1) {
       return;
     }
-    const { path, offset, text, length, mark, node, position, properties, newPath } = op;
+    const {
+      path,
+      offset,
+      text,
+      length,
+      mark,
+      node,
+      position,
+      properties,
+      newPath,
+    } = op;
     const index = path.get(path.size - 1);
     const rest = path.slice(0, -1);
     let currentNode = doc.document;
     switch (op.type) {
-      case "add_mark":
-      case "remove_mark":
-      case "set_mark":  
+      case 'add_mark':
+      case 'remove_mark':
+      case 'set_mark':
         console.log(`SKIPPING: ${op.type}`, op);
         break;
       // NOTE: Marks are definitely broken as of Slate 0.34
@@ -223,7 +238,7 @@ export const applySlateOperationsHelper = (doc, operations) => {
           currentNode = doc.note;
           newParentPath = newParentPath.set(
             oldParentPath.size,
-            newParentPath.get(oldParentPath.size) - 1
+            newParentPath.get(oldParentPath.size) - 1,
           );
           newParentPath.forEach(el => {
             currentNode = currentNode.nodes[el];

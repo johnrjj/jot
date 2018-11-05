@@ -13,6 +13,7 @@ import {
   AutomergeUpdateFromServerPayload,
   KeepalivePayload,
 } from '@jot/shared/src/types/websocket-types';
+import { WebSocketServerMessageCreator } from '@jot/shared';
 import { AutomergeConnection } from '@jot/shared/src/types/automerge';
 
 interface ConnectionContext {
@@ -312,10 +313,7 @@ export class WebSocketNode {
   };
 
   private sendKeepAlive(connectionContext: ConnectionContext): void {
-    const msg: WebSocketMessage<KeepalivePayload> = {
-      type: 'keepalive',
-      payload: {},
-    };
+    const msg = WebSocketServerMessageCreator.createKeepaliveFromServerMessage();
     this.sendMessage(connectionContext, msg);
   }
 

@@ -1,6 +1,10 @@
 import * as SlateAutomergeAdapter from './adapter/slate-automerge-bridge';
-import { WebSocketMessageCreator } from './/websockets/websocket-actions';
+import {
+  WebSocketClientMessageCreator,
+  WebSocketServerMessageCreator,
+} from './/websockets/websocket-actions';
 export {
-    SlateAutomergeAdapter,
-    WebSocketMessageCreator,
+  SlateAutomergeAdapter,
+  WebSocketClientMessageCreator,
+  WebSocketServerMessageCreator,
 };

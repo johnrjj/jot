@@ -1,10 +1,17 @@
 {
   "name": "@jot/shared",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc -w",
+    "prettier": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css}'"
+  },
   "license": "MIT",
   "files": [
-    "src/index.ts",
-    "src/types/**/*.ts"
-  ]
+    "dist/"
+  ],
+  "devDependencies": {
+    "prettier": "^1.14.3"
+  }
 }

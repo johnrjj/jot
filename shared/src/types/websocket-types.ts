@@ -8,7 +8,6 @@ export type MessageType =
   | 'keepalive'
   | 'undefined';
 
-
 export interface AutomergeUpdatePayload {
   clientId: string;
   docId: string;
@@ -16,7 +15,7 @@ export interface AutomergeUpdatePayload {
 }
 
 export interface AutomergeUpdateFromServerPayload {
-    message: any;
+  message: any;
 }
 
 export interface RemoteAgentSetSelectionPayload {
@@ -38,15 +37,13 @@ export interface JoinDocumentRequestPayload {
 }
 
 export interface WebSocketMessage<
-  T extends 
-  | AutomergeUpdatePayload 
-  | JoinDocumentRequestPayload 
-  | RemoteAgentSetSelectionPayload
-  | AutomergeUpdateFromServerPayload
-  | KeepalivePayload
+  T extends
+    | AutomergeUpdatePayload
+    | JoinDocumentRequestPayload
+    | RemoteAgentSetSelectionPayload
+    | AutomergeUpdateFromServerPayload
+    | KeepalivePayload
 > {
   type: MessageType;
   payload: T;
 }
-
-
