@@ -5,7 +5,7 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-import { SlateAutomergeAdapter } from '@jot/shared';
+import { SlateAutomergeAdapter, WebSocketMessageCreator } from '@jot/shared';
 import { Bold, Italic, Underline, Code } from 'react-feather';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -121,10 +121,10 @@ const DEFAULT_NODE = 'paragraph';
 export default class App extends Component<AppProps, AppState> {
   doc: any;
   docSet: any;
-  websocket: React.RefObject<any>;
   connection: any;
-  editor: React.RefObject<any>;
   selection: any;
+  websocket: React.RefObject<any>;
+  editor: React.RefObject<any>;
 
   constructor(props: AppProps) {
     super(props);
@@ -178,21 +178,20 @@ export default class App extends Component<AppProps, AppState> {
       });
 
       this.connection = new Automerge.Connection(this.docSet, data => {
-        const message = JSON.stringify({
-          type: 'automerge-connection-send',
-          payload: {
+        const message = WebSocketMessageCreator.createAutomergeUpdateToServerMessage(
+          {
             clientId: this.state.clientId,
             docId: this.state.docId,
             message: data,
           },
-        });
+        );
 
         if (this.state.isConnectedToDocument) {
-          this.websocket.current.sendMessage(message);
+          this.websocket.current.sendMessage(JSON.stringify(message));
         } else {
           setTimeout(() => {
             // wait a second while we connect...
-            this.websocket.current.sendMessage(message);
+            this.websocket.current.sendMessage(JSON.stringify(message));
           }, 1000);
         }
       });
