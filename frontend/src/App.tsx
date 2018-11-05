@@ -273,19 +273,14 @@ export default class App extends Component<AppProps, AppState> {
         });
 
       if (this.state.isConnectedToDocument) {
-        const msg: WebSocketMessage<RemoteAgentSetSelectionPayload> = {
-          type: 'remote-agent-setselection',
-          payload: {
-            clientId: this.state.clientId,
-            docId: this.state.docId,
-            message: {
-              ...decoration,
-              mark: {
-                type: `remote-agent-setselection-${this.state.clientId}`,
-              },
-            },
-          },
-        };
+        const msg: WebSocketMessage<
+          RemoteAgentSetSelectionPayload
+        > = WebSocketMessageCreator.createUpdateClientSelectionMessage({
+          clientId: this.state.clientId,
+          docId: this.state.docId,
+          decoration,
+        });
+
         this.websocket.current.sendJsonMessage(msg);
       } else {
         console.log(

@@ -65,6 +65,21 @@ export interface JoinDocumentRequestMessage {
     },
 };
 
+export interface UpdateClientSelectionMessage {
+    type: 'remote-agent-setselection',
+    payload: {
+        clientId: string,
+        docId: string,
+        message: {
+            anchor: any;
+            focus: any;
+            mark: {
+                type: string
+            }
+        }
+    },
+};
+
 export type WebsocketClientMessages = 
     | AutomergeUpdateToServerMessage
     | JoinDocumentRequestMessage
@@ -92,9 +107,26 @@ const createJoinDocumentRequestMessage = ({ clientId, docId }: { clientId: strin
     }
 };
 
+const createUpdateClientSelectionMessage = ({ clientId, docId, decoration }: { clientId: string, docId: string, decoration: any }): UpdateClientSelectionMessage => {
+    return {
+        type: 'remote-agent-setselection',
+        payload: {
+            clientId: clientId,
+            docId: docId,
+            message: {
+                ...decoration,
+                mark: {
+                    type: `remote-agent-setselection-${clientId}`,
+                }
+            }
+        },
+    }
+}
+
 const WebSocketMessageCreator = {
     createAutomergeUpdateToServerMessage,
     createJoinDocumentRequestMessage,
+    createUpdateClientSelectionMessage,
 };
 
 export {
