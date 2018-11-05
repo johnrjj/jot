@@ -1995,8 +1995,8 @@ caniuse-db@^1.0.30000529, caniuse-db@^1.0.30000634, caniuse-db@^1.0.30000639:
   resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30000905.tgz#dd762db91d20d53a2e6bf227596d162b91782e73"
 
 caniuse-lite@^1.0.0, caniuse-lite@^1.0.30000899:
-  version "1.0.30000904"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30000904.tgz#4445d00da859a0e0ae6dbb2876c545f3324f6c74"
+  version "1.0.30000905"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30000905.tgz#8f731ecf5b8553c7154a691c3df3a635a1a3fda5"
 
 caseless@~0.12.0:
   version "0.12.0"
