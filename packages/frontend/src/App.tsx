@@ -8,7 +8,7 @@ import Websocket from './components/Websocket';
 import {
   SlateAutomergeAdapter,
   WebSocketClientMessageCreator,
-} from '@jot/shared';
+} from '@jot/common';
 import { Bold, Italic, Underline, Code } from 'react-feather';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -22,7 +22,7 @@ import {
 import {
   WebSocketMessage,
   RemoteAgentSetSelectionPayload,
-} from '@jot/shared/src/types/websocket-types';
+} from '@jot/common/src/types/websocket-types';
 import {
   EditorContainer,
   EditorToolbar,

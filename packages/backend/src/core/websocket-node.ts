@@ -13,7 +13,7 @@ import {
   AutomergeUpdateFromServerPayload,
   KeepalivePayload,
 } from '@jot/shared/src/types/websocket-types';
-import { WebSocketServerMessageCreator } from '@jot/shared';
+import { WebSocketServerMessageCreator } from '@jot/common';
 import { AutomergeConnection } from '@jot/shared/src/types/automerge';
 
 interface ConnectionContext {

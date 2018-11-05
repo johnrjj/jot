@@ -11,7 +11,7 @@
     "prettier": "prettier --write 'src/**/*.ts'"
   },
   "dependencies": {
-    "@jot/shared": "file:../common",
+    "@jot/common": "file:../common",
     "automerge": "^0.9.1",
     "body-parser": "^1.18.3",
     "compression": "^1.7.3",

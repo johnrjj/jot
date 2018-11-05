@@ -1,5 +1,5 @@
 {
-  "name": "@jot/shared",
+  "name": "@jot/common",
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {

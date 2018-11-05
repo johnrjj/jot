@@ -2,7 +2,7 @@
   "name": "jot",
   "private": true,
   "scripts": {
-    "build": "lerna run build  --stream --concurrency=1",
+    "build": "lerna run build  --stream",
     "prettier": "lerna run prettier --stream",
     "start:backend": "lerna run start --stream --scope backend",
     "start:frontend": "lerna run start --stream --scope frontend"
@@ -35,7 +35,12 @@
   },
   "workspaces": [
     "packages/backend",
-    "packages/frontend",
-    "packages/common"
-  ]
+    "packages/common",
+    "packages/frontend"
+  ],
+  "dependencies": {
+    "@jot/common": "file:packages/common",
+    "backend": "file:packages/backend",
+    "frontend": "file:packages/frontend"
+  }
 }
