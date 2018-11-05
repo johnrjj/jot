@@ -2,7 +2,7 @@
   "name": "jot",
   "private": true,
   "scripts": {
-    "build": "lerna run build --stream",
+    "build": "lerna run build  --stream --concurrency=1",
     "prettier": "lerna run prettier --stream",
     "start:backend": "lerna run start --stream --scope backend",
     "start:frontend": "lerna run start --stream --scope frontend"
