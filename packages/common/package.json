@@ -2,13 +2,11 @@
   "name": "@jot/common",
   "version": "1.0.0",
   "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc -w",
     "prettier": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css}'"
   },
-  "license": "MIT",
-  "files": [
-    "dist/"
-  ]
+  "license": "MIT"
 }

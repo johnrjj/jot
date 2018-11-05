@@ -12,9 +12,9 @@ import {
   JoinDocumentRequestPayload,
   AutomergeUpdateFromServerPayload,
   KeepalivePayload,
-} from '@jot/shared/src/types/websocket-types';
+} from '@jot/common/src/types/websocket-types';
 import { WebSocketServerMessageCreator } from '@jot/common';
-import { AutomergeConnection } from '@jot/shared/src/types/automerge';
+import { AutomergeConnection } from '@jot/common/src/types/automerge';
 
 interface ConnectionContext {
   socket: WebSocket;

@@ -37,10 +37,5 @@
     "packages/backend",
     "packages/common",
     "packages/frontend"
-  ],
-  "dependencies": {
-    "@jot/common": "file:packages/common",
-    "backend": "file:packages/backend",
-    "frontend": "file:packages/frontend"
-  }
+  ]
 }
