@@ -34,13 +34,8 @@
     "typescript": "^3.1.1"
   },
   "workspaces": [
-    "backend",
-    "frontend",
-    "shared"
-  ],
-  "dependencies": {
-    "@jot/shared": "file:shared",
-    "backend": "file:backend",
-    "frontend": "file:frontend"
-  }
+    "packages/backend",
+    "packages/frontend",
+    "packages/common"
+  ]
 }

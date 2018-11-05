@@ -1,6 +1,5 @@
 {
   "name": "@jot/shared",
-  "private": true,
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
