@@ -83,9 +83,14 @@ class Websocket extends React.Component<WebsocketPropTypes, WebsocketState> {
     websocket.close();
   }
 
-  sendMessage = (data: any) => {
+  sendMessage = (data: string) => {
     const websocket = this.state.ws;
     this.waitForConnection(() => websocket.send(data));
+  };
+
+  sendJsonMessage = (data: any) => {
+    const websocket = this.state.ws;
+    this.waitForConnection(() => websocket.send(JSON.stringify(data)));
   };
 
   waitForConnection = (callback, interval = 1000) => {

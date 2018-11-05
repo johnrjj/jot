@@ -57,12 +57,21 @@ export interface AutomergeUpdateToServerMessage {
     },
 };
 
+export interface JoinDocumentRequestMessage {
+    type: 'join-document',
+    payload: {
+        clientId: string,
+        docId: string,
+    },
+};
+
 export type WebsocketClientMessages = 
     | AutomergeUpdateToServerMessage
+    | JoinDocumentRequestMessage
 ;
 
 
-const createAutomergeUpdateToServerMessage = ({ clientId, docId, message }): AutomergeUpdateToServerMessage => {
+const createAutomergeUpdateToServerMessage = ({ clientId, docId, message }: { clientId: string, docId: string, message: any }): AutomergeUpdateToServerMessage => {
     return {
         type: 'automerge-connection-send',
         payload: {
@@ -73,8 +82,19 @@ const createAutomergeUpdateToServerMessage = ({ clientId, docId, message }): Aut
     }
 };
 
+const createJoinDocumentRequestMessage = ({ clientId, docId }: { clientId: string, docId: string }): JoinDocumentRequestMessage => {
+    return {
+        type: 'join-document',
+        payload: {
+            clientId: clientId,
+            docId: docId,
+        },
+    }
+};
+
 const WebSocketMessageCreator = {
     createAutomergeUpdateToServerMessage,
+    createJoinDocumentRequestMessage,
 };
 
 export {

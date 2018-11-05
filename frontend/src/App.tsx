@@ -187,11 +187,11 @@ export default class App extends Component<AppProps, AppState> {
         );
 
         if (this.state.isConnectedToDocument) {
-          this.websocket.current.sendMessage(JSON.stringify(message));
+          this.websocket.current.sendJsonMessage(message);
         } else {
           setTimeout(() => {
             // wait a second while we connect...
-            this.websocket.current.sendMessage(JSON.stringify(message));
+            this.websocket.current.sendJsonMessage(message);
           }, 1000);
         }
       });
@@ -206,13 +206,10 @@ export default class App extends Component<AppProps, AppState> {
 
     setTimeout(
       () =>
-        this.websocket.current.sendMessage(
-          JSON.stringify({
-            type: 'join-document',
-            payload: {
-              docId: this.state.docId,
-              clientId: this.state.clientId,
-            },
+        this.websocket.current.sendJsonMessage(
+          WebSocketMessageCreator.createJoinDocumentRequestMessage({
+            docId: this.state.docId,
+            clientId: this.state.clientId,
           }),
         ) || this.connection.open(),
       1000,
@@ -289,8 +286,7 @@ export default class App extends Component<AppProps, AppState> {
             },
           },
         };
-        const message = JSON.stringify(msg);
-        this.websocket.current.sendMessage(message);
+        this.websocket.current.sendJsonMessage(msg);
       } else {
         console.log(
           'not connected to a doc, not sending cursor/selection to webseockt',
