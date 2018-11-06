@@ -15,36 +15,28 @@ import { WebSocketNode } from './core/websocket-node';
 import { ConsoleLoggerFactory } from './util/logger';
 import { initialAutomergeDocExample } from './test-data/initial-doc';
 import { AppConfig } from './config';
-
-interface ResponseError extends Error {
-  status?: number;
-}
-
-const getSampleDoc = () => {
-  const docId = '1';
-  const doc = Automerge.load(initialAutomergeDocExample);
-  return {
-    doc,
-    docId,
-  };
-};
+import { RedisSubscriber } from './core/subscriber';
+import { RedisPublisher } from './core/publisher';
 
 const createApp = async (config: AppConfig): Promise<Express> => {
   const logger: Logger = ConsoleLoggerFactory({ level: config.LOG_LEVEL });
   const docSet = new (Automerge as any).DocSet();
-  // docSet.registerHandler((id: any, doc: any) => console.log('handler', id, JSON.stringify(doc)));
   const { doc, docId: testDocId } = getSampleDoc();
   docSet.setDoc(testDocId, doc);
 
-  const checkAccess = async () => true;
-  const loadDocument = async () => {};
-  const saveDocument = async (figurethisout: any, soon: any) => {};
+  // Set up Redis
+  const redisPublisher = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
+  logger.log('verbose', '🛠️ Redis Publisher setup');
+  const redisSubscriber = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
+  logger.log('verbose', '🛠️ Redis Subscriber setup');
+  logger.log('verbose', '🛠️ Connected to Redis instance');
+  const subscriber = new RedisSubscriber({ redisSubscriber, logger });
+  const publisher = new RedisPublisher({ redisPublisher, logger });
 
   const documentRepo = new DocumentRepository({
-    checkAccess,
-    loadDocument,
-    saveDocument,
     initialDocSet: docSet,
+    publisher,
+    subscriber,
     logger,
   });
 
@@ -59,14 +51,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   app.get('/', (_, res) => res.send('Welcome to Jot ✍️'));
   app.get('/healthcheck', (_, res) => res.sendStatus(200));
 
-  // Set up Redis
-  // const redisPublisher = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
-  // logger.log('verbose', '🛠️ Redis Publisher setup');
-  // const redisSubscriber = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
-  // logger.log('verbose', '🛠️ Redis Subscriber setup');
-  // logger.log('verbose', '🛠️ Connected to Redis instance');
-
-  // rest api
+  // REST API
   app.use('/api/v0', v0ApiRouterFactory(documentRepo, logger));
   logger.log('verbose', '🛠️ REST API /api/v0 endpoint setup');
 
@@ -95,6 +80,19 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   );
   logger.log('debug', `✅ Jot configured successfully, ready to start`);
   return app;
+};
+
+interface ResponseError extends Error {
+  status?: number;
+}
+
+const getSampleDoc = () => {
+  const docId = '1';
+  const doc = Automerge.load(initialAutomergeDocExample);
+  return {
+    doc,
+    docId,
+  };
 };
 
 export default createApp;

@@ -1,5 +1,7 @@
 import Automerge from 'automerge';
 import { Logger } from 'winston';
+import { Publisher } from './publisher';
+import { Subscriber } from './subscriber';
 
 export type CRDTDocument = Automerge.AutomergeRoot;
 
@@ -9,10 +11,9 @@ export interface DocumentMetadata {
 }
 
 export interface IDocumentRepositoryConfig {
-  initialDocSet: any;
-  loadDocument: Function;
-  saveDocument: Function;
-  checkAccess: (id: string, req: any) => Promise<any>;
+  initialDocSet?: DocSet;
+  publisher: Publisher;
+  subscriber: Subscriber;
   logger?: Logger;
 }
 
@@ -20,8 +21,6 @@ export interface DocSet {
   getDoc: (docId: string) => CRDTDocument | null;
   applyChanges: Function;
 }
-
-// export class Document implements CRDTDocument {};
 
 export interface IDocumentRepository {
   getDoc(id: string): Promise<CRDTDocument | null>;
@@ -31,25 +30,13 @@ export interface IDocumentRepository {
 export class DocumentRepository implements IDocumentRepository {
   logger?: Logger;
   docSet: DocSet;
-  loadDocument: Function;
-  saveDocument: Function;
-  checkAccess: (id: string, req: any) => Promise<any>;
-  constructor({
-    loadDocument,
-    saveDocument,
-    initialDocSet,
-    checkAccess = (id: string, req: any) => Promise.resolve(true),
-    logger,
-  }: IDocumentRepositoryConfig) {
-    this.loadDocument = loadDocument;
-    this.saveDocument = saveDocument;
-    this.checkAccess = checkAccess;
+  publisher: Publisher;
+  subscriber: Subscriber;
+  constructor({ initialDocSet, logger, publisher, subscriber }: IDocumentRepositoryConfig) {
+    this.publisher = publisher;
+    this.subscriber = subscriber;
+    this.docSet = initialDocSet || new (Automerge as any).DocSet();
     this.logger = logger;
-    if (initialDocSet) {
-      this.docSet = initialDocSet;
-    } else {
-      this.docSet = new (Automerge as any).DocSet();
-    }
   }
 
   private log(level: string, e: string, metadata?: any) {
