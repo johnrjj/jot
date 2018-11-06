@@ -3,6 +3,11 @@ import { Logger } from 'winston';
 
 export type CRDTDocument = Automerge.AutomergeRoot;
 
+export interface DocumentMetadata {
+  activeUsers: Set<string>;
+  activeAgentCount: number;
+}
+
 export interface IDocumentRepositoryConfig {
   initialDocSet: any;
   loadDocument: Function;
@@ -12,14 +17,14 @@ export interface IDocumentRepositoryConfig {
 }
 
 export interface DocSet {
-  getDoc: any;
+  getDoc: (docId: string) => CRDTDocument | null;
   applyChanges: Function;
 }
 
 // export class Document implements CRDTDocument {};
 
 export interface IDocumentRepository {
-  getDoc(id: string): Promise<CRDTDocument>;
+  getDoc(id: string): Promise<CRDTDocument | null>;
   serializeDoc(doc: CRDTDocument): string;
 }
 
@@ -29,7 +34,6 @@ export class DocumentRepository implements IDocumentRepository {
   loadDocument: Function;
   saveDocument: Function;
   checkAccess: (id: string, req: any) => Promise<any>;
-  docCache: Map<string, CRDTDocument>;
   constructor({
     loadDocument,
     saveDocument,
@@ -46,18 +50,7 @@ export class DocumentRepository implements IDocumentRepository {
     } else {
       this.docSet = new (Automerge as any).DocSet();
     }
-    this.docCache = new Map();
-    this.onChange = this.onChange.bind(this);
   }
-
-  async onChange(id: string, doc: CRDTDocument): Promise<void> {
-    // return this.saveDocument(id, doc);
-  }
-
-  public setDocSet = (docSet: DocSet) => {
-    this.log('debug', 'updated doc set', docSet);
-    this.docSet = docSet;
-  };
 
   private log(level: string, e: string, metadata?: any) {
     if (!this.logger) {
@@ -84,17 +77,16 @@ export class DocumentRepository implements IDocumentRepository {
     return Automerge.save(doc);
   }
 
-  async getDoc(id: string): Promise<CRDTDocument> {
-    this.log('debug', `docrepo: request for docID: ${id}`);
+  async getDoc(id: string): Promise<CRDTDocument | null> {
+    this.log('debug', `DocumentRepository:getDoc(${id}):Fetching doc`);
     const doc = this.docSet.getDoc(id);
     if (!doc) {
-      this.log('silly', `docrepo docset miss for docId ${id}, creating new one.`);
-      return this.createNewDoc(id);
+      this.log('silly', `DocumentRepository:getDoc(${id}):Doc does not exist, returning`);
+      return null;
     } else {
-      this.log('silly', `docrepo docset hit for docId ${id}`);
+      this.log('silly', `DocumentRepository:getDoc(${id}):Doc exists, returning`);
     }
-    this.docCache.set(id, doc);
-    return this.docCache.get(id) as CRDTDocument;
+    return doc as CRDTDocument;
   }
 
   // handleSocket(ws, req) {
