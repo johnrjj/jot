@@ -20,15 +20,20 @@ interface ResponseError extends Error {
   status?: number;
 }
 
+const getSampleDoc = () => {
+  const docId = '1';
+  const doc = Automerge.load(initialAutomergeDocExample);
+  return {
+    doc,
+    docId,
+  };
+};
+
 const createApp = async (config: AppConfig): Promise<Express> => {
   const logger: Logger = ConsoleLoggerFactory({ level: config.LOG_LEVEL });
-  const loadTestDoc = () => {
-    return Automerge.load(initialAutomergeDocExample);
-  };
-  const testDocId = '1';
   const docSet = new (Automerge as any).DocSet();
   // docSet.registerHandler((id: any, doc: any) => console.log('handler', id, JSON.stringify(doc)));
-  const doc = loadTestDoc();
+  const { doc, docId: testDocId } = getSampleDoc();
   docSet.setDoc(testDocId, doc);
 
   const checkAccess = async () => true;
