@@ -6,7 +6,6 @@ import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
 import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
-import { Bold, Italic, Underline, Code } from 'react-feather';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faFont,
@@ -16,10 +15,6 @@ import {
   faCode,
   faUnderline,
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  WebSocketMessage,
-  RemoteAgentSetSelectionPayload,
-} from '@jot/common/src/types/websocket-types';
 import {
   EditorContainer,
   EditorToolbar,
@@ -33,25 +28,7 @@ import {
   SlateEditorContainer,
   FakeTitle,
 } from './components/Editor';
-import {
-  SideBarContainer,
-  SidebarIdentitySection,
-  SidebarIdentityLogo,
-  SidebarIdentityUserInfoContainer,
-  SidebarSearchContainer,
-  SidebarSearchIcon,
-  SidebarSearchText,
-  SidebarAddFileLinkContainer,
-  SidebarAddFileLinkIcon,
-  SidebarAddFileLinkText,
-  SidebarFolderLinkContainer,
-  SidebarFolderLinkIcon,
-  SidebarFolderLinkText,
-  SidebarFileLinkContainer,
-  SidebarFileLinkIcon,
-  SidebarFileLinkText,
-  SidebarContentContainer,
-} from './components/Sidebar';
+import { Sidebar } from './components/Sidebar';
 import {
   HistoryContainer,
   HistoryHeaderContainer,
@@ -61,7 +38,11 @@ import {
 } from './components/History';
 import './reset.css';
 import './global.css';
-import { Toolbar, Button, Icon } from './components/Toolbar';
+import { Toolbar, Button } from './components/Toolbar';
+import {
+  WebsocketServerMessages,
+  UpdateClientSelectionMessage,
+} from '@jot/common/dist/websockets/websocket-actions';
 const {
   automergeJsonToSlate,
   applySlateOperationsHelper,
@@ -264,13 +245,13 @@ export default class App extends Component<AppProps, AppState> {
         });
 
       if (this.state.isConnectedToDocument) {
-        const msg: WebSocketMessage<
-          RemoteAgentSetSelectionPayload
-        > = WebSocketClientMessageCreator.createUpdateClientSelectionMessage({
-          clientId: this.state.clientId,
-          docId: this.state.docId,
-          decoration,
-        });
+        const msg: UpdateClientSelectionMessage = WebSocketClientMessageCreator.createUpdateClientSelectionMessage(
+          {
+            clientId: this.state.clientId,
+            docId: this.state.docId,
+            decoration,
+          },
+        );
         this.websocket.current.sendJsonMessage(msg);
       } else {
         console.log('not connected to a doc, not sending cursor/selection to webseockt');
@@ -301,7 +282,7 @@ export default class App extends Component<AppProps, AppState> {
   };
 
   handleMessage = msg => {
-    const msgJson = JSON.parse(msg);
+    const msgJson: WebsocketServerMessages = JSON.parse(msg);
     // console.log(' got a msg', msgJson);
     if (msgJson.type === 'server-update') {
       const docNew = this.connection.receiveMsg(msgJson.payload);
@@ -475,53 +456,7 @@ export default class App extends Component<AppProps, AppState> {
     return (
       <FullViewportAppContainer>
         <MainContainer>
-          {/* <SideBarContainer>
-            <SidebarIdentitySection>
-              <SidebarIdentityLogo />
-              <SidebarIdentityUserInfoContainer />
-            </SidebarIdentitySection>
-            <SidebarSearchContainer>
-              <SidebarSearchIcon />
-              <SidebarSearchText>Search Files or Folders</SidebarSearchText>
-            </SidebarSearchContainer>
-            <SidebarAddFileLinkContainer>
-              <SidebarAddFileLinkIcon />
-              <SidebarAddFileLinkText>
-                Add File or Folder
-              </SidebarAddFileLinkText>
-            </SidebarAddFileLinkContainer>
-            <SidebarFolderLinkContainer>
-              <SidebarFolderLinkIcon />
-              <SidebarFolderLinkText>
-                Sample Document Folder
-              </SidebarFolderLinkText>
-            </SidebarFolderLinkContainer>
-            <SidebarFileLinkContainer>
-              <SidebarFileLinkIcon />
-              <SidebarFileLinkText>Quick notes</SidebarFileLinkText>
-            </SidebarFileLinkContainer>
-            <SidebarFileLinkContainer selected>
-              <SidebarFileLinkIcon selected />
-              <SidebarFileLinkText selected>
-                Welcome to the Jot Editor
-              </SidebarFileLinkText>
-            </SidebarFileLinkContainer>
-            <SidebarFileLinkContainer style={{ marginBottom: '16px' }}>
-              <SidebarFileLinkIcon />
-              <SidebarFileLinkText>
-                Interesting facts about snakes
-              </SidebarFileLinkText>
-            </SidebarFileLinkContainer>
-            <SidebarFolderLinkContainer>
-              <SidebarFolderLinkIcon />
-              <SidebarFolderLinkText>Favorite recipes</SidebarFolderLinkText>
-            </SidebarFolderLinkContainer>
-            <SidebarFolderLinkContainer>
-              <SidebarFolderLinkIcon />
-              <SidebarFolderLinkText>Book reviews</SidebarFolderLinkText>
-            </SidebarFolderLinkContainer>
-            <SidebarContentContainer />
-          </SideBarContainer> */}
+          <Sidebar />
 
           <ContentContainer>
             <EditorContainer>
@@ -642,7 +577,6 @@ export default class App extends Component<AppProps, AppState> {
 
     const editor = this.editor.current;
     const { value } = editor;
-    const { document } = value;
 
     editor.change(change => {
       const { value } = change;

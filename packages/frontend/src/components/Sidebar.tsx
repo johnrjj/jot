@@ -125,3 +125,45 @@ export const SidebarContentContainer = styled.div`
   flex-direction: column;
   overflow-y: scroll;
 `;
+
+export const Sidebar = () => (
+  <SideBarContainer>
+    <SidebarIdentitySection>
+      <SidebarIdentityLogo />
+      <SidebarIdentityUserInfoContainer />
+    </SidebarIdentitySection>
+    <SidebarSearchContainer>
+      <SidebarSearchIcon />
+      <SidebarSearchText>Search Files or Folders</SidebarSearchText>
+    </SidebarSearchContainer>
+    <SidebarAddFileLinkContainer>
+      <SidebarAddFileLinkIcon />
+      <SidebarAddFileLinkText>Add File or Folder</SidebarAddFileLinkText>
+    </SidebarAddFileLinkContainer>
+    <SidebarFolderLinkContainer>
+      <SidebarFolderLinkIcon />
+      <SidebarFolderLinkText>Sample Document Folder</SidebarFolderLinkText>
+    </SidebarFolderLinkContainer>
+    <SidebarFileLinkContainer>
+      <SidebarFileLinkIcon />
+      <SidebarFileLinkText>Quick notes</SidebarFileLinkText>
+    </SidebarFileLinkContainer>
+    <SidebarFileLinkContainer selected>
+      <SidebarFileLinkIcon selected />
+      <SidebarFileLinkText selected>Welcome to the Jot Editor</SidebarFileLinkText>
+    </SidebarFileLinkContainer>
+    <SidebarFileLinkContainer style={{ marginBottom: '16px' }}>
+      <SidebarFileLinkIcon />
+      <SidebarFileLinkText>Interesting facts about snakes</SidebarFileLinkText>
+    </SidebarFileLinkContainer>
+    <SidebarFolderLinkContainer>
+      <SidebarFolderLinkIcon />
+      <SidebarFolderLinkText>Favorite recipes</SidebarFolderLinkText>
+    </SidebarFolderLinkContainer>
+    <SidebarFolderLinkContainer>
+      <SidebarFolderLinkIcon />
+      <SidebarFolderLinkText>Book reviews</SidebarFolderLinkText>
+    </SidebarFolderLinkContainer>
+    <SidebarContentContainer />
+  </SideBarContainer>
+);

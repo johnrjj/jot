@@ -11,6 +11,7 @@ export interface AutomergeUpdateFromServerMessage {
   type: 'server-update';
   payload: {
     message: any;
+    changes?: Array<any>;
   };
 }
 
