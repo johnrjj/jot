@@ -51,24 +51,15 @@ declare module 'automerge' {
     _objectId: string;
     join(delim: string): string;
     insertAt(index: number, ...itemsToAdd: Array<any>): AutomergeProxy;
-    deleteAt(
-      index: number,
-      numberToDelete?: number | Array<number>,
-    ): AutomergeProxy;
+    deleteAt(index: number, numberToDelete?: number | Array<number>): AutomergeProxy;
   }
-  function applyChanges(
-    root: AutomergeRoot,
-    changes: AutomergeChanges,
-  ): AutomergeRoot;
+  function applyChanges(root: AutomergeRoot, changes: AutomergeChanges): AutomergeRoot;
   function change(
     root: AutomergeRoot,
     message?: string | AutomergeUpdater,
     updater?: AutomergeUpdater | undefined,
   ): AutomergeRoot;
-  function getMissingChanges(
-    opSet: AutomergeOpSet,
-    clock: AutomergeClock,
-  ): AutomergeChanges;
+  function getMissingChanges(opSet: AutomergeOpSet, clock: AutomergeClock): AutomergeChanges;
   function init(actorId?: string): AutomergeRoot;
   function load(raw: string): AutomergeRoot;
   function save(a: AutomergeRoot): string;

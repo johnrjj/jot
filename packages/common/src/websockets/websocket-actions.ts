@@ -67,6 +67,8 @@ export type WebsocketServerMessages =
   | RemoteAgentCursorUpdateFromServerMessage
   | AutomergeUpdateFromServerMessage;
 
+export type WebsocketMessages = WebsocketServerMessages | WebsocketClientMessages;
+
 const createKeepaliveFromServerMessage = (): KeepaliveFromServerMessage => {
   return {
     type: 'keepalive',

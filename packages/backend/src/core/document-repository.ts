@@ -88,10 +88,7 @@ export class DocumentRepository implements IDocumentRepository {
     this.log('debug', `docrepo: request for docID: ${id}`);
     const doc = this.docSet.getDoc(id);
     if (!doc) {
-      this.log(
-        'silly',
-        `docrepo docset miss for docId ${id}, creating new one.`,
-      );
+      this.log('silly', `docrepo docset miss for docId ${id}, creating new one.`);
       return this.createNewDoc(id);
     } else {
       this.log('silly', `docrepo docset hit for docId ${id}`);

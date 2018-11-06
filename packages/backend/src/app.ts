@@ -83,12 +83,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   });
 
   app.use(
-    (
-      error: ResponseError | Error | any,
-      _req: Request,
-      res: Response,
-      _next: NextFunction,
-    ) => {
+    (error: ResponseError | Error | any, _req: Request, res: Response, _next: NextFunction) => {
       res.status(error.status || 500);
       res.json({ ...error });
     },

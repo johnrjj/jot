@@ -38,9 +38,7 @@ export const applyAutomergeOperations = (
  * @param {Array} automergeOps - a list of Automerge operations created from Automerge.diff
  * @return {Array} Array of Slate operations
  */
-export const convertAutomergeToSlateOps = (
-  automergeOps: Array<any>,
-): Array<any> => {
+export const convertAutomergeToSlateOps = (automergeOps: Array<any>): Array<any> => {
   // To build objects from Automerge operations
   let slateOps: any[] = [];
   let objIdMap: any = {};

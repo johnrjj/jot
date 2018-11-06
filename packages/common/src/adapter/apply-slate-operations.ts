@@ -38,12 +38,7 @@ const allowedOperations = [
  * @param {List} slateOperations - a list of Slate Operations
  * @param {number} clientId - (optional) Id of the client
  */
-export const applySlateOperations = (
-  docSet,
-  docId,
-  slateOperations,
-  clientId,
-) => {
+export const applySlateOperations = (docSet, docId, slateOperations, clientId) => {
   const currentDoc = docSet.getDoc(docId);
   if (currentDoc) {
     const message = clientId ? `Client ${clientId}` : 'Change log';
@@ -67,17 +62,7 @@ export const applySlateOperationsHelper = (doc, operations) => {
     if (allowedOperations.indexOf(op.type) === -1) {
       return;
     }
-    const {
-      path,
-      offset,
-      text,
-      length,
-      mark,
-      node,
-      position,
-      properties,
-      newPath,
-    } = op;
+    const { path, offset, text, length, mark, node, position, properties, newPath } = op;
     const index = path.get(path.size - 1);
     const rest = path.slice(0, -1);
     let currentNode = doc.document;

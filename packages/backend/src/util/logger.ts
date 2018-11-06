@@ -9,10 +9,7 @@ export function ConsoleLoggerFactory(options?: any): winston.Logger {
     {
       level: 'debug',
       transports: [new winston.transports.Console()],
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple(),
-      ),
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
       colorize: true,
     },
     options || {},
@@ -25,10 +22,7 @@ export function JSONLoggerFactory(options?: any): winston.Logger {
     {
       level: 'debug',
       transports: [new winston.transports.Console()],
-      format: winston.format.combine(
-        winston.format.simple(),
-        winston.format.json(),
-      ),
+      format: winston.format.combine(winston.format.simple(), winston.format.json()),
     },
     options || {},
   );

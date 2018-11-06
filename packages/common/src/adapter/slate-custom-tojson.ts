@@ -78,10 +78,7 @@ export const toJSON = (value, options = {}) => {
         focusOffset: value.focusOffset,
         isBackward: value.isBackward,
         isFocused: value.isFocused,
-        marks:
-          value.marks === null
-            ? null
-            : value.marks.toArray().map(m => toJSON(m, options)),
+        marks: value.marks === null ? null : value.marks.toArray().map(m => toJSON(m, options)),
       };
     case 'schema':
       return {
@@ -191,8 +188,7 @@ export const operationJSON = (valueOriginal, options: any = {}) => {
       if ('focusPath' in value) v.focusPath = value.focusPath;
       if ('isBackward' in value) v.isBackward = value.isBackward;
       if ('isFocused' in value) v.isFocused = value.isFocused;
-      if ('marks' in value)
-        v.marks = value.marks === null ? null : toJSON(value.marks, options);
+      if ('marks' in value) v.marks = value.marks === null ? null : toJSON(value.marks, options);
       value = v;
     }
 
@@ -252,12 +248,8 @@ export const valueJSON = (value, options: any = {}) => {
 
   if (options.preserveSelection && !options.preserveKeys) {
     const { document, selection } = value;
-    object.selection.anchorPath = selection.isSet
-      ? document.getPath(selection.anchorKey)
-      : null;
-    object.selection.focusPath = selection.isSet
-      ? document.getPath(selection.focusKey)
-      : null;
+    object.selection.anchorPath = selection.isSet ? document.getPath(selection.anchorKey) : null;
+    object.selection.focusPath = selection.isSet ? document.getPath(selection.focusKey) : null;
     delete object.selection.anchorKey;
     delete object.selection.focusKey;
   }

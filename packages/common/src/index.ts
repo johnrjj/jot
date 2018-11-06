@@ -3,8 +3,4 @@ import {
   WebSocketClientMessageCreator,
   WebSocketServerMessageCreator,
 } from './/websockets/websocket-actions';
-export {
-  SlateAutomergeAdapter,
-  WebSocketClientMessageCreator,
-  WebSocketServerMessageCreator,
-};
+export { SlateAutomergeAdapter, WebSocketClientMessageCreator, WebSocketServerMessageCreator };

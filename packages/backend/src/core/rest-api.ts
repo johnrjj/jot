@@ -3,10 +3,7 @@ import { Router } from 'express';
 import { Logger } from 'winston';
 import { IDocumentRepository } from './document-repository';
 
-const v0ApiRouterFactory = (
-  documentRepository: IDocumentRepository,
-  logger: Logger,
-) => {
+const v0ApiRouterFactory = (documentRepository: IDocumentRepository, logger: Logger) => {
   const router = Router();
   router.use(bodyParser.json({ type: '*/*' }));
   router.use(bodyParser.urlencoded({ extended: true }));

@@ -5,10 +5,7 @@ import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from './components/Websocket';
-import {
-  SlateAutomergeAdapter,
-  WebSocketClientMessageCreator,
-} from '@jot/common';
+import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
 import { Bold, Italic, Underline, Code } from 'react-feather';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -76,9 +73,7 @@ const QuoteIcon = props => <FontAwesomeIcon icon={faQuoteRight} {...props} />;
 const BoldIcon = props => <FontAwesomeIcon icon={faBold} {...props} />;
 const ItalicIcon = props => <FontAwesomeIcon icon={faItalic} {...props} />;
 const CodeIcon = props => <FontAwesomeIcon icon={faCode} {...props} />;
-const UnderlineIcon = props => (
-  <FontAwesomeIcon icon={faUnderline} {...props} />
-);
+const UnderlineIcon = props => <FontAwesomeIcon icon={faUnderline} {...props} />;
 
 const FullViewportAppContainer = styled.div`
   display: flex;
@@ -153,15 +148,11 @@ export default class App extends Component<AppProps, AppState> {
   async componentDidMount() {
     const docIdToRequest = '1';
     try {
-      const res = await fetch(
-        `${this.props.apiEndpoint}/doc/${docIdToRequest}`,
-      );
+      const res = await fetch(`${this.props.apiEndpoint}/doc/${docIdToRequest}`);
       if (res.status >= 400) {
         return this.setState({
           error: new Error(
-            `api fetch for sample doc got a ${res.status} [${
-              res.statusText
-            }]\n is your backend on`,
+            `api fetch for sample doc got a ${res.status} [${res.statusText}]\n is your backend on`,
           ),
         });
       }
@@ -181,13 +172,11 @@ export default class App extends Component<AppProps, AppState> {
       });
 
       this.connection = new Automerge.Connection(this.docSet, data => {
-        const message = WebSocketClientMessageCreator.createAutomergeUpdateToServerMessage(
-          {
-            clientId: this.state.clientId,
-            docId: this.state.docId,
-            message: data,
-          },
-        );
+        const message = WebSocketClientMessageCreator.createAutomergeUpdateToServerMessage({
+          clientId: this.state.clientId,
+          docId: this.state.docId,
+          message: data,
+        });
 
         if (this.state.isConnectedToDocument) {
           this.websocket.current.sendJsonMessage(message);
@@ -201,8 +190,7 @@ export default class App extends Component<AppProps, AppState> {
     } catch (error) {
       if (error.message === 'Failed to fetch') {
         return this.setState({
-          error:
-            'Error fetching sample document. Is the API up? Make sure it is running.',
+          error: 'Error fetching sample document. Is the API up? Make sure it is running.',
         });
       }
     }
@@ -285,9 +273,7 @@ export default class App extends Component<AppProps, AppState> {
         });
         this.websocket.current.sendJsonMessage(msg);
       } else {
-        console.log(
-          'not connected to a doc, not sending cursor/selection to webseockt',
-        );
+        console.log('not connected to a doc, not sending cursor/selection to webseockt');
       }
     }
 
@@ -545,9 +531,7 @@ export default class App extends Component<AppProps, AppState> {
                   <EditorToolbarBackText>Back</EditorToolbarBackText>
                 </EditorToolbarLeftGroup>
                 <EditorToolbarRightGroup>
-                  <EditorToolbarButtonContainer
-                    onClick={this.toggleHistorySidebar}
-                  >
+                  <EditorToolbarButtonContainer onClick={this.toggleHistorySidebar}>
                     <EditorToolbarHistoryButtonIcon />
                     <span>History</span>
                   </EditorToolbarButtonContainer>
@@ -681,10 +665,7 @@ export default class App extends Component<AppProps, AppState> {
         // Handle the extra wrapping required for list buttons.
         const isList = this.hasBlock('list-item');
         const isType = value.blocks.some(block => {
-          return !!document.getClosest(
-            block.key,
-            parent => parent.type == type,
-          );
+          return !!document.getClosest(block.key, parent => parent.type == type);
         });
 
         if (isList && isType) {
@@ -694,9 +675,7 @@ export default class App extends Component<AppProps, AppState> {
             .unwrapBlock('numbered-list');
         } else if (isList) {
           change
-            .unwrapBlock(
-              type == 'bulleted-list' ? 'numbered-list' : 'bulleted-list',
-            )
+            .unwrapBlock(type == 'bulleted-list' ? 'numbered-list' : 'bulleted-list')
             .wrapBlock(type);
         } else {
           change.setBlocks('list-item').wrapBlock(type);
@@ -711,15 +690,11 @@ export default class App extends Component<AppProps, AppState> {
     if (['numbered-list', 'bulleted-list'].includes(type)) {
       const { value } = this.state;
       const parent = value.document.getParent(value.blocks.first().key);
-      isActive =
-        this.hasBlock('list-item') && parent && (parent as any).type === type;
+      isActive = this.hasBlock('list-item') && parent && (parent as any).type === type;
     }
 
     return (
-      <Button
-        active={isActive}
-        onMouseDown={event => this.onClickBlock(event, type)}
-      >
+      <Button active={isActive} onMouseDown={event => this.onClickBlock(event, type)}>
         {icon === 'h1_icon' ? (
           <FontIcon size="lg" />
         ) : icon === 'h2_icon' ? (
@@ -739,10 +714,7 @@ export default class App extends Component<AppProps, AppState> {
   renderMarkButton = (type: string, icon: string) => {
     const isActive = this.hasMark(type);
     return (
-      <Button
-        active={isActive}
-        onMouseDown={event => this.onClickMark(event, type)}
-      >
+      <Button active={isActive} onMouseDown={event => this.onClickMark(event, type)}>
         {icon === 'bold_icon' ? (
           <BoldIcon />
         ) : icon === 'underline_icon' ? (
