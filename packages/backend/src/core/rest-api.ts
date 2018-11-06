@@ -11,6 +11,7 @@ const v0ApiRouterFactory = (
   router.use(bodyParser.json({ type: '*/*' }));
   router.use(bodyParser.urlencoded({ extended: true }));
 
+  logger.log('debug', 'REST API Route: /doc/:docId [GET] setup');
   router.get('/doc/:docId', async (req, res) => {
     const { docId } = req.params;
     const doc = await documentRepository.getDoc(docId);

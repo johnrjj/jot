@@ -57,14 +57,13 @@ export class WebSocketNode {
 
   public async connectionHandler(
     socket: WebSocket,
-    req: Request,
-    next: NextFunction,
+    _req: Request,
+    _next: NextFunction,
   ): Promise<void> {
     this.log(
       'verbose',
       `WebSocket client connected to WebSocket Server node ${this.id}`,
     );
-
     const connectionContext: ConnectionContext = {
       socket,
       subscriptions: [],
@@ -120,6 +119,13 @@ export class WebSocketNode {
         data = JSON.parse(message.toString()) as WebsocketClientMessages;
       } catch {
         data = message as WebsocketClientMessages;
+      }
+      if (!data) {
+        this.log(
+          'verbose',
+          `WebSocket Server node ${this.id} received empty message`,
+        );
+        return;
       }
       switch (data.type) {
         case 'automerge-connection-send':
@@ -185,11 +191,10 @@ export class WebSocketNode {
         'verbose',
         `${agentId} sent websocket server a set selection, going to broadcast cursor selection`,
       );
+      const msg: RemoteAgentCursorUpdateFromServerMessage = WebSocketServerMessageCreator.createRemoteAgentCursorUpdateFromServerMessage(
+        setSelectionMessage.payload,
+      );
       this.connections.forEach(c => {
-        const msg: RemoteAgentCursorUpdateFromServerMessage = {
-          type: 'remote-agent-setselection-from-server',
-          payload: setSelectionMessage.payload,
-        };
         c.socket.send(JSON.stringify(msg));
       });
     }
@@ -225,10 +230,9 @@ export class WebSocketNode {
             }: connectionAutomerge sending message to ${agentId}`,
             message,
           );
-          const msg: AutomergeUpdateFromServerMessage = {
-            type: 'server-update',
-            payload: message,
-          };
+          const msg: AutomergeUpdateFromServerMessage = WebSocketServerMessageCreator.createAutomergeUpdateFromServerMessage(
+            message,
+          );
           connectionContext.socket.send(JSON.stringify(msg));
         },
       );

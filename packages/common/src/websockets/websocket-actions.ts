@@ -143,6 +143,15 @@ const createAutomergeUpdateToServerMessage = ({
   };
 };
 
+const createAutomergeUpdateFromServerMessage = (
+  payload_TYPEME: any,
+): AutomergeUpdateFromServerMessage => {
+  return {
+    type: 'server-update',
+    payload: payload_TYPEME,
+  };
+};
+
 const createJoinDocumentRequestMessage = ({
   clientId,
   docId,
@@ -156,6 +165,15 @@ const createJoinDocumentRequestMessage = ({
       clientId: clientId,
       docId: docId,
     },
+  };
+};
+
+const createRemoteAgentCursorUpdateFromServerMessage = (
+  payload,
+): RemoteAgentCursorUpdateFromServerMessage => {
+  return {
+    type: 'remote-agent-setselection-from-server',
+    payload: payload,
   };
 };
 
@@ -191,6 +209,8 @@ const WebSocketClientMessageCreator = {
 
 const WebSocketServerMessageCreator = {
   createKeepaliveFromServerMessage,
+  createAutomergeUpdateFromServerMessage,
+  createRemoteAgentCursorUpdateFromServerMessage,
 };
 
 export { WebSocketClientMessageCreator, WebSocketServerMessageCreator };
