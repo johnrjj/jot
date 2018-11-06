@@ -4,17 +4,17 @@ import { Logger } from 'winston';
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import { DocumentRepository } from './document-repository';
-import {
-  WebSocketMessage,
-  MessageType,
-  AutomergeUpdatePayload,
-  RemoteAgentSetSelectionPayload,
-  JoinDocumentRequestPayload,
-  AutomergeUpdateFromServerPayload,
-  KeepalivePayload,
-} from '@jot/common/src/types/websocket-types';
 import { WebSocketServerMessageCreator } from '@jot/common';
 import { AutomergeConnection } from '@jot/common/src/types/automerge';
+import {
+  WebsocketClientMessages,
+  UpdateClientSelectionMessage,
+  RemoteAgentCursorUpdateFromServerMessage,
+  JoinDocumentRequestMessage,
+  AutomergeUpdateFromServerMessage,
+  AutomergeUpdateToServerMessage,
+  WebsocketServerMessages,
+} from '@jot/common/dist/websockets/websocket-actions';
 
 interface ConnectionContext {
   socket: WebSocket;
@@ -115,17 +115,15 @@ export class WebSocketNode {
         } received message from a client WebSocket`,
         message,
       );
-      let data: WebSocketMessage<any> = { type: 'undefined', payload: {} };
+      let data: WebsocketClientMessages;
       try {
-        data = JSON.parse(message.toString());
+        data = JSON.parse(message.toString()) as WebsocketClientMessages;
       } catch {
-        data = message as WebSocketMessage<any>;
+        data = message as WebsocketClientMessages;
       }
-      switch (data.type as MessageType) {
+      switch (data.type) {
         case 'automerge-connection-send':
-          const autoConnectionMessage = data as WebSocketMessage<
-            AutomergeUpdatePayload
-          >;
+          const autoConnectionMessage = data;
           this.log(
             'verbose',
             'automerge-connection-send',
@@ -148,9 +146,7 @@ export class WebSocketNode {
               `remote-agent-setselection message recieved but no agentId assigned, this shouldn't happen`,
             );
           }
-          const remoteAgentSelectionMessage = data as WebSocketMessage<
-            RemoteAgentSetSelectionPayload
-          >;
+          const remoteAgentSelectionMessage = data;
           const handleRemoteSelectionRes = await this.handleReceiveRemoteAgentSetSelection(
             remoteAgentSelectionMessage,
             agentId as string,
@@ -159,9 +155,7 @@ export class WebSocketNode {
           break;
         case 'join-document':
           this.log('debug', `WebSocket subscribe request received`, data);
-          const joinDocumentRequestMessage = data as WebSocketMessage<
-            JoinDocumentRequestPayload
-          >;
+          const joinDocumentRequestMessage = data;
           const res = await this.handleReceiveJoinDocumentRequest(
             connectionContext,
             joinDocumentRequestMessage,
@@ -171,9 +165,9 @@ export class WebSocketNode {
         default:
           this.log(
             'debug',
-            `Unrecognized message type ${
-              data.type
-            } received from client websocket`,
+            `Unrecognized message received from client websocket ${
+              connectionContext.agentId
+            }`,
             data,
           );
           break;
@@ -182,7 +176,7 @@ export class WebSocketNode {
   }
 
   private async handleReceiveRemoteAgentSetSelection(
-    setSelectionMessage: WebSocketMessage<RemoteAgentSetSelectionPayload>,
+    setSelectionMessage: UpdateClientSelectionMessage,
     agentId: string,
     isClientConnected: boolean,
   ) {
@@ -192,7 +186,7 @@ export class WebSocketNode {
         `${agentId} sent websocket server a set selection, going to broadcast cursor selection`,
       );
       this.connections.forEach(c => {
-        const msg: WebSocketMessage<RemoteAgentSetSelectionPayload> = {
+        const msg: RemoteAgentCursorUpdateFromServerMessage = {
           type: 'remote-agent-setselection-from-server',
           payload: setSelectionMessage.payload,
         };
@@ -203,7 +197,7 @@ export class WebSocketNode {
 
   private async handleReceiveJoinDocumentRequest(
     connectionContext: ConnectionContext,
-    joinRequestMessage: WebSocketMessage<JoinDocumentRequestPayload>,
+    joinRequestMessage: JoinDocumentRequestMessage,
   ) {
     const subscribeRequest = joinRequestMessage;
     let { docId, clientId } = subscribeRequest.payload;
@@ -231,7 +225,7 @@ export class WebSocketNode {
             }: connectionAutomerge sending message to ${agentId}`,
             message,
           );
-          const msg: WebSocketMessage<AutomergeUpdateFromServerPayload> = {
+          const msg: AutomergeUpdateFromServerMessage = {
             type: 'server-update',
             payload: message,
           };
@@ -252,7 +246,7 @@ export class WebSocketNode {
   // private handleSendAutomergeOperation
 
   private handleRecieveAutomergeServerUpdate = (
-    msg: WebSocketMessage<AutomergeUpdatePayload>,
+    msg: AutomergeUpdateToServerMessage,
     isClientConnected: boolean,
   ): Promise<true> =>
     new Promise((accept, _reject) => {
@@ -319,7 +313,7 @@ export class WebSocketNode {
 
   private sendMessage(
     connectionContext: ConnectionContext,
-    message: WebSocketMessage<any>,
+    message: WebsocketServerMessages,
   ): void {
     if (message && connectionContext.socket.readyState === WebSocket.OPEN) {
       connectionContext.socket.send(JSON.stringify(message));

@@ -489,7 +489,7 @@ export default class App extends Component<AppProps, AppState> {
     return (
       <FullViewportAppContainer>
         <MainContainer>
-          <SideBarContainer>
+          {/* <SideBarContainer>
             <SidebarIdentitySection>
               <SidebarIdentityLogo />
               <SidebarIdentityUserInfoContainer />
@@ -535,7 +535,7 @@ export default class App extends Component<AppProps, AppState> {
               <SidebarFolderLinkText>Book reviews</SidebarFolderLinkText>
             </SidebarFolderLinkContainer>
             <SidebarContentContainer />
-          </SideBarContainer>
+          </SideBarContainer> */}
 
           <ContentContainer>
             <EditorContainer>

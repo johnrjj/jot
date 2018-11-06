@@ -57,6 +57,13 @@ export interface AutomergeUpdateToServerMessage {
   };
 }
 
+export interface AutomergeUpdateFromServerMessage {
+  type: 'server-update';
+  payload: {
+    message: any;
+  };
+}
+
 export interface JoinDocumentRequestMessage {
   type: 'join-document';
   payload: {
@@ -85,11 +92,30 @@ export interface KeepaliveFromServerMessage {
   payload: {};
 }
 
+export interface RemoteAgentCursorUpdateFromServerMessage {
+  type: 'remote-agent-setselection-from-server';
+  payload: {
+    clientId: string;
+    docId: string;
+    message: {
+      anchor: any;
+      focus: any;
+      mark: {
+        type: string;
+      };
+    };
+  };
+}
+
 export type WebsocketClientMessages =
   | AutomergeUpdateToServerMessage
-  | JoinDocumentRequestMessage;
+  | JoinDocumentRequestMessage
+  | UpdateClientSelectionMessage;
 
-export type WebsocketServerMessages = KeepaliveFromServerMessage;
+export type WebsocketServerMessages =
+  | KeepaliveFromServerMessage
+  | RemoteAgentCursorUpdateFromServerMessage
+  | AutomergeUpdateFromServerMessage;
 
 const createKeepaliveFromServerMessage = (): KeepaliveFromServerMessage => {
   return {
