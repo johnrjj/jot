@@ -8,6 +8,7 @@ import compression from 'compression';
 import { Logger, config } from 'winston';
 import { Pool } from 'pg';
 import { createClient } from 'redis';
+import { RedisBasicClient } from './core/redis-client';
 import Automerge from 'automerge';
 import { v0ApiRouterFactory } from './core/rest-api';
 import { DocumentRepository } from './core/document-repository';
@@ -15,8 +16,8 @@ import { WebSocketNode } from './core/websocket-node';
 import { ConsoleLoggerFactory } from './util/logger';
 import { initialAutomergeDocExample } from './test-data/initial-doc';
 import { AppConfig } from './config';
-import { RedisSubscriber } from './core/subscriber';
-import { RedisPublisher } from './core/publisher';
+import { RedisSubscriber } from './core/redis-subscriber';
+import { RedisPublisher } from './core/redis-publisher';
 
 const createApp = async (config: AppConfig): Promise<Express> => {
   const logger: Logger = ConsoleLoggerFactory({ level: config.LOG_LEVEL });
@@ -25,13 +26,21 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   docSet.setDoc(testDocId, doc);
 
   // Set up Redis
+  // Create specific Redis Publisher instance
+  logger.log('verbose', '🛠️ Setting up Redis instances');
   const redisPublisher = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
-  logger.log('verbose', '🛠️ Redis Publisher setup');
+  logger.log('verbose', '🛠️ Redis publisher setup\t(1 of 3 redis instances)');
+  // Create specific Redis Subscriber instance
   const redisSubscriber = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
-  logger.log('verbose', '🛠️ Redis Subscriber setup');
-  logger.log('verbose', '🛠️ Connected to Redis instance');
+  logger.log('verbose', '🛠️ Redis subscriber setup\t(2 of 3 redis instances)');
+  // Create generic redis client for non pub/sub stuff (ZSET, SET, EXPIRES, etc)
+  const redisClient = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
+  logger.log('verbose', '🛠️ Redis basic client setup\t(3 of 3 redis instances)');
+
   const subscriber = new RedisSubscriber({ redisSubscriber, logger });
   const publisher = new RedisPublisher({ redisPublisher, logger });
+  const client = new RedisBasicClient({ redisClient, logger });
+  logger.log('verbose', '🛠️ Connected to Redis instance');
 
   const documentRepo = new DocumentRepository({
     initialDocSet: docSet,

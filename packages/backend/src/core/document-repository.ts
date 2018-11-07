@@ -1,7 +1,7 @@
 import Automerge from 'automerge';
 import { Logger } from 'winston';
-import { Publisher } from './publisher';
-import { Subscriber } from './subscriber';
+import { Publisher } from './redis-publisher';
+import { Subscriber } from './redis-subscriber';
 
 export type CRDTDocument = Automerge.AutomergeRoot;
 
