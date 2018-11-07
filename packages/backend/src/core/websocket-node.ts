@@ -20,9 +20,6 @@ interface ConnectionContext {
   socket: WebSocket;
   initialized: boolean;
   agentId?: string;
-  subscriptions: Array<string>;
-  subscriptionCount: number;
-  subscriptionIdMap: Map<string, number>;
 }
 
 export class WebSocketNode {
@@ -39,8 +36,8 @@ export class WebSocketNode {
     documentRepository,
   }: {
     wss: WebSocket.Server;
-    logger?: Logger;
     documentRepository: DocumentRepository;
+    logger?: Logger;
   }) {
     this.wsServerRef = wss;
     this.logger = logger;
@@ -63,10 +60,7 @@ export class WebSocketNode {
     this.log('verbose', `WebSocket client connected to WebSocket Server node ${this.id}`);
     const connectionContext: ConnectionContext = {
       socket,
-      subscriptions: [],
       initialized: false,
-      subscriptionCount: 0,
-      subscriptionIdMap: new Map(),
     };
     socket.on('error', err => this.log('error', JSON.stringify(err)));
     socket.on('close', this.handleDisconnectFromClientSocket(connectionContext));

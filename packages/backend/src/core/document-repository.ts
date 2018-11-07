@@ -63,15 +63,19 @@ export class DocumentRepository implements IDocumentRepository {
   //   await this.redisClient.smembers('jot:doc:active-users');
   // };
 
-  public addUserToDocActiveList = async (docId: string, userId: string) => {
+  public joinDocument = async (docId: string, userId: string) => {
+    await this.addUserToDocActiveList(docId, userId);
+  };
+
+  private addUserToDocActiveList = async (docId: string, userId: string) => {
     return this.redisClient.sadd(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
   };
 
-  public removeUserToDocActiveList = async (docId: string, userId: string) => {
+  private removeUserToDocActiveList = async (docId: string, userId: string) => {
     return this.redisClient.srem(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
   };
 
-  public getActiveUserListForDoc = async (docId: string) => {
+  private getActiveUserListForDoc = async (docId: string) => {
     return this.redisClient.smembers(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`);
   };
 
