@@ -9,7 +9,10 @@
     "prettier": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css}'"
   },
   "license": "MIT",
-  "dependencies": {
+  "peerDependencies": {
+    "automerge": "^0.9.2"
+  },
+  "devDependencies": {
     "automerge": "^0.9.2"
   }
 }
