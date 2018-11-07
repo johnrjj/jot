@@ -20,6 +20,7 @@ interface ConnectionContext {
   socket: WebSocket;
   initialized: boolean;
   agentId?: string;
+  isClientConnected: boolean;
 }
 
 export class WebSocketNode {
@@ -61,6 +62,7 @@ export class WebSocketNode {
     const connectionContext: ConnectionContext = {
       socket,
       initialized: false,
+      isClientConnected: false,
     };
     socket.on('error', err => this.log('error', JSON.stringify(err)));
     socket.on('close', this.handleDisconnectFromClientSocket(connectionContext));
@@ -75,9 +77,6 @@ export class WebSocketNode {
   }
 
   private onMessageFromClientSocket(connectionContext: ConnectionContext) {
-    let isClientConnected: boolean = false;
-    let agentId: string | null = null;
-
     return async (message: string | object) => {
       // initialize
       if (!connectionContext.initialized) {
@@ -114,14 +113,18 @@ export class WebSocketNode {
         case 'automerge-connection-send':
           const autoConnectionMessage = data;
           this.log('verbose', 'automerge-connection-send', autoConnectionMessage.payload);
-          isClientConnected = await this.handleRecieveAutomergeServerUpdate(
+          connectionContext.isClientConnected = await this.handleRecieveAutomergeServerUpdate(
             autoConnectionMessage,
-            isClientConnected,
+            connectionContext.isClientConnected,
           );
           break;
         case 'remote-agent-setselection':
-          this.log('debug', `Received remote-agent-setselection from agentId ${agentId}`, data);
-          if (!agentId) {
+          this.log(
+            'debug',
+            `Received remote-agent-setselection from agentId ${connectionContext.agentId}`,
+            data,
+          );
+          if (!connectionContext.agentId) {
             this.log(
               'error',
               `remote-agent-setselection message recieved but no agentId assigned, this shouldn't happen`,
@@ -130,8 +133,8 @@ export class WebSocketNode {
           const remoteAgentSelectionMessage = data;
           const handleRemoteSelectionRes = await this.handleReceiveRemoteAgentSetSelection(
             remoteAgentSelectionMessage,
-            agentId as string,
-            isClientConnected,
+            connectionContext.agentId as string,
+            connectionContext.isClientConnected,
           );
           break;
         case 'join-document':
@@ -141,7 +144,7 @@ export class WebSocketNode {
             connectionContext,
             joinDocumentRequestMessage,
           );
-          agentId = res.agentId;
+          connectionContext.agentId = res.agentId;
           break;
         default:
           this.log(
@@ -181,10 +184,8 @@ export class WebSocketNode {
     let { docId, clientId } = subscribeRequest.payload;
     const agentId: string = clientId;
     this.log('debug', `join-request, for docId: ${docId} , agentId(sent as clientId): ${agentId}`);
-    let doc;
     try {
-      // doc will autocreate a new doc for us!
-      doc = await this.documentRepository.getDoc('1');
+      const doc = await this.documentRepository.getDoc('1');
     } catch (e) {
       this.log('error', `error:join-document getting doc id ${agentId}`, e);
     }
@@ -211,8 +212,6 @@ export class WebSocketNode {
     }
     return { agentId };
   }
-
-  // private handleSendAutomergeOperation
 
   private handleRecieveAutomergeServerUpdate = (
     msg: AutomergeUpdateToServerMessage,
