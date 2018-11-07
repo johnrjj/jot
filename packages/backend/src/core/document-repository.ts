@@ -15,7 +15,7 @@ export interface IDocumentRepositoryConfig {
   initialDocSet?: DocSet;
   publisher: Publisher;
   subscriber: Subscriber;
-  client: RedisBasicClient;
+  redisClient: RedisBasicClient;
   logger?: Logger;
 }
 
@@ -29,28 +29,50 @@ export interface IDocumentRepository {
   serializeDoc(doc: CRDTDocument): string;
 }
 
+export const TOPICS = {
+  ACTIVE_USERS: 'active-users',
+};
+
 export class DocumentRepository implements IDocumentRepository {
-  logger?: Logger;
   docSet: DocSet;
   publisher: Publisher;
   subscriber: Subscriber;
-  client: RedisBasicClient;
-  constructor({ initialDocSet, logger, publisher, subscriber, client }: IDocumentRepositoryConfig) {
+  redisClient: RedisBasicClient;
+  logger?: Logger;
+  constructor({
+    initialDocSet,
+    logger,
+    publisher,
+    subscriber,
+    redisClient,
+  }: IDocumentRepositoryConfig) {
     this.publisher = publisher;
     this.subscriber = subscriber;
-    this.client = client;
+    this.redisClient = redisClient;
     this.docSet = initialDocSet || new (Automerge as any).DocSet();
     this.logger = logger;
   }
 
-  public test = async () => {
-    // messing around with redis, can be removed once i put code over in the redis client
-    await this.client.sadd('jot:doc:active-users', 'user1234');
-    await this.client.sadd('jot:doc:active-users', 'user98765');
-    const members = await this.client.smembers('jot:doc:active-users');
-    await this.client.smembers('jot:doc:active-users:doesnotexist');
-    await this.client.srem('jot:doc:active-users', 'user1234');
-    await this.client.smembers('jot:doc:active-users');
+  // public test = async () => {
+  //   // messing around with redis, can be removed once i put code over in the redis client
+  //   await this.redisClient.sadd('jot:doc:active-users', 'user1234');
+  //   await this.redisClient.sadd('jot:doc:active-users', 'user98765');
+  //   const members = await this.redisClient.smembers('jot:doc:active-users');
+  //   await this.redisClient.smembers('jot:doc:active-users:doesnotexist');
+  //   await this.redisClient.srem('jot:doc:active-users', 'user1234');
+  //   await this.redisClient.smembers('jot:doc:active-users');
+  // };
+
+  public addUserToDocActiveList = async (docId: string, userId: string) => {
+    return this.redisClient.sadd(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
+  };
+
+  public removeUserToDocActiveList = async (docId: string, userId: string) => {
+    return this.redisClient.srem(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
+  };
+
+  public getActiveUserListForDoc = async (docId: string) => {
+    return this.redisClient.smembers(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`);
   };
 
   private log(level: string, e: string, metadata?: any) {

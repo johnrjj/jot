@@ -40,9 +40,7 @@ export class RedisBasicClient implements IRedisBasicClient {
       this.redisClient.smembers(topic, (err, val) => (err ? reject(err) : accept(val))),
     );
 
-  public getClient(): RedisClient {
-    return this.redisClient;
-  }
+  public getClient = (): RedisClient => this.redisClient;
 
   private log(level: string, message: string, meta?: any) {
     if (!this.logger) {

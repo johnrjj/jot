@@ -46,12 +46,10 @@ const createApp = async (config: AppConfig): Promise<Express> => {
     initialDocSet: docSet,
     publisher,
     subscriber,
-    client: basicRedisClient,
+    redisClient: basicRedisClient,
     logger,
   });
   logger.log('verbose', '🛠️ DocumentRepository setup');
-
-  await documentRepo.test();
 
   const app = express();
   const expressWs = expressWsFactory(app);
