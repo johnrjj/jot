@@ -19,7 +19,8 @@ export class RedisBasicClient implements IRedisBasicClient {
     this.logger = logger;
   }
 
-  // convenience functions
+  // redis async-ified convenience functions
+  // feel free to use the normal redisClient
   public sadd = (topic: string, keyToAddToSet: string): Promise<number> =>
     new Promise((accept, reject) =>
       this.redisClient.sadd(topic, keyToAddToSet, (err, val) => (err ? reject(err) : accept(val))),

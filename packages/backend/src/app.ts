@@ -26,11 +26,11 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   docSet.setDoc(testDocId, doc);
 
   // Set up Redis
-  // Create specific Redis Publisher instance
+  // Create dedicated Redis Publisher instance
   logger.log('verbose', '🛠️ Setting up Redis instances');
   const redisPublisher = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
   logger.log('verbose', '🛠️ Redis publisher setup\t(1 of 3 redis instances)');
-  // Create specific Redis Subscriber instance
+  // Create dedicated Redis Subscriber instance
   const redisSubscriber = config.REDIS_URL ? createClient(config.REDIS_URL) : createClient();
   logger.log('verbose', '🛠️ Redis subscriber setup\t(2 of 3 redis instances)');
   // Create generic redis client for non pub/sub stuff (ZSET, SET, EXPIRES, etc)
@@ -40,7 +40,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   const subscriber = new RedisSubscriber({ redisSubscriber, logger });
   const publisher = new RedisPublisher({ redisPublisher, logger });
   const basicRedisClient = new RedisBasicClient({ redisClient, logger });
-  logger.log('verbose', '🛠️ Connected to Redis instance');
+  logger.log('verbose', '🛠️ Redis setup');
 
   const documentRepo = new DocumentRepository({
     initialDocSet: docSet,
@@ -49,7 +49,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
     client: basicRedisClient,
     logger,
   });
-  logger.log('verbose', 'DocumentRepository setup');
+  logger.log('verbose', '🛠️ DocumentRepository setup');
 
   // messing around with redis, can be removed once i put code over in the redis client
   const hasErr1 = await basicRedisClient.sadd('jot:doc:active-users', 'user1234');
