@@ -40,7 +40,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   const subscriber = new RedisSubscriber({ redisSubscriber, logger });
   const publisher = new RedisPublisher({ redisPublisher, logger });
   const basicRedisClient = new RedisBasicClient({ redisClient, logger });
-  logger.log('verbose', '🛠️ Redis setup');
+  logger.log('verbose', '🛠️ Redis instances setup and clients created');
 
   const documentRepo = new DocumentRepository({
     initialDocSet: docSet,
@@ -51,14 +51,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   });
   logger.log('verbose', '🛠️ DocumentRepository setup');
 
-  // messing around with redis, can be removed once i put code over in the redis client
-  const hasErr1 = await basicRedisClient.sadd('jot:doc:active-users', 'user1234');
-  const hasErr2 = await basicRedisClient.sadd('jot:doc:active-users', 'user98765');
-  const members = await basicRedisClient.smembers('jot:doc:active-users');
-  await basicRedisClient.smembers('jot:doc:active-users:doesnotexist');
-  console.log('need cb instead memebers', hasErr1, hasErr2, members);
-  await basicRedisClient.srem('jot:doc:active-users', 'user1234');
-  await basicRedisClient.smembers('jot:doc:active-users');
+  await documentRepo.test();
 
   const app = express();
   const expressWs = expressWsFactory(app);
