@@ -42,10 +42,10 @@ export class RedisBasicClient implements IRedisBasicClient {
 
   public getClient = (): RedisClient => this.redisClient;
 
-  private log(level: string, message: string, meta?: any) {
+  private log = (level: string, message: string, meta?: any) => {
     if (!this.logger) {
       return;
     }
     this.logger.log(level, message, meta);
-  }
+  };
 }

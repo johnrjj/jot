@@ -14,7 +14,7 @@ export class RedisPublisher implements Publisher {
     this.logger = logger;
   }
 
-  publish(channelName: string, payload: any): Promise<number> {
+  publish = (channelName: string, payload: any): Promise<number> => {
     return new Promise((accept, reject) => {
       this.log('verbose', `RedisPublisher:Publishing event to ${channelName} channel`);
       return this.publisher.publish(
@@ -23,7 +23,7 @@ export class RedisPublisher implements Publisher {
         (err, reply) => (err ? reject(err) : accept(reply)),
       );
     });
-  }
+  };
 
   private log(level: string, message: string, meta?: any) {
     if (!this.logger) {

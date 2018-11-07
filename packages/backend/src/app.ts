@@ -66,6 +66,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   app.use('/api/v0', v0ApiRouterFactory(documentRepo, logger));
   logger.log('verbose', '🛠️ REST API /api/v0 endpoint setup');
 
+  // WS API
   const wss = expressWs.getWss();
   const webSocketNode = new WebSocketNode({
     wss,

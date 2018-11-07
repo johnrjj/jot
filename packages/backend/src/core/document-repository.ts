@@ -53,16 +53,6 @@ export class DocumentRepository implements IDocumentRepository {
     this.logger = logger;
   }
 
-  // public test = async () => {
-  //   // messing around with redis, can be removed once i put code over in the redis client
-  //   await this.redisClient.sadd('jot:doc:active-users', 'user1234');
-  //   await this.redisClient.sadd('jot:doc:active-users', 'user98765');
-  //   const members = await this.redisClient.smembers('jot:doc:active-users');
-  //   await this.redisClient.smembers('jot:doc:active-users:doesnotexist');
-  //   await this.redisClient.srem('jot:doc:active-users', 'user1234');
-  //   await this.redisClient.smembers('jot:doc:active-users');
-  // };
-
   public joinDocument = async (docId: string, userId: string) => {
     await this.addUserToDocActiveList(docId, userId);
   };

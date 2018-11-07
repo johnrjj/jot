@@ -70,35 +70,34 @@ export class WebSocketNode {
     this.connections.add(connectionContext);
     this.log(
       'debug',
-      `WebSocket Server ${
-        this.id
-      }: ${this.getConnectionsCount()} total active connections. (added 1)`,
+      `WS node ${this.id}: Added connection. ${this.getConnectionsCount()} total connections.`,
     );
   }
 
-  private onMessageFromClientSocket(connectionContext: ConnectionContext) {
+  private initialize = connectionContext => {
+    this.sendKeepAlive(connectionContext);
+    const keepAliveTimer = setInterval(() => {
+      if (connectionContext.socket.readyState === WebSocket.OPEN) {
+        this.sendKeepAlive(connectionContext);
+      } else {
+        clearInterval(keepAliveTimer);
+        if (this.connections.has(connectionContext)) {
+          this.log('debug', 'Keepalive found a stale connection, removing');
+          this.handleDisconnectFromClientSocket(connectionContext);
+        }
+      }
+    }, 20000);
+    connectionContext.initialized = true;
+    return connectionContext;
+  };
+
+  private onMessageFromClientSocket(ctx: ConnectionContext) {
+    let connectionContext = ctx;
     return async (message: string | object) => {
       // initialize
       if (!connectionContext.initialized) {
-        this.sendKeepAlive(connectionContext);
-        const keepAliveTimer = setInterval(() => {
-          if (connectionContext.socket.readyState === WebSocket.OPEN) {
-            this.sendKeepAlive(connectionContext);
-          } else {
-            clearInterval(keepAliveTimer);
-            if (this.connections.has(connectionContext)) {
-              this.log('debug', 'Keepalive found a stale connection, removing');
-              this.handleDisconnectFromClientSocket(connectionContext);
-            }
-          }
-        }, 20000);
-        connectionContext.initialized = true;
+        connectionContext = this.initialize(ctx);
       }
-      this.log(
-        'verbose',
-        `WebSocket Server node ${this.id} received message from a client WebSocket`,
-        message,
-      );
       let data: WebsocketClientMessages;
       try {
         data = JSON.parse(message.toString()) as WebsocketClientMessages;
@@ -112,26 +111,18 @@ export class WebSocketNode {
       switch (data.type) {
         case 'automerge-connection-send':
           const autoConnectionMessage = data;
-          this.log('verbose', 'automerge-connection-send', autoConnectionMessage.payload);
-          connectionContext.isClientConnected = await this.handleRecieveAutomergeServerUpdate(
+          const isClientConnected = await this.handleRecieveAutomergeServerUpdate(
             autoConnectionMessage,
             connectionContext.isClientConnected,
           );
+          connectionContext.isClientConnected = isClientConnected;
           break;
         case 'remote-agent-setselection':
-          this.log(
-            'debug',
-            `Received remote-agent-setselection from agentId ${connectionContext.agentId}`,
-            data,
-          );
           if (!connectionContext.agentId) {
-            this.log(
-              'error',
-              `remote-agent-setselection message recieved but no agentId assigned, this shouldn't happen`,
-            );
+            this.log('error', `no agentId assigned, this shouldn't happen`);
           }
           const remoteAgentSelectionMessage = data;
-          const handleRemoteSelectionRes = await this.handleReceiveRemoteAgentSetSelection(
+          await this.handleReceiveRemoteAgentSetSelection(
             remoteAgentSelectionMessage,
             connectionContext.agentId as string,
             connectionContext.isClientConnected,
