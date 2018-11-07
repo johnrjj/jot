@@ -223,7 +223,7 @@ export class WebSocketNode {
   private handleRecieveAutomergeServerUpdate = (
     msg: AutomergeUpdateToServerMessage,
     isClientConnected: boolean,
-  ): Promise<true> =>
+  ): Promise<boolean> =>
     new Promise((accept, _reject) => {
       if (isClientConnected) {
         // const { clientId, docId, message } = (data as any).payload;

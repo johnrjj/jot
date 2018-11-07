@@ -1,63 +1,47 @@
 import Automerge from 'automerge';
 import { Logger } from 'winston';
+import { Publisher } from './redis-publisher';
+import { Subscriber } from './redis-subscriber';
+import { RedisBasicClient } from './redis-client';
 
 export type CRDTDocument = Automerge.AutomergeRoot;
 
+export interface DocumentMetadata {
+  activeUsers: Set<string>;
+  activeAgentCount: number;
+}
+
 export interface IDocumentRepositoryConfig {
-  initialDocSet: any;
-  loadDocument: Function;
-  saveDocument: Function;
-  checkAccess: (id: string, req: any) => Promise<any>;
+  initialDocSet?: DocSet;
+  publisher: Publisher;
+  subscriber: Subscriber;
+  client: RedisBasicClient;
   logger?: Logger;
 }
 
 export interface DocSet {
-  getDoc: any;
+  getDoc: (docId: string) => CRDTDocument | null;
   applyChanges: Function;
 }
 
-// export class Document implements CRDTDocument {};
-
 export interface IDocumentRepository {
-  getDoc(id: string): Promise<CRDTDocument>;
+  getDoc(id: string): Promise<CRDTDocument | null>;
   serializeDoc(doc: CRDTDocument): string;
 }
 
 export class DocumentRepository implements IDocumentRepository {
   logger?: Logger;
   docSet: DocSet;
-  loadDocument: Function;
-  saveDocument: Function;
-  checkAccess: (id: string, req: any) => Promise<any>;
-  docCache: Map<string, CRDTDocument>;
-  constructor({
-    loadDocument,
-    saveDocument,
-    initialDocSet,
-    checkAccess = (id: string, req: any) => Promise.resolve(true),
-    logger,
-  }: IDocumentRepositoryConfig) {
-    this.loadDocument = loadDocument;
-    this.saveDocument = saveDocument;
-    this.checkAccess = checkAccess;
+  publisher: Publisher;
+  subscriber: Subscriber;
+  client: RedisBasicClient;
+  constructor({ initialDocSet, logger, publisher, subscriber, client }: IDocumentRepositoryConfig) {
+    this.publisher = publisher;
+    this.subscriber = subscriber;
+    this.client = client;
+    this.docSet = initialDocSet || new (Automerge as any).DocSet();
     this.logger = logger;
-    if (initialDocSet) {
-      this.docSet = initialDocSet;
-    } else {
-      this.docSet = new (Automerge as any).DocSet();
-    }
-    this.docCache = new Map();
-    this.onChange = this.onChange.bind(this);
   }
-
-  async onChange(id: string, doc: CRDTDocument): Promise<void> {
-    // return this.saveDocument(id, doc);
-  }
-
-  public setDocSet = (docSet: DocSet) => {
-    this.log('debug', 'updated doc set', docSet);
-    this.docSet = docSet;
-  };
 
   private log(level: string, e: string, metadata?: any) {
     if (!this.logger) {
@@ -80,21 +64,20 @@ export class DocumentRepository implements IDocumentRepository {
     });
   }
 
-  serializeDoc(doc: CRDTDocument): string {
+  public serializeDoc(doc: CRDTDocument): string {
     return Automerge.save(doc);
   }
 
-  async getDoc(id: string): Promise<CRDTDocument> {
-    this.log('debug', `docrepo: request for docID: ${id}`);
+  async getDoc(id: string): Promise<CRDTDocument | null> {
+    this.log('debug', `DocumentRepository:getDoc(${id}):Fetching doc`);
     const doc = this.docSet.getDoc(id);
     if (!doc) {
-      this.log('silly', `docrepo docset miss for docId ${id}, creating new one.`);
-      return this.createNewDoc(id);
+      this.log('silly', `DocumentRepository:getDoc(${id}):Doc does not exist, returning`);
+      return null;
     } else {
-      this.log('silly', `docrepo docset hit for docId ${id}`);
+      this.log('silly', `DocumentRepository:getDoc(${id}):Doc exists, returning`);
     }
-    this.docCache.set(id, doc);
-    return this.docCache.get(id) as CRDTDocument;
+    return doc as CRDTDocument;
   }
 
   // handleSocket(ws, req) {
