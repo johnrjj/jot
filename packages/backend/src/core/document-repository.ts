@@ -2,6 +2,7 @@ import Automerge from 'automerge';
 import { Logger } from 'winston';
 import { Publisher } from './redis-publisher';
 import { Subscriber } from './redis-subscriber';
+import { RedisBasicClient } from './redis-client';
 
 export type CRDTDocument = Automerge.AutomergeRoot;
 
@@ -14,6 +15,7 @@ export interface IDocumentRepositoryConfig {
   initialDocSet?: DocSet;
   publisher: Publisher;
   subscriber: Subscriber;
+  client: RedisBasicClient;
   logger?: Logger;
 }
 
@@ -32,9 +34,11 @@ export class DocumentRepository implements IDocumentRepository {
   docSet: DocSet;
   publisher: Publisher;
   subscriber: Subscriber;
-  constructor({ initialDocSet, logger, publisher, subscriber }: IDocumentRepositoryConfig) {
+  client: RedisBasicClient;
+  constructor({ initialDocSet, logger, publisher, subscriber, client }: IDocumentRepositoryConfig) {
     this.publisher = publisher;
     this.subscriber = subscriber;
+    this.client = client;
     this.docSet = initialDocSet || new (Automerge as any).DocSet();
     this.logger = logger;
   }
@@ -60,7 +64,7 @@ export class DocumentRepository implements IDocumentRepository {
     });
   }
 
-  serializeDoc(doc: CRDTDocument): string {
+  public serializeDoc(doc: CRDTDocument): string {
     return Automerge.save(doc);
   }
 

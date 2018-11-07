@@ -39,13 +39,14 @@ const createApp = async (config: AppConfig): Promise<Express> => {
 
   const subscriber = new RedisSubscriber({ redisSubscriber, logger });
   const publisher = new RedisPublisher({ redisPublisher, logger });
-  const client = new RedisBasicClient({ redisClient, logger });
+  const basicRedisClient = new RedisBasicClient({ redisClient, logger });
   logger.log('verbose', '🛠️ Connected to Redis instance');
 
   const documentRepo = new DocumentRepository({
     initialDocSet: docSet,
     publisher,
     subscriber,
+    client: basicRedisClient,
     logger,
   });
 
