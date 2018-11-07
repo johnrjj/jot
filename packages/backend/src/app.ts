@@ -49,33 +49,16 @@ const createApp = async (config: AppConfig): Promise<Express> => {
     client: basicRedisClient,
     logger,
   });
+  logger.log('verbose', 'DocumentRepository setup');
 
   // messing around with redis, can be removed once i put code over in the redis client
-  const hasErr1 = basicRedisClient
-    .getClient()
-    .sadd('jot:doc:active-users', 'user1234', (err, val) =>
-      console.log('added user1234 to active set', val),
-    );
-  const hasErr2 = basicRedisClient
-    .getClient()
-    .sadd('jot:doc:active-users', 'user98765', (err, val) =>
-      console.log('added user98765 to active set', val),
-    );
-  const members = basicRedisClient
-    .getClient()
-    .smembers('jot:doc:active-users', (err, val) => console.log('smembers cb', val));
-  basicRedisClient
-    .getClient()
-    .smembers('jot:doc:active-users:doesnotexist', (err, val) =>
-      console.log('smembers DNE cb', err, val),
-    );
+  const hasErr1 = await basicRedisClient.sadd('jot:doc:active-users', 'user1234');
+  const hasErr2 = await basicRedisClient.sadd('jot:doc:active-users', 'user98765');
+  const members = await basicRedisClient.smembers('jot:doc:active-users');
+  await basicRedisClient.smembers('jot:doc:active-users:doesnotexist');
   console.log('need cb instead memebers', hasErr1, hasErr2, members);
-  basicRedisClient
-    .getClient()
-    .srem('jot:doc:active-users', 'user1234', (err, val) => console.log('smembers cb', val));
-  basicRedisClient
-    .getClient()
-    .smembers('jot:doc:active-users', (err, val) => console.log('updated after removal cb', val));
+  await basicRedisClient.srem('jot:doc:active-users', 'user1234');
+  await basicRedisClient.smembers('jot:doc:active-users');
 
   const app = express();
   const expressWs = expressWsFactory(app);
