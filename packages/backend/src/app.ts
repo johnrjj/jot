@@ -105,8 +105,8 @@ interface ResponseError extends Error {
   status?: number;
 }
 
-const getSampleDoc = () => {
-  const docId = '1';
+const getSampleDoc = (sampleDocIdToUse = '1') => {
+  const docId = sampleDocIdToUse;
   const doc = Automerge.load(initialAutomergeDocExample);
   return {
     doc,

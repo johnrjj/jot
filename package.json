@@ -6,7 +6,8 @@
     "prettier": "lerna run prettier --stream",
     "start": "wsrun --done-criteria='Found 0 errors. Watching for file changes.' --stages watch",
     "start:backend": "lerna run start --stream --scope backend",
-    "start:frontend": "lerna run start --stream --scope frontend"
+    "start:frontend": "lerna run start --stream --scope frontend",
+    "clean": "lerna run clean --stream"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
@@ -30,6 +31,7 @@
     "parcel-bundler": "^1.10.2",
     "prettier": "^1.14.3",
     "react-pose": "^3.3.6",
+    "rimraf": "^2.6.2",
     "surge": "^0.20.1",
     "ts-node": "^7.0.1",
     "typescript": "^3.1.1",

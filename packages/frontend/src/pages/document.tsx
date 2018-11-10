@@ -82,6 +82,7 @@ interface DocEditProps {
   wsEndpoint: string;
   apiEndpoint: string;
   path: string;
+  docId?: string; // needs to be optional otherwise typescript complains w/ reach router typings
 }
 
 interface DocEditState {
@@ -129,14 +130,20 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   }
 
   async componentDidMount() {
-    const docIdToRequest = '1';
+    console.log(this.props);
+    const docIdToRequest = this.props.docId;
     try {
       const res = await fetch(`${this.props.apiEndpoint}/doc/${docIdToRequest}`);
+      // 404 doc does not exist
+      if (res.status === 404) {
+        return this.setState({ error: 'document does not exist' });
+      }
+      // general error
       if (res.status >= 400) {
         return this.setState({
-          error: new Error(
-            `api fetch for sample doc got a ${res.status} [${res.statusText}]\n is your backend on`,
-          ),
+          error: `api fetch for sample doc got a ${res.status} [${
+            res.statusText
+          }]\nis your backend on?`,
         });
       }
       const json = await res.json();
@@ -171,6 +178,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         }
       });
     } catch (error) {
+      console.log(error.message);
       if (error.message === 'Failed to fetch') {
         return this.setState({
           error: 'Error fetching sample document. Is the API up? Make sure it is running.',
