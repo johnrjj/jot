@@ -17,14 +17,15 @@ First install deps:
 yarn install
 ```
 
-To run the entire stack (frontend and backend):
+To run the entire stack in dev mode (frontend and backend):
 
 ```
 yarn start
 ```
 
-Redis automatically connects to cloud dev instance.
+All packages are watched, and have live and/or hot reloading where applicable.
 
+Redis automatically connects to a cloud dev Redis server (you can override if needed). 
 
 #### Backend 
 
