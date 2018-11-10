@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run build && node dist/index",
+    "watch": "ts-node-dev --respawn src/index.ts",
     "dev": "ts-node --project ./tsconfig.json src/index",
     "test": "jest",
     "prettier": "prettier --write 'src/**/*.ts'"
@@ -37,6 +38,7 @@
     "node": ">=8.0.0"
   },
   "devDependencies": {
-    "@types/node": "^10.12.2"
+    "@types/node": "^10.12.2",
+    "ts-node-dev": "^1.0.0-pre.30"
   }
 }

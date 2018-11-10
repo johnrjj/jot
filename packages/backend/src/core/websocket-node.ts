@@ -171,14 +171,16 @@ export class WebSocketNode {
     connectionContext: ConnectionContext,
     joinRequestMessage: JoinDocumentRequestMessage,
   ) {
+    const testDocId = '1';
     const subscribeRequest = joinRequestMessage;
     let { docId, clientId } = subscribeRequest.payload;
     const agentId: string = clientId;
     this.log('debug', `join-request, for docId: ${docId} , agentId(sent as clientId): ${agentId}`);
     try {
-      const doc = await this.documentRepository.getDoc('1');
+      await this.documentRepository.getDoc(testDocId);
+      await this.documentRepository.joinDocument(testDocId, clientId);
     } catch (e) {
-      this.log('error', `error:join-document getting doc id ${agentId}`, e);
+      this.log('error', `error:join-document getting doc id ${testDocId} agentId:${agentId}`, e);
     }
     if (!this.connectionAutomerge.has(agentId)) {
       this.log('silly', `connectionAutomerge adding ${agentId}`);

@@ -57,6 +57,12 @@ export class DocumentRepository implements IDocumentRepository {
 
   public joinDocument = async (docId: string, userId: string) => {
     await this.addUserToDocActiveList(docId, userId);
+    this.log('verbose', `DocumentRepository:joinDocument:User ${userId} joined doc ${docId}`);
+  };
+
+  public leaveDocument = async (docId: string, userId: string) => {
+    await this.removeUserToDocActiveList(docId, userId);
+    this.log('verbose', `DocumentRepository:leaveDocument:User ${userId} left doc ${docId}`);
   };
 
   private addUserToDocActiveList = async (docId: string, userId: string) => {
@@ -65,10 +71,18 @@ export class DocumentRepository implements IDocumentRepository {
       `jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`,
       DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS,
     );
+    this.log(
+      'silly',
+      `DocumentRepository:addUserToDocActiveList:Added user ${userId} to active user list for doc ${docId}`,
+    );
   };
 
   private removeUserToDocActiveList = async (docId: string, userId: string) => {
-    return this.redisClient.srem(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
+    await this.redisClient.srem(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
+    this.log(
+      'silly',
+      `DocumentRepository:removeUserToDocActiveList:Removed user ${userId} from active user list for doc ${docId}`,
+    );
   };
 
   private getActiveUserListForDoc = async (docId: string) => {

@@ -4,6 +4,7 @@
   "scripts": {
     "build": "lerna run build  --stream",
     "prettier": "lerna run prettier --stream",
+    "start": "wsrun --done-criteria='Found 0 errors. Watching for file changes.' --stages watch",
     "start:backend": "lerna run start --stream --scope backend",
     "start:frontend": "lerna run start --stream --scope frontend"
   },
@@ -31,7 +32,8 @@
     "react-pose": "^3.3.6",
     "surge": "^0.20.1",
     "ts-node": "^7.0.1",
-    "typescript": "^3.1.1"
+    "typescript": "^3.1.1",
+    "wsrun": "^3.3.5"
   },
   "workspaces": [
     "packages/backend",

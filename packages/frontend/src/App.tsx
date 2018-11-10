@@ -7,6 +7,8 @@ import styled from 'styled-components';
 import Websocket from './components/Websocket';
 import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Router, Link } from '@reach/router';
+
 import {
   faFont,
   faQuoteRight,

@@ -120,8 +120,8 @@ export const HistoryItem = ({ avatarSrc, name, date, type }: HistoryItemProps) =
     type === 'edited'
       ? colors.purple.light
       : type === 'commented'
-        ? colors.green.light
-        : colors.yellow.light;
+      ? colors.green.light
+      : colors.yellow.light;
 
   return (
     <HistoryDetail>
@@ -138,8 +138,8 @@ export const HistoryItem = ({ avatarSrc, name, date, type }: HistoryItemProps) =
             {type === 'edited'
               ? 'edited the document'
               : type === 'commented'
-                ? 'commented on the document'
-                : 'created the document '}
+              ? 'commented on the document'
+              : 'created the document '}
           </HistoryDetailContentSeconaryText>
           <HistoryDetailContentMetaText>• {date}</HistoryDetailContentMetaText>
         </HistoryDetailContentText>
