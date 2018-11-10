@@ -34,4 +34,4 @@ export default class App extends Component<AppProps, AppState> {
   }
 }
 
-const Home = ({ path }) => <Redirect to="./docs" noThrow />;
+const Home = ({ path }) => <Redirect to="docs/1" noThrow />;
