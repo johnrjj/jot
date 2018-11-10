@@ -17,10 +17,8 @@ export class RedisPublisher implements Publisher {
   publish = (channelName: string, payload: any): Promise<number> => {
     return new Promise((accept, reject) => {
       this.log('verbose', `RedisPublisher:Publishing event to ${channelName} channel`);
-      return this.publisher.publish(
-        channelName,
-        JSON.stringify(payload),
-        (err, reply) => (err ? reject(err) : accept(reply)),
+      return this.publisher.publish(channelName, JSON.stringify(payload), (err, reply) =>
+        err ? reject(err) : accept(reply),
       );
     });
   };

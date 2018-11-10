@@ -14,7 +14,7 @@ const start = async () => {
     app.listen(PORT), logger.log('info', `✍️ Jot started on port ${config.PORT}`);
   } catch (e) {
     logger.error('Error starting app', (e as Error).message);
-    logger.log(e);
+    logger.error(e);
   }
 };
 

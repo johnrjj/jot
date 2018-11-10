@@ -4,6 +4,8 @@ import { Publisher } from './redis-publisher';
 import { Subscriber } from './redis-subscriber';
 import { RedisBasicClient } from './redis-client';
 
+const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 3600; // one hour
+
 export type CRDTDocument = Automerge.AutomergeRoot;
 
 export interface DocumentMetadata {
@@ -58,7 +60,11 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private addUserToDocActiveList = async (docId: string, userId: string) => {
-    return this.redisClient.sadd(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
+    await this.redisClient.sadd(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
+    await this.redisClient.expire(
+      `jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`,
+      DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS,
+    );
   };
 
   private removeUserToDocActiveList = async (docId: string, userId: string) => {
@@ -68,13 +74,6 @@ export class DocumentRepository implements IDocumentRepository {
   private getActiveUserListForDoc = async (docId: string) => {
     return this.redisClient.smembers(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`);
   };
-
-  private log(level: string, e: string, metadata?: any) {
-    if (!this.logger) {
-      return;
-    }
-    this.logger.log(level, e, metadata);
-  }
 
   public getDocSet = () => {
     this.log(
@@ -104,6 +103,13 @@ export class DocumentRepository implements IDocumentRepository {
       this.log('silly', `DocumentRepository:getDoc(${id}):Doc exists, returning`);
     }
     return doc as CRDTDocument;
+  }
+
+  private log(level: string, e: string, metadata?: any) {
+    if (!this.logger) {
+      return;
+    }
+    this.logger.log(level, e, metadata);
   }
 
   // handleSocket(ws, req) {

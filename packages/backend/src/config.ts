@@ -12,6 +12,7 @@ export interface AppConfig {
   PG_APP_TABLE_NAME?: string;
   PG_POPULATE_DATABASE?: boolean;
   REDIS_URL?: string;
+  REDIS_PASSWORD?: string;
 }
 
 const config: AppConfig = {
@@ -26,7 +27,9 @@ const config: AppConfig = {
   PGDATABASE: 'jot',
   PG_APP_TABLE_NAME: 'app',
   PGPORT: parseInt(process.env.PGPORT || '', 10) || 5432,
-  REDIS_URL: process.env.REDIS_URL,
+  REDIS_URL:
+    process.env.REDIS_URL || 'redis://redis-11672.c60.us-west-1-2.ec2.cloud.redislabs.com:11672',
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD || 'jOOsJSMB5WIxLDv7o4mqye167Spv2ubL',
 };
 
 export default config;

@@ -28,16 +28,19 @@ export class RedisBasicClient implements IRedisBasicClient {
 
   public srem = (topic: string, keyToRemoveFromSet: string): Promise<number> =>
     new Promise((accept, reject) =>
-      this.redisClient.srem(
-        topic,
-        keyToRemoveFromSet,
-        (err, val) => (err ? reject(err) : accept(val)),
+      this.redisClient.srem(topic, keyToRemoveFromSet, (err, val) =>
+        err ? reject(err) : accept(val),
       ),
     );
 
   public smembers = (topic: string): Promise<Array<string>> =>
     new Promise((accept, reject) =>
       this.redisClient.smembers(topic, (err, val) => (err ? reject(err) : accept(val))),
+    );
+
+  public expire = (key: string, seconds: number): Promise<number> =>
+    new Promise((accept, reject) =>
+      this.redisClient.expire(key, seconds, (err, val) => (err ? reject(err) : accept(val))),
     );
 
   public getClient = (): RedisClient => this.redisClient;
