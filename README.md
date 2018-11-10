@@ -17,11 +17,13 @@ First install deps:
 yarn install
 ```
 
-To run the entire stack (frontend and backend). [Redis automatically connects to dev cloud instance].
+To run the entire stack (frontend and backend):
 
 ```
 yarn start
 ```
+
+Redis automatically connects to cloud dev instance.
 
 
 #### Backend 
@@ -31,6 +33,6 @@ The dev backend server is hosted at [`http://localhost:3001`](`http://localhost:
 To make sure it is working, make a GET request to [`http://localhost:3001/api/v0/healthcheck`](http://localhost:3001/api/v0/healthcheck).
 
 
-##### Frontend
+#### Frontend
 
 The dev backend server is hosted at [`http://localhost:1234`](http://localhost:1234). It will also live reload.
