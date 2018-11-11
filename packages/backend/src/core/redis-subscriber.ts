@@ -2,6 +2,7 @@ import { RedisClient } from 'redis';
 import { Logger } from 'winston';
 
 export interface Subscriber {
+  getSubscriber(): RedisClient;
   // subscribe(channelName: string, payload: any): Promise<number>;
   // unsubscribe(subscriptionId: number): void;
 }
@@ -18,6 +19,10 @@ export class RedisSubscriber implements Subscriber {
     this.subscriber = redisSubscriber;
     this.logger = logger;
   }
+
+  getSubscriber = () => {
+    return this.subscriber;
+  };
 
   private log(level: string, message: string, meta?: any) {
     if (!this.logger) {

@@ -70,7 +70,7 @@ export class WebSocketNode {
     this.connections.add(connectionContext);
     this.log(
       'debug',
-      `WS node ${this.id}: Added connection. ${this.getConnectionsCount()} total connections.`,
+      `WebsocketNode: Connection added. ${this.getConnectionsCount()} total connections.`,
     );
   }
 

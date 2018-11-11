@@ -4,7 +4,11 @@ import { Publisher } from './redis-publisher';
 import { Subscriber } from './redis-subscriber';
 import { RedisBasicClient } from './redis-client';
 
-const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 3600; // one hour
+const DOC_EVENT_STREAM_TOPIC_WILDCARD = 'jot:doc:*';
+const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 3600;
+const TOPICS = {
+  ACTIVE_USERS: 'active-users',
+};
 
 export type CRDTDocument = Automerge.AutomergeRoot;
 
@@ -31,16 +35,13 @@ export interface IDocumentRepository {
   serializeDoc(doc: CRDTDocument): string;
 }
 
-export const TOPICS = {
-  ACTIVE_USERS: 'active-users',
-};
-
 export class DocumentRepository implements IDocumentRepository {
   docSet: DocSet;
   publisher: Publisher;
   subscriber: Subscriber;
   redisClient: RedisBasicClient;
   logger?: Logger;
+  docStreamListeners: Set<any>;
   constructor({
     initialDocSet,
     logger,
@@ -52,8 +53,42 @@ export class DocumentRepository implements IDocumentRepository {
     this.subscriber = subscriber;
     this.redisClient = redisClient;
     this.docSet = initialDocSet || new (Automerge as any).DocSet();
+    this.docStreamListeners = new Set();
     this.logger = logger;
+
+    this.subscribeToRedisDocStream();
+    this.testPublishDocEventStream();
   }
+
+  private subscribeToRedisDocStream = async () => {
+    // Handler for
+    this.subscriber.getSubscriber().on('pmessage', (pattern, channel, message) => {
+      this.log(
+        'verbose',
+        `DocStream message received from channel ${channel} (triggered via pattern ${pattern})`,
+      );
+      this.log(
+        'silly',
+        `Calling all ${this.docStreamListeners.size} docStreamListeners with message`,
+      );
+      this.docStreamListeners.forEach(f => f(message));
+    });
+    // Handler triggered on new redis psubscriptions
+    // this.subscriber.getSubscriber().on('psubscribe', (pattern, _count) => {
+    //   this.log('verbose', `Redis psubscription for DocumentRepository's Doc event stream setup using pattern ${pattern}`)
+    // });
+    this.subscriber.getSubscriber().psubscribe(DOC_EVENT_STREAM_TOPIC_WILDCARD);
+  };
+
+  private testPublishDocEventStream = () => {
+    setTimeout(() => this.publisher.publish('jot:doc:yeeeeet', { skirt: 'skurt' }), 500);
+  };
+
+  public addListener = (cbFn: Function): Function => {
+    this.docStreamListeners.add(cbFn);
+    const removeFn = () => this.docStreamListeners.delete(cbFn);
+    return removeFn;
+  };
 
   public joinDocument = async (docId: string, userId: string) => {
     await this.addUserToDocActiveList(docId, userId);
@@ -72,7 +107,7 @@ export class DocumentRepository implements IDocumentRepository {
       DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS,
     );
     this.log(
-      'silly',
+      'verbose',
       `DocumentRepository:addUserToDocActiveList:Added user ${userId} to active user list for doc ${docId}`,
     );
   };
@@ -80,7 +115,7 @@ export class DocumentRepository implements IDocumentRepository {
   private removeUserToDocActiveList = async (docId: string, userId: string) => {
     await this.redisClient.srem(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
     this.log(
-      'silly',
+      'verbose',
       `DocumentRepository:removeUserToDocActiveList:Removed user ${userId} from active user list for doc ${docId}`,
     );
   };
@@ -89,11 +124,8 @@ export class DocumentRepository implements IDocumentRepository {
     return this.redisClient.smembers(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`);
   };
 
+  // antipattern need to find a better way
   public getDocSet = () => {
-    this.log(
-      'silly',
-      'DocumentRepository.getDocSet will be deprecated, do not build on top of it.',
-    );
     return this.docSet;
   };
 
@@ -113,9 +145,8 @@ export class DocumentRepository implements IDocumentRepository {
     if (!doc) {
       this.log('silly', `DocumentRepository:getDoc(${id}):Doc does not exist, returning`);
       return null;
-    } else {
-      this.log('silly', `DocumentRepository:getDoc(${id}):Doc exists, returning`);
     }
+    this.log('silly', `DocumentRepository:getDoc(${id}):Doc exists, returning`);
     return doc as CRDTDocument;
   }
 
