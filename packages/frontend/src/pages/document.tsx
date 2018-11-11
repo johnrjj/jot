@@ -488,7 +488,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                 <Websocket
                   ref={this.websocket}
                   debug={true}
-                  url={'ws://localhost:3001/ws'}
+                  url={this.props.wsEndpoint}
                   onMessage={this.handleMessage}
                   onClose={() => console.log('websocket closed')}
                 />
