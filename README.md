@@ -10,6 +10,8 @@ Realtime collaboritve editor using CRDTs.
 
 ### Local dev setup
 
+A good bit of work has been done to ensure a great devx. Install the dependencies and immedietly begin running the app using sensible defaults. No dockerfile (yet).
+
 First install deps:
 
 ```
@@ -22,17 +24,19 @@ To run the entire stack in dev mode (frontend and backend):
 yarn start
 ```
 
+Your default browser will automatically open to the local frontend app when done compiling.
+
 All packages are watched, and have live and/or hot reloading where applicable.
 
 Redis automatically connects to a cloud dev Redis server (you can override if needed).
 
-### Dev endpoints
+### Package Local Dev Links
 
-#### Frontend
+#### `@jot/frontend`
 
 The dev frontend server is hosted at [`http://localhost:1234`](http://localhost:1234). It will live reload.
 
-#### Backend
+#### `@jot/backend`
 
 The dev backend server is hosted at [`http://localhost:3001`](`http://localhost:3001`). It will also live relod.
 
@@ -40,7 +44,19 @@ To confirm it's working, a GET request to [`http://localhost:3001/api/v0/healthc
 
 ## Deployment
 
-### Frontend
+### Overview
+
+#### Prod URLs
+
+Frontend: [`https://jot-app.surge.sh`](https://jot-app.surge.sh)
+
+Backend: [`https://jot-api-prod.herokuapp.com`](https://jot-api-prod.herokuapp.com)
+
+---
+
+### Package Deployment:
+
+### `@jot/frontend`
 
 Frontend is manually deployed right now via yarn script:
 
@@ -48,10 +64,16 @@ Frontend is manually deployed right now via yarn script:
 yarn deploy:frontend
 ```
 
-### Backend
+Prod frontend url: [`https://jot-app.surge.sh`](https://jot-app.surge.sh)
+
+### `@jot/backend`
 
 Backend autodeploys to Heroku on every successful master build.
 
-Prod base url: `https://jot-api-prod.herokuapp.com`
+Prod backend base url: `https://jot-api-prod.herokuapp.com`
 
-Prod healthcheck url: [`https://jot-api-prod.herokuapp.com/healthcheck`](https://jot-api-prod.herokuapp.com/healthcheck)
+Prod backend healthcheck url: [`https://jot-api-prod.herokuapp.com/healthcheck`](https://jot-api-prod.herokuapp.com/healthcheck)
+
+### `@jot/common`
+
+Does not need to be deployed.
