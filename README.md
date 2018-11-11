@@ -26,12 +26,32 @@ All packages are watched, and have live and/or hot reloading where applicable.
 
 Redis automatically connects to a cloud dev Redis server (you can override if needed).
 
-#### Backend
-
-The dev backend server is hosted at [`http://localhost:3001`](`http://localhost:3001`). It will live relod.
-
-To make sure it is working, make a GET request to [`http://localhost:3001/api/v0/healthcheck`](http://localhost:3001/api/v0/healthcheck).
+### Dev endpoints
 
 #### Frontend
 
-The dev backend server is hosted at [`http://localhost:1234`](http://localhost:1234). It will also live reload.
+The dev frontend server is hosted at [`http://localhost:1234`](http://localhost:1234). It will live reload.
+
+#### Backend
+
+The dev backend server is hosted at [`http://localhost:3001`](`http://localhost:3001`). It will also live relod.
+
+To confirm it's working, a GET request to [`http://localhost:3001/api/v0/healthcheck`](http://localhost:3001/api/v0/healthcheck) should return a status code 200 `OK`.
+
+## Deployment
+
+### Frontend
+
+Frontend is manually deployed right now via yarn script:
+
+```
+yarn deploy:frontend
+```
+
+### Backend
+
+Backend autodeploys to Heroku on every successful master build.
+
+Prod base url: `https://jot-api-prod.herokuapp.com`
+
+Prod healthcheck url: [`https://jot-api-prod.herokuapp.com/healthcheck`](https://jot-api-prod.herokuapp.com/healthcheck)
