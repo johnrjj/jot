@@ -189,7 +189,6 @@ export class WebSocketNode {
           this.log(
             'silly',
             `websocket node ${this.id}: connectionAutomerge sending message to ${agentId}`,
-            message,
           );
           const msg: AutomergeUpdateFromServerMessage = WebSocketServerMessageCreator.createAutomergeUpdateFromServerMessage(
             message,

@@ -60,8 +60,44 @@ export class DocumentRepository implements IDocumentRepository {
     this.testPublishDocEventStream();
   }
 
+  public addDocStreamListener = (cbFn: Function): Function => {
+    this.docStreamListeners.add(cbFn);
+    const removeFn = () => this.docStreamListeners.delete(cbFn);
+    return removeFn;
+  };
+
+  public joinDocument = async (docId: string, userId: string) => {
+    await this.addUserToDocActiveList(docId, userId);
+    this.log('verbose', `DocumentRepository:joinDocument:User ${userId} joined doc ${docId}`);
+  };
+
+  public leaveDocument = async (docId: string, userId: string) => {
+    await this.removeUserToDocActiveList(docId, userId);
+    this.log('verbose', `DocumentRepository:leaveDocument:User ${userId} left doc ${docId}`);
+  };
+
+  public serializeDoc(doc: CRDTDocument): string {
+    return Automerge.save(doc);
+  }
+
+  public async getDoc(id: string): Promise<CRDTDocument | null> {
+    this.log('debug', `DocumentRepository:getDoc(${id}):Fetching doc`);
+    const doc = this.docSet.getDoc(id);
+    if (!doc) {
+      this.log('silly', `DocumentRepository:getDoc(${id}):Doc does not exist, returning`);
+      return null;
+    }
+    this.log('silly', `DocumentRepository:getDoc(${id}):Doc exists, returning`);
+    return doc as CRDTDocument;
+  }
+
+  // antipattern need to find a better way
+  public getDocSet = () => {
+    return this.docSet;
+  };
+
   private subscribeToRedisDocStream = async () => {
-    // Handler for
+    // Handler for getting pattern message from DOC_EVENT_STREAM_TOPIC_WILDCARD
     this.subscriber.getSubscriber().on('pmessage', (pattern, channel, message) => {
       this.log(
         'verbose',
@@ -84,28 +120,10 @@ export class DocumentRepository implements IDocumentRepository {
     setTimeout(() => this.publisher.publish('jot:doc:yeeeeet', { skirt: 'skurt' }), 500);
   };
 
-  public addListener = (cbFn: Function): Function => {
-    this.docStreamListeners.add(cbFn);
-    const removeFn = () => this.docStreamListeners.delete(cbFn);
-    return removeFn;
-  };
-
-  public joinDocument = async (docId: string, userId: string) => {
-    await this.addUserToDocActiveList(docId, userId);
-    this.log('verbose', `DocumentRepository:joinDocument:User ${userId} joined doc ${docId}`);
-  };
-
-  public leaveDocument = async (docId: string, userId: string) => {
-    await this.removeUserToDocActiveList(docId, userId);
-    this.log('verbose', `DocumentRepository:leaveDocument:User ${userId} left doc ${docId}`);
-  };
-
   private addUserToDocActiveList = async (docId: string, userId: string) => {
-    await this.redisClient.sadd(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
-    await this.redisClient.expire(
-      `jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`,
-      DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS,
-    );
+    const topic = `jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`;
+    await this.redisClient.sadd(topic, userId);
+    await this.redisClient.expire(topic, DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS);
     this.log(
       'verbose',
       `DocumentRepository:addUserToDocActiveList:Added user ${userId} to active user list for doc ${docId}`,
@@ -113,7 +131,8 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private removeUserToDocActiveList = async (docId: string, userId: string) => {
-    await this.redisClient.srem(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`, userId);
+    const topic = `jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`;
+    await this.redisClient.srem(topic, userId);
     this.log(
       'verbose',
       `DocumentRepository:removeUserToDocActiveList:Removed user ${userId} from active user list for doc ${docId}`,
@@ -121,33 +140,14 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private getActiveUserListForDoc = async (docId: string) => {
-    return this.redisClient.smembers(`jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`);
+    const topic = `jot:doc:${docId}:${TOPICS.ACTIVE_USERS}`;
+    return this.redisClient.smembers(topic);
   };
 
-  // antipattern need to find a better way
-  public getDocSet = () => {
-    return this.docSet;
-  };
-
-  async createNewDoc(docId: string): Promise<CRDTDocument> {
+  private async createNewDoc(docId: string): Promise<CRDTDocument> {
     return Automerge.change(Automerge.init(), doc => {
       doc.docId = docId;
     });
-  }
-
-  public serializeDoc(doc: CRDTDocument): string {
-    return Automerge.save(doc);
-  }
-
-  async getDoc(id: string): Promise<CRDTDocument | null> {
-    this.log('debug', `DocumentRepository:getDoc(${id}):Fetching doc`);
-    const doc = this.docSet.getDoc(id);
-    if (!doc) {
-      this.log('silly', `DocumentRepository:getDoc(${id}):Doc does not exist, returning`);
-      return null;
-    }
-    this.log('silly', `DocumentRepository:getDoc(${id}):Doc exists, returning`);
-    return doc as CRDTDocument;
   }
 
   private log(level: string, e: string, metadata?: any) {
