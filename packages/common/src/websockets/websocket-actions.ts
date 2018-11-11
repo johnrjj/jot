@@ -23,6 +23,24 @@ export interface JoinDocumentRequestMessage {
   };
 }
 
+export interface LeaveDocumentRequestMessage {
+  type: 'leave-document';
+  payload: {
+    clientId: string;
+    docId: string;
+    agentId: string;
+  };
+}
+
+export interface LeaveDocumentSuccessMessage {
+  type: 'leave-document-success';
+  payload: {
+    clientId: string;
+    docId: string;
+    agentId: string;
+  };
+}
+
 export interface JoinDocumentSuccessMessage {
   type: 'join-document-success';
   payload: {
@@ -70,11 +88,13 @@ export interface RemoteAgentCursorUpdateFromServerMessage {
 export type WebsocketClientMessages =
   | AutomergeUpdateToServerMessage
   | JoinDocumentRequestMessage
+  | LeaveDocumentRequestMessage
   | UpdateClientSelectionMessage;
 
 export type WebsocketServerMessages =
   | KeepaliveFromServerMessage
   | JoinDocumentSuccessMessage
+  | LeaveDocumentSuccessMessage
   | RemoteAgentCursorUpdateFromServerMessage
   | AutomergeUpdateFromServerMessage;
 
@@ -129,6 +149,25 @@ const createJoinDocumentRequestMessage = ({
   };
 };
 
+const createLeaveDocumentRequestMessage = ({
+  clientId,
+  docId,
+  agentId,
+}: {
+  clientId: string;
+  docId: string;
+  agentId: string;
+}): LeaveDocumentRequestMessage => {
+  return {
+    type: 'leave-document',
+    payload: {
+      docId,
+      clientId,
+      agentId,
+    },
+  };
+};
+
 const createRemoteAgentCursorUpdateFromServerMessage = (payload): RemoteAgentCursorUpdateFromServerMessage => {
   return {
     type: 'remote-agent-setselection-from-server',
@@ -147,6 +186,25 @@ const createJoinDocumentSuccessMessage = ({
 }): JoinDocumentSuccessMessage => {
   return {
     type: 'join-document-success',
+    payload: {
+      docId,
+      clientId,
+      agentId,
+    },
+  };
+};
+
+const createLeaveDocumentSuccessMessage = ({
+  docId,
+  clientId,
+  agentId,
+}: {
+  docId: string;
+  clientId: string;
+  agentId: string;
+}): LeaveDocumentSuccessMessage => {
+  return {
+    type: 'leave-document-success',
     payload: {
       docId,
       clientId,
@@ -182,6 +240,7 @@ const createUpdateClientSelectionMessage = ({
 const WebSocketClientMessageCreator = {
   createAutomergeUpdateToServerMessage,
   createJoinDocumentRequestMessage,
+  createLeaveDocumentRequestMessage,
   createUpdateClientSelectionMessage,
 };
 
@@ -190,6 +249,7 @@ const WebSocketServerMessageCreator = {
   createAutomergeUpdateFromServerMessage,
   createRemoteAgentCursorUpdateFromServerMessage,
   createJoinDocumentSuccessMessage,
+  createLeaveDocumentSuccessMessage,
 };
 
 export { WebSocketClientMessageCreator, WebSocketServerMessageCreator };
