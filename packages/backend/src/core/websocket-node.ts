@@ -164,6 +164,14 @@ export class WebSocketNode {
     } catch (e) {
       this.log('error', `error:join-document getting doc id ${docId} agentId:${agentId}`, e);
     }
+
+    const joinSuccessAckMsg = WebSocketServerMessageCreator.createJoinDocumentSuccessMessage({
+      docId,
+      clientId,
+      agentId,
+    });
+    connectionContext.socket.send(JSON.stringify(joinSuccessAckMsg));
+
     if (!this.connectionAutomerge.has(agentId)) {
       this.log('silly', `connectionAutomerge adding ${agentId}`);
       const connection = new (Automerge as any).Connection(this.documentRepository.getDocSet(), (message: any) => {
@@ -178,12 +186,6 @@ export class WebSocketNode {
       (this.connectionAutomerge.get(agentId) as AutomergeConnection).open();
       connectionContext.agentId = agentId;
     }
-    const joinSuccessAckMsg = WebSocketServerMessageCreator.createJoinDocumentSuccessMessage({
-      docId,
-      clientId,
-      agentId,
-    });
-    connectionContext.socket.send(JSON.stringify(joinSuccessAckMsg));
     return { agentId };
   }
 

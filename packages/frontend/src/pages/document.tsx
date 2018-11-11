@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Editor } from 'slate-react';
 import { Value } from 'slate';
 import Automerge from 'automerge';
-import uuid from 'uuid/v4';
 import styled from 'styled-components';
 import Websocket from '../components/Websocket';
 import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
@@ -75,14 +74,15 @@ interface DocEditProps {
   wsEndpoint: string;
   apiEndpoint: string;
   path: string;
+  clientId: string;
   docId?: string; // needs to be optional otherwise typescript complains w/ reach router typings
 }
 
 interface DocEditState {
   loading: boolean;
   value: Value;
-  clientId: string;
   docId: string;
+  isSyncedWithServer: boolean;
   clientUpdateCount: number;
   serverUpdateCount: number;
   isConnectedToDocument: boolean;
@@ -107,10 +107,10 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       loading: true,
       error: null,
       value: null,
-      clientId: uuid(),
       docId: null,
       clientUpdateCount: 0,
       serverUpdateCount: 0,
+      isSyncedWithServer: false,
       isConnectedToDocument: false,
       isSidebarOpen: false,
       isHistorySidebarOpen: false,
@@ -147,26 +147,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       this.docSet.setDoc(docId, this.doc);
 
       this.setState({
-        // loading: false,
         value: initialSlateValue,
         docId: docId,
-      });
-
-      this.connection = new Automerge.Connection(this.docSet, data => {
-        const message = WebSocketClientMessageCreator.createAutomergeUpdateToServerMessage({
-          clientId: this.state.clientId,
-          docId: this.state.docId,
-          message: data,
-        });
-
-        if (this.state.isConnectedToDocument) {
-          this.websocket.current.sendJsonMessage(message);
-        } else {
-          setTimeout(() => {
-            // wait a second while we connect...
-            this.websocket.current.sendJsonMessage(message);
-          }, 1000);
-        }
       });
     } catch (error) {
       console.log(error.message);
@@ -182,11 +164,25 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         this.websocket.current.sendJsonMessage(
           WebSocketClientMessageCreator.createJoinDocumentRequestMessage({
             docId: this.state.docId,
-            clientId: this.state.clientId,
+            clientId: this.props.clientId,
           }),
-        ) || this.connection.open(),
+        ),
       1000,
     );
+  }
+
+  componentDidUpdate(prevProps: DocEditProps, prevState: DocEditState) {
+    if (!prevState.isConnectedToDocument && this.state.isConnectedToDocument) {
+      this.connection = new Automerge.Connection(this.docSet, data => {
+        const message = WebSocketClientMessageCreator.createAutomergeUpdateToServerMessage({
+          clientId: this.props.clientId,
+          docId: this.state.docId,
+          message: data,
+        });
+        this.websocket.current.sendJsonMessage(message);
+      });
+      this.connection.open();
+    }
   }
 
   componentDidCatch(e, stack) {
@@ -200,7 +196,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     console.log('onChange:operations', operations && operations.toJS(), `from remote: ${rest.fromRemote}`);
     this.setState({ value });
     this.selection = value.selection.toJS();
-    const clientId = this.state.clientId;
+    const clientId = this.props.clientId;
     const message = clientId ? `Client ${clientId}` : 'Change log';
 
     if (rest.fromSetSelectionSelf) {
@@ -225,7 +221,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         anchor: selection.anchor,
         focus: selection.focus,
         mark: {
-          type: `remote-agent-setselection-${this.state.clientId}`,
+          type: `remote-agent-setselection-${this.props.clientId}`,
         },
       };
       const decorations = [decoration];
@@ -243,7 +239,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
       if (this.state.isConnectedToDocument) {
         const msg: UpdateClientSelectionMessage = WebSocketClientMessageCreator.createUpdateClientSelectionMessage({
-          clientId: this.state.clientId,
+          clientId: this.props.clientId,
           docId: this.state.docId,
           decoration,
         });
@@ -276,13 +272,20 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }));
   };
 
-  handleJoinDocumentSuccessMessage(_msg: JoinDocumentSuccessMessage): void {}
+  handleJoinDocumentSuccessMessage(_msg: JoinDocumentSuccessMessage): void {
+    this.setState({
+      loading: false,
+      isConnectedToDocument: true,
+    });
+  }
+
   handleKeepAlive(_msg: KeepaliveFromServerMessage): void {}
+
   handleRemoteAgentSelectionFromServerMessage(msg: RemoteAgentCursorUpdateFromServerMessage): void {
     const { payload } = msg;
     const clientId = payload.clientId;
 
-    if (clientId === this.state.clientId) {
+    if (clientId === this.props.clientId) {
       console.log('received our own message from the server, skipping');
       return;
     }
@@ -298,17 +301,10 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
           return c;
         });
       });
-
-    throw new Error('Method not implemented.');
   }
+
   handleServerUpdateMessage = (msg: AutomergeUpdateFromServerMessage): void => {
     const docNew = this.connection.receiveMsg(msg.payload);
-    if (!this.state.isConnectedToDocument) {
-      this.setState({
-        loading: false,
-        isConnectedToDocument: true,
-      });
-    }
     if (msg.payload.changes) {
       const currentDoc = this.doc;
       const opSetDiff = Automerge.diff(currentDoc, docNew);
@@ -325,6 +321,11 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         const updatedDoc = this.docSet.getDoc(this.state.docId);
         this.doc = updatedDoc;
       }
+    }
+    if (!this.state.isSyncedWithServer) {
+      this.setState({
+        isSyncedWithServer: true,
+      });
     }
   };
 
@@ -385,7 +386,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   renderMark = (props, next) => {
     const { children, mark, attributes } = props;
 
-    if (mark.type === `remote-agent-setselection-${this.state.clientId}`) {
+    if (mark.type === `remote-agent-setselection-${this.props.clientId}`) {
       return (
         <span {...attributes} data-self-selection={true}>
           {children}
@@ -394,7 +395,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
     if (
       mark.type.startsWith('remote-agent-setselection-') &&
-      mark.type !== `remote-agent-setselection-${this.state.clientId}`
+      mark.type !== `remote-agent-setselection-${this.props.clientId}`
     ) {
       return (
         <span
@@ -461,7 +462,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   };
 
   render() {
-    const { loading, error, isHistorySidebarOpen } = this.state;
+    const { loading, error, isHistorySidebarOpen, isConnectedToDocument, isSyncedWithServer } = this.state;
     if (error) {
       return (
         <div>
@@ -469,6 +470,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         </div>
       );
     }
+
+    const isLoading = loading || !isConnectedToDocument || !isSyncedWithServer;
 
     // const history = Automerge.getHistory(this.doc);
     return (
@@ -500,8 +503,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   </EditorToolbarButtonContainer>
                 </EditorToolbarRightGroup>
               </EditorToolbar>
-              {loading && <div>loading...</div>}
-              {!loading && (
+              {isLoading && <div>loading...</div>}
+              {!isLoading && (
                 <Toolbar>
                   {this.renderMarkButton('bold', 'bold_icon')}
                   {this.renderMarkButton('italic', 'italic_icon')}
@@ -520,7 +523,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                       )} */}
                 </Toolbar>
               )}
-              {!loading && (
+              {!isLoading && (
                 <SlateEditorContainer>
                   <FakeTitle>Welcome to the Jot Editor</FakeTitle>
                   <Editor
