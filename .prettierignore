@@ -3,3 +3,5 @@ dist
 node_modules
 /frontend/dist
 /backend/dist
+.cache
+tsconfig.json

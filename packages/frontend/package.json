@@ -10,7 +10,6 @@
     "build": "parcel build public/index.html",
     "build:lib": "parcel build src/index.ts",
     "deploy": "npm run build && surge ./dist measure-text-off-thread.surge.sh",
-    "prettier": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css}'",
     "clean": "rimraf dist .cache"
   },
   "dependencies": {

@@ -1,17 +1,16 @@
-# ✍️ Jot 
+# ✍️ Jot
 
-[![CircleCI](https://circleci.com/gh/johnrjj/jot.svg?style=svg&circle-token=f3d5f772f89eee9e33f32c1c273e7164d3635567)](https://circleci.com/gh/johnrjj/jot) [![Greenkeeper badge](https://badges.greenkeeper.io/johnrjj/jot.svg?token=c7ecb37b97912ada6cb220f095fcf1e64193d4bb32db380702b3cb6e2550ce4e&ts=1540698479566)](https://greenkeeper.io/) 
+[![CircleCI](https://circleci.com/gh/johnrjj/jot.svg?style=svg&circle-token=f3d5f772f89eee9e33f32c1c273e7164d3635567)](https://circleci.com/gh/johnrjj/jot) [![Greenkeeper badge](https://badges.greenkeeper.io/johnrjj/jot.svg?token=c7ecb37b97912ada6cb220f095fcf1e64193d4bb32db380702b3cb6e2550ce4e&ts=1540698479566)](https://greenkeeper.io/)
 
 ## Overview
 
 Realtime collaboritve editor using CRDTs.
 
-
 ## Getting started
 
 ### Local dev setup
 
-First install deps: 
+First install deps:
 
 ```
 yarn install
@@ -25,14 +24,13 @@ yarn start
 
 All packages are watched, and have live and/or hot reloading where applicable.
 
-Redis automatically connects to a cloud dev Redis server (you can override if needed). 
+Redis automatically connects to a cloud dev Redis server (you can override if needed).
 
-#### Backend 
+#### Backend
 
 The dev backend server is hosted at [`http://localhost:3001`](`http://localhost:3001`). It will live relod.
 
 To make sure it is working, make a GET request to [`http://localhost:3001/api/v0/healthcheck`](http://localhost:3001/api/v0/healthcheck).
-
 
 #### Frontend
 

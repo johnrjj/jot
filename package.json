@@ -3,11 +3,11 @@
   "private": true,
   "scripts": {
     "build": "lerna run build  --stream",
-    "prettier": "lerna run prettier --stream",
     "start": "wsrun --done-criteria='Found 0 errors. Watching for file changes.' --stages watch",
     "start:backend": "lerna run start --stream --scope backend",
     "start:frontend": "lerna run start --stream --scope frontend",
-    "clean": "lerna run clean --stream"
+    "clean": "lerna run clean --stream",
+    "prettier": "prettier --write '**/*.{ts,tsx,json,md}' --config .prettierrc"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
