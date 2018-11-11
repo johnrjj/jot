@@ -3,7 +3,6 @@
   "private": true,
   "version": "1.0.0",
   "main": "dist/index.js",
-  "license": "MIT",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index",

@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "index.js",
   "private": true,
-  "license": "MIT",
   "scripts": {
     "start": "parcel public/index.html --open",
     "watch": "parcel public/index.html --open",
