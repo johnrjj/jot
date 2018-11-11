@@ -206,10 +206,7 @@ export const applySlateOperationsHelper = (doc, operations) => {
         let nodeToMove = currentNode.nodes[oldIndex];
 
         // Find the new target...
-        if (
-          oldParentPath.every((x, i) => x === newParentPath.get(i)) &&
-          oldParentPath.size === newParentPath.size
-        ) {
+        if (oldParentPath.every((x, i) => x === newParentPath.get(i)) && oldParentPath.size === newParentPath.size) {
           // Do nothing
         } else if (
           oldParentPath.every((x, i) => x === newParentPath.get(i)) &&
@@ -221,10 +218,7 @@ export const applySlateOperationsHelper = (doc, operations) => {
           // Otherwise, if the old path removal resulted in the new path being no longer
           // correct, we need to decrement the new path at the old path's last index.
           currentNode = doc.note;
-          newParentPath = newParentPath.set(
-            oldParentPath.size,
-            newParentPath.get(oldParentPath.size) - 1,
-          );
+          newParentPath = newParentPath.set(oldParentPath.size, newParentPath.get(oldParentPath.size) - 1);
           newParentPath.forEach(el => {
             currentNode = currentNode.nodes[el];
           });

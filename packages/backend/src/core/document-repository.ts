@@ -42,13 +42,7 @@ export class DocumentRepository implements IDocumentRepository {
   redisClient: RedisBasicClient;
   logger?: Logger;
   docStreamListeners: Set<any>;
-  constructor({
-    initialDocSet,
-    logger,
-    publisher,
-    subscriber,
-    redisClient,
-  }: IDocumentRepositoryConfig) {
+  constructor({ initialDocSet, logger, publisher, subscriber, redisClient }: IDocumentRepositoryConfig) {
     this.publisher = publisher;
     this.subscriber = subscriber;
     this.redisClient = redisClient;
@@ -99,14 +93,8 @@ export class DocumentRepository implements IDocumentRepository {
   private subscribeToRedisDocStream = async () => {
     // Handler for getting pattern message from DOC_EVENT_STREAM_TOPIC_WILDCARD
     this.subscriber.getSubscriber().on('pmessage', (pattern, channel, message) => {
-      this.log(
-        'verbose',
-        `DocStream message received from channel ${channel} (triggered via pattern ${pattern})`,
-      );
-      this.log(
-        'silly',
-        `Calling all ${this.docStreamListeners.size} docStreamListeners with message`,
-      );
+      this.log('verbose', `DocStream message received from channel ${channel} (triggered via pattern ${pattern})`);
+      this.log('silly', `Calling all ${this.docStreamListeners.size} docStreamListeners with message`);
       this.docStreamListeners.forEach(f => f(message));
     });
     // Handler triggered on new redis psubscriptions

@@ -96,9 +96,7 @@ const createAutomergeUpdateToServerMessage = ({
   };
 };
 
-const createAutomergeUpdateFromServerMessage = (
-  payload_TYPEME: any,
-): AutomergeUpdateFromServerMessage => {
+const createAutomergeUpdateFromServerMessage = (payload_TYPEME: any): AutomergeUpdateFromServerMessage => {
   return {
     type: 'server-update',
     payload: payload_TYPEME,
@@ -121,9 +119,7 @@ const createJoinDocumentRequestMessage = ({
   };
 };
 
-const createRemoteAgentCursorUpdateFromServerMessage = (
-  payload,
-): RemoteAgentCursorUpdateFromServerMessage => {
+const createRemoteAgentCursorUpdateFromServerMessage = (payload): RemoteAgentCursorUpdateFromServerMessage => {
   return {
     type: 'remote-agent-setselection-from-server',
     payload: payload,

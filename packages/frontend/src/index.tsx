@@ -3,16 +3,10 @@ import ReactDOM from 'react-dom';
 import App from './App';
 
 const API_ENDPOINT_ROOT =
-  process.env.NODE_ENV === 'development'
-    ? 'http://localhost:3001/api/v0'
-    : 'http://localhost:3001/api/v0';
+  process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api/v0' : 'http://localhost:3001/api/v0';
 // : 'https://jot.herokuapp.com/api/v0';
 
-const WS_ENDPOINT =
-  process.env.NODE_ENV === 'development' ? 'ws://localhost:3001/ws' : 'ws://localhost:3001/ws';
+const WS_ENDPOINT = process.env.NODE_ENV === 'development' ? 'ws://localhost:3001/ws' : 'ws://localhost:3001/ws';
 // : 'wss://jot.herokuapp.com/ws';
 
-ReactDOM.render(
-  <App apiEndpoint={API_ENDPOINT_ROOT} wsEndpoint={WS_ENDPOINT} />,
-  document.getElementById('app'),
-);
+ReactDOM.render(<App apiEndpoint={API_ENDPOINT_ROOT} wsEndpoint={WS_ENDPOINT} />, document.getElementById('app'));

@@ -24,11 +24,7 @@ export default class App extends Component<AppProps, AppState> {
       <Router>
         <Home path="/" />
         <Documents path="/docs" />
-        <DocEdit
-          path="docs/:docId"
-          apiEndpoint={this.props.apiEndpoint}
-          wsEndpoint={this.props.wsEndpoint}
-        />
+        <DocEdit path="docs/:docId" apiEndpoint={this.props.apiEndpoint} wsEndpoint={this.props.wsEndpoint} />
       </Router>
     );
   }

@@ -8,14 +8,7 @@ import Websocket from '../components/Websocket';
 import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
-import {
-  faFont,
-  faQuoteRight,
-  faBold,
-  faItalic,
-  faCode,
-  faUnderline,
-} from '@fortawesome/free-solid-svg-icons';
+import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
 import {
   EditorContainer,
   EditorToolbar,
@@ -40,15 +33,8 @@ import {
 import '../reset.css';
 import '../global.css';
 import { Toolbar, Button } from '../components/Toolbar';
-import {
-  WebsocketServerMessages,
-  UpdateClientSelectionMessage,
-} from '@jot/common/dist/websockets/websocket-actions';
-const {
-  automergeJsonToSlate,
-  applySlateOperationsHelper,
-  convertAutomergeToSlateOps,
-} = SlateAutomergeAdapter;
+import { WebsocketServerMessages, UpdateClientSelectionMessage } from '@jot/common/dist/websockets/websocket-actions';
+const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
 const QuoteIcon = props => <FontAwesomeIcon icon={faQuoteRight} {...props} />;
@@ -141,9 +127,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       // general error
       if (res.status >= 400) {
         return this.setState({
-          error: `api fetch for sample doc got a ${res.status} [${
-            res.statusText
-          }]\nis your backend on?`,
+          error: `api fetch for sample doc got a ${res.status} [${res.statusText}]\nis your backend on?`,
         });
       }
       const json = await res.json();
@@ -206,11 +190,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   }
 
   onChange = ({ value, operations, ...rest }) => {
-    console.log(
-      'onChange:operations',
-      operations && operations.toJS(),
-      `from remote: ${rest.fromRemote}`,
-    );
+    console.log('onChange:operations', operations && operations.toJS(), `from remote: ${rest.fromRemote}`);
     this.setState({ value });
     this.selection = value.selection.toJS();
     const clientId = this.state.clientId;
@@ -255,13 +235,11 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         });
 
       if (this.state.isConnectedToDocument) {
-        const msg: UpdateClientSelectionMessage = WebSocketClientMessageCreator.createUpdateClientSelectionMessage(
-          {
-            clientId: this.state.clientId,
-            docId: this.state.docId,
-            decoration,
-          },
-        );
+        const msg: UpdateClientSelectionMessage = WebSocketClientMessageCreator.createUpdateClientSelectionMessage({
+          clientId: this.state.clientId,
+          docId: this.state.docId,
+          decoration,
+        });
         this.websocket.current.sendJsonMessage(msg);
       } else {
         console.log('not connected to a doc, not sending cursor/selection to webseockt');
@@ -621,9 +599,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
             .unwrapBlock('bulleted-list')
             .unwrapBlock('numbered-list');
         } else if (isList) {
-          change
-            .unwrapBlock(type == 'bulleted-list' ? 'numbered-list' : 'bulleted-list')
-            .wrapBlock(type);
+          change.unwrapBlock(type == 'bulleted-list' ? 'numbered-list' : 'bulleted-list').wrapBlock(type);
         } else {
           change.setBlocks('list-item').wrapBlock(type);
         }
@@ -642,13 +618,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
     return (
       <Button active={isActive} onMouseDown={event => this.onClickBlock(event, type)}>
-        {icon === 'h1_icon' ? (
-          <FontIcon size="lg" />
-        ) : icon === 'h2_icon' ? (
-          <FontIcon />
-        ) : (
-          <QuoteIcon />
-        )}
+        {icon === 'h1_icon' ? <FontIcon size="lg" /> : icon === 'h2_icon' ? <FontIcon /> : <QuoteIcon />}
       </Button>
     );
   };

@@ -229,9 +229,7 @@ export const valueJSON = (value, options: any = {}) => {
   }
 
   if (options.preserveDecorations) {
-    object.decorations = value.decorations
-      ? value.decorations.toArray().map(d => toJSON(d, options))
-      : null;
+    object.decorations = value.decorations ? value.decorations.toArray().map(d => toJSON(d, options)) : null;
   }
 
   if (options.preserveHistory) {

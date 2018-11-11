@@ -79,9 +79,7 @@ const createApp = async (config: AppConfig): Promise<Express> => {
     logger,
     documentRepository: documentRepo,
   });
-  (app as any).ws('/ws', (ws: any, req: any, next: any) =>
-    webSocketNode.connectionHandler(ws, req, next),
-  );
+  (app as any).ws('/ws', (ws: any, req: any, next: any) => webSocketNode.connectionHandler(ws, req, next));
   logger.log('verbose', '🛠️ Websocket /ws endpoint setup');
 
   app.use((_req: Request, _res: Response, next: NextFunction) => {
@@ -90,12 +88,10 @@ const createApp = async (config: AppConfig): Promise<Express> => {
     next(err);
   });
 
-  app.use(
-    (error: ResponseError | Error | any, _req: Request, res: Response, _next: NextFunction) => {
-      res.status(error.status || 500);
-      res.json({ ...error });
-    },
-  );
+  app.use((error: ResponseError | Error | any, _req: Request, res: Response, _next: NextFunction) => {
+    res.status(error.status || 500);
+    res.json({ ...error });
+  });
   logger.log('debug', `✅ Jot configured successfully, ready to start`);
   // setTimeout(() => logger.log('verbose', `Redis version ${redisClient.server_info.redis_version}`), 2000);
   return app;

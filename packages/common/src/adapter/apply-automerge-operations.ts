@@ -12,11 +12,7 @@ import automergeJsonToSlate from './automerge-json-to-slate';
  * @param {function} failureCallback - (optional) Function to call if an error occurs
  * @returns {Slate.Change} The Slate Change operation with the applied Automerge operations
  */
-export const applyAutomergeOperations = (
-  opSetDiff: Array<any>,
-  change: any,
-  failureCallback: Function,
-) => {
+export const applyAutomergeOperations = (opSetDiff: Array<any>, change: any, failureCallback: Function) => {
   try {
     const slateOps = convertAutomergeToSlateOps(opSetDiff);
     // Apply the operation
@@ -271,11 +267,7 @@ const automergeOpInsert = (op, objIdMap) => {
  * @param {Array} slateOps - List of created Slate operations
  * @return {Array} List of list of Slate operations
  */
-const automergeOpInsertText = (
-  deferredOps: Array<any>,
-  objIdMap: any,
-  slateOps: Array<any>,
-): Array<any> => {
+const automergeOpInsertText = (deferredOps: Array<any>, objIdMap: any, slateOps: Array<any>): Array<any> => {
   // We know all ops in this list have the following conditions true:
   //  - op.action === `insert`
   //  - pathMap.hasOwnProperty(op.obj)

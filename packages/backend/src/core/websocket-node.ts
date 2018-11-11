@@ -53,11 +53,7 @@ export class WebSocketNode {
     return this.connections.size;
   }
 
-  public async connectionHandler(
-    socket: WebSocket,
-    _req: Request,
-    _next: NextFunction,
-  ): Promise<void> {
+  public async connectionHandler(socket: WebSocket, _req: Request, _next: NextFunction): Promise<void> {
     this.log('verbose', `WebSocket client connected to WebSocket Server node ${this.id}`);
     const connectionContext: ConnectionContext = {
       socket,
@@ -68,10 +64,7 @@ export class WebSocketNode {
     socket.on('close', this.handleDisconnectFromClientSocket(connectionContext));
     socket.on('message', this.onMessageFromClientSocket(connectionContext));
     this.connections.add(connectionContext);
-    this.log(
-      'debug',
-      `WebsocketNode: Connection added. ${this.getConnectionsCount()} total connections.`,
-    );
+    this.log('debug', `WebsocketNode: Connection added. ${this.getConnectionsCount()} total connections.`);
   }
 
   private initialize = connectionContext => {
@@ -131,18 +124,11 @@ export class WebSocketNode {
         case 'join-document':
           this.log('debug', `WebSocket subscribe request received`, data);
           const joinDocumentRequestMessage = data;
-          const res = await this.handleReceiveJoinDocumentRequest(
-            connectionContext,
-            joinDocumentRequestMessage,
-          );
+          const res = await this.handleReceiveJoinDocumentRequest(connectionContext, joinDocumentRequestMessage);
           connectionContext.agentId = res.agentId;
           break;
         default:
-          this.log(
-            'debug',
-            `Unrecognized message received from client websocket ${connectionContext.agentId}`,
-            data,
-          );
+          this.log('debug', `Unrecognized message received from client websocket ${connectionContext.agentId}`, data);
           break;
       }
     };
@@ -154,10 +140,7 @@ export class WebSocketNode {
     isClientConnected: boolean,
   ) {
     if (isClientConnected && agentId) {
-      this.log(
-        'verbose',
-        `${agentId} sent websocket server a set selection, going to broadcast cursor selection`,
-      );
+      this.log('verbose', `${agentId} sent websocket server a set selection, going to broadcast cursor selection`);
       const msg: RemoteAgentCursorUpdateFromServerMessage = WebSocketServerMessageCreator.createRemoteAgentCursorUpdateFromServerMessage(
         setSelectionMessage.payload,
       );
@@ -183,19 +166,13 @@ export class WebSocketNode {
     }
     if (!this.connectionAutomerge.has(agentId)) {
       this.log('silly', `connectionAutomerge adding ${agentId}`);
-      const connection = new (Automerge as any).Connection(
-        this.documentRepository.getDocSet(),
-        (message: any) => {
-          this.log(
-            'silly',
-            `websocket node ${this.id}: connectionAutomerge sending message to ${agentId}`,
-          );
-          const msg: AutomergeUpdateFromServerMessage = WebSocketServerMessageCreator.createAutomergeUpdateFromServerMessage(
-            message,
-          );
-          connectionContext.socket.send(JSON.stringify(msg));
-        },
-      );
+      const connection = new (Automerge as any).Connection(this.documentRepository.getDocSet(), (message: any) => {
+        this.log('silly', `websocket node ${this.id}: connectionAutomerge sending message to ${agentId}`);
+        const msg: AutomergeUpdateFromServerMessage = WebSocketServerMessageCreator.createAutomergeUpdateFromServerMessage(
+          message,
+        );
+        connectionContext.socket.send(JSON.stringify(msg));
+      });
       this.connectionAutomerge.set(agentId, connection);
       this.log('silly', `connectionAutomerge opening connection for ${agentId}`);
       (this.connectionAutomerge.get(agentId) as AutomergeConnection).open();
@@ -212,19 +189,13 @@ export class WebSocketNode {
       if (isClientConnected) {
         // const { clientId, docId, message } = (data as any).payload;
         const connection = this.connectionAutomerge.get(msg.payload.clientId);
-        this.log(
-          'verbose',
-          'websocket node connection received message from automerge-connection-send',
-        );
+        this.log('verbose', 'websocket node connection received message from automerge-connection-send');
         const updatedDoc = connection && connection.receiveMsg(msg.payload.message);
         return accept(true);
       } else {
         setTimeout(() => {
           const connection = this.connectionAutomerge.get(msg.payload.clientId);
-          this.log(
-            'verbose',
-            'websocket node connection received message from automerge-connection-send',
-          );
+          this.log('verbose', 'websocket node connection received message from automerge-connection-send');
           const updatedDoc = connection && connection.receiveMsg(msg.payload.message);
           isClientConnected = true;
           return accept(true);
@@ -244,9 +215,7 @@ export class WebSocketNode {
       this.connections.delete(context);
       this.log(
         'debug',
-        `WebSocket Server ${
-          this.id
-        }: ${this.getConnectionsCount()} total active connections remaining. (removed 1)`,
+        `WebSocket Server ${this.id}: ${this.getConnectionsCount()} total active connections remaining. (removed 1)`,
       );
     };
   };
@@ -256,10 +225,7 @@ export class WebSocketNode {
     this.sendMessage(connectionContext, msg);
   }
 
-  private sendMessage(
-    connectionContext: ConnectionContext,
-    message: WebsocketServerMessages,
-  ): void {
+  private sendMessage(connectionContext: ConnectionContext, message: WebsocketServerMessages): void {
     if (message && connectionContext.socket.readyState === WebSocket.OPEN) {
       connectionContext.socket.send(JSON.stringify(message));
     }
