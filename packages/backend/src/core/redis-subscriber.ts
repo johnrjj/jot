@@ -20,7 +20,7 @@ export class RedisSubscriber implements Subscriber {
     this.logger = logger;
   }
 
-  getSubscriber = () => {
+  getSubscriber = (): RedisClient => {
     return this.subscriber;
   };
 

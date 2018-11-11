@@ -23,6 +23,15 @@ export interface JoinDocumentRequestMessage {
   };
 }
 
+export interface JoinDocumentSuccessMessage {
+  type: 'join-document-success';
+  payload: {
+    docId: string;
+    clientId: string;
+    agentId: string;
+  };
+}
+
 export interface UpdateClientSelectionMessage {
   type: 'remote-agent-setselection';
   payload: {
@@ -65,6 +74,7 @@ export type WebsocketClientMessages =
 
 export type WebsocketServerMessages =
   | KeepaliveFromServerMessage
+  | JoinDocumentSuccessMessage
   | RemoteAgentCursorUpdateFromServerMessage
   | AutomergeUpdateFromServerMessage;
 
@@ -126,6 +136,25 @@ const createRemoteAgentCursorUpdateFromServerMessage = (payload): RemoteAgentCur
   };
 };
 
+const createJoinDocumentSuccessMessage = ({
+  docId,
+  clientId,
+  agentId,
+}: {
+  docId: string;
+  clientId: string;
+  agentId: string;
+}): JoinDocumentSuccessMessage => {
+  return {
+    type: 'join-document-success',
+    payload: {
+      docId,
+      clientId,
+      agentId,
+    },
+  };
+};
+
 const createUpdateClientSelectionMessage = ({
   clientId,
   docId,
@@ -160,6 +189,7 @@ const WebSocketServerMessageCreator = {
   createKeepaliveFromServerMessage,
   createAutomergeUpdateFromServerMessage,
   createRemoteAgentCursorUpdateFromServerMessage,
+  createJoinDocumentSuccessMessage,
 };
 
 export { WebSocketClientMessageCreator, WebSocketServerMessageCreator };

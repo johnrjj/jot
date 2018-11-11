@@ -178,6 +178,12 @@ export class WebSocketNode {
       (this.connectionAutomerge.get(agentId) as AutomergeConnection).open();
       connectionContext.agentId = agentId;
     }
+    const joinSuccessAckMsg = WebSocketServerMessageCreator.createJoinDocumentSuccessMessage({
+      docId,
+      clientId,
+      agentId,
+    });
+    connectionContext.socket.send(JSON.stringify(joinSuccessAckMsg));
     return { agentId };
   }
 

@@ -33,7 +33,14 @@ import {
 import '../reset.css';
 import '../global.css';
 import { Toolbar, Button } from '../components/Toolbar';
-import { WebsocketServerMessages, UpdateClientSelectionMessage } from '@jot/common/dist/websockets/websocket-actions';
+import {
+  WebsocketServerMessages,
+  UpdateClientSelectionMessage,
+  JoinDocumentSuccessMessage,
+  AutomergeUpdateFromServerMessage,
+  KeepaliveFromServerMessage,
+  RemoteAgentCursorUpdateFromServerMessage,
+} from '@jot/common/dist/websockets/websocket-actions';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
@@ -140,7 +147,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       this.docSet.setDoc(docId, this.doc);
 
       this.setState({
-        loading: false,
+        // loading: false,
         value: initialSlateValue,
         docId: docId,
       });
@@ -269,55 +276,80 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }));
   };
 
+  handleJoinDocumentSuccessMessage(_msg: JoinDocumentSuccessMessage): void {}
+  handleKeepAlive(_msg: KeepaliveFromServerMessage): void {}
+  handleRemoteAgentSelectionFromServerMessage(msg: RemoteAgentCursorUpdateFromServerMessage): void {
+    const { payload } = msg;
+    const clientId = payload.clientId;
+
+    if (clientId === this.state.clientId) {
+      console.log('received our own message from the server, skipping');
+      return;
+    }
+    let decoration = payload.message;
+    const decorations = [decoration];
+    this.editor &&
+      this.editor.current &&
+      this.editor.current.change(change => {
+        return change.withoutSaving(() => {
+          let c = change.setValue({ decorations });
+          c = change.fromRemote = true;
+          c = change.fromSetSelectionSelf = true;
+          return c;
+        });
+      });
+
+    throw new Error('Method not implemented.');
+  }
+  handleServerUpdateMessage = (msg: AutomergeUpdateFromServerMessage): void => {
+    const docNew = this.connection.receiveMsg(msg.payload);
+    if (!this.state.isConnectedToDocument) {
+      this.setState({
+        loading: false,
+        isConnectedToDocument: true,
+      });
+    }
+    if (msg.payload.changes) {
+      const currentDoc = this.doc;
+      const opSetDiff = Automerge.diff(currentDoc, docNew);
+      if (opSetDiff.length !== 0) {
+        const slateOps = convertAutomergeToSlateOps(opSetDiff);
+        this.editor.current.change(change => {
+          const appliedChanges = change.applyOperations(slateOps);
+          // we can tack on anything to the changes object so the onchange() handler
+          // knows not to apply these changes again (as it will get called
+          // immedietly after we return this a couple lines down.
+          appliedChanges.fromRemote = true;
+          return appliedChanges;
+        });
+        const updatedDoc = this.docSet.getDoc(this.state.docId);
+        this.doc = updatedDoc;
+      }
+    }
+  };
+
   handleMessage = msg => {
     const msgJson: WebsocketServerMessages = JSON.parse(msg);
-    // console.log(' got a msg', msgJson);
-    if (msgJson.type === 'server-update') {
-      const docNew = this.connection.receiveMsg(msgJson.payload);
-      if (!this.state.isConnectedToDocument) {
-        this.setState({
-          isConnectedToDocument: true,
-        });
-      }
-      if (msgJson.payload.changes) {
-        const currentDoc = this.doc;
-        const opSetDiff = Automerge.diff(currentDoc, docNew);
-        if (opSetDiff.length !== 0) {
-          const slateOps = convertAutomergeToSlateOps(opSetDiff);
-          this.editor.current.change(change => {
-            const appliedChanges = change.applyOperations(slateOps);
-            // we can tack on anything to the changes object so the onchange() handler
-            // knows not to apply these changes again (as it will get called
-            // immedietly after we return this a couple lines down.
-            appliedChanges.fromRemote = true;
-            return appliedChanges;
-          });
-          const updatedDoc = this.docSet.getDoc(this.state.docId);
-          this.doc = updatedDoc;
-        }
-      }
-    } else if (msgJson.type === 'remote-agent-setselection-from-server') {
-      const { payload } = msgJson;
-      const clientId = payload.clientId;
-
-      if (clientId === this.state.clientId) {
-        console.log('received our own message from the server, skipping');
-        return;
-      }
-      let decoration = payload.message;
-      const decorations = [decoration];
-      this.editor &&
-        this.editor.current &&
-        this.editor.current.change(change => {
-          return change.withoutSaving(() => {
-            let c = change.setValue({ decorations });
-            c = change.fromRemote = true;
-            c = change.fromSetSelectionSelf = true;
-            return c;
-          });
-        });
-    } else {
-      console.log('dont know msg type', msgJson, msg);
+    switch (msgJson.type) {
+      case 'join-document-success':
+        const joinDocumentSuccessMessage = msgJson;
+        this.handleJoinDocumentSuccessMessage(joinDocumentSuccessMessage);
+        break;
+      case 'keepalive':
+        const keepaliveMessage = msgJson;
+        this.handleKeepAlive(keepaliveMessage);
+        break;
+      case 'remote-agent-setselection-from-server':
+        const remoteAgentSetSelectionFromServer = msgJson;
+        this.handleRemoteAgentSelectionFromServerMessage(remoteAgentSetSelectionFromServer);
+        break;
+      case 'server-update':
+        const serverUpdateMessage = msgJson;
+        this.handleServerUpdateMessage(serverUpdateMessage);
+        break;
+      default:
+        console.error('error detecting type of websocket message', msgJson);
+        break;
     }
   };
 
@@ -437,20 +469,21 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         </div>
       );
     }
-    if (loading) {
-      return <div>loading...</div>;
-    }
+
     // const history = Automerge.getHistory(this.doc);
     return (
       <FullViewportAppContainer>
         <MainContainer>
-          {/* <Link to="/">Home</Link>{" "} */}
-          {/* <Link to="doc/1">Sally</Link> */}
-
           {/* <Sidebar /> */}
-
           <ContentContainer>
             <EditorContainer>
+              <Websocket
+                ref={this.websocket}
+                debug={true}
+                url={this.props.wsEndpoint}
+                onMessage={this.handleMessage}
+                onClose={() => console.warn('websocket closed')}
+              />
               <EditorToolbar>
                 <EditorToolbarLeftGroup>
                   <EditorToolbarBackIcon />
@@ -467,47 +500,44 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   </EditorToolbarButtonContainer>
                 </EditorToolbarRightGroup>
               </EditorToolbar>
-              <Toolbar>
-                {this.renderMarkButton('bold', 'bold_icon')}
-                {this.renderMarkButton('italic', 'italic_icon')}
-                {this.renderMarkButton('underlined', 'underline_icon')}
-                {this.renderMarkButton('code', 'code_icon')}
-                {this.renderBlockButton('heading-one', 'h1_icon')}
-                {this.renderBlockButton('heading-two', 'h2_icon')}
-                {this.renderBlockButton('block-quote', 'quote_icon')}
-                {/* {this.renderBlockButton(
-                  'numbered-list',
-                  'format_list_numbered',
-                )}
-                {this.renderBlockButton(
-                  'bulleted-list',
-                  'format_list_bulleted',
-                )} */}
-              </Toolbar>
-              <SlateEditorContainer>
-                <Websocket
-                  ref={this.websocket}
-                  debug={true}
-                  url={this.props.wsEndpoint}
-                  onMessage={this.handleMessage}
-                  onClose={() => console.log('websocket closed')}
-                />
-                <FakeTitle>Welcome to the Jot Editor</FakeTitle>
-                <Editor
-                  ref={this.editor}
-                  placeholder="Go ahead and jot something down..."
-                  autoCorrect={false}
-                  autoFocus={true}
-                  spellCheck={false}
-                  value={this.state.value}
-                  onChange={this.onChange}
-                  renderNode={this.renderNode}
-                  renderMark={this.renderMark as any}
-                />
-              </SlateEditorContainer>
+              {loading && <div>loading...</div>}
+              {!loading && (
+                <Toolbar>
+                  {this.renderMarkButton('bold', 'bold_icon')}
+                  {this.renderMarkButton('italic', 'italic_icon')}
+                  {this.renderMarkButton('underlined', 'underline_icon')}
+                  {this.renderMarkButton('code', 'code_icon')}
+                  {this.renderBlockButton('heading-one', 'h1_icon')}
+                  {this.renderBlockButton('heading-two', 'h2_icon')}
+                  {this.renderBlockButton('block-quote', 'quote_icon')}
+                  {/* {this.renderBlockButton(
+                        'numbered-list',
+                        'format_list_numbered',
+                      )}
+                      {this.renderBlockButton(
+                        'bulleted-list',
+                        'format_list_bulleted',
+                      )} */}
+                </Toolbar>
+              )}
+              {!loading && (
+                <SlateEditorContainer>
+                  <FakeTitle>Welcome to the Jot Editor</FakeTitle>
+                  <Editor
+                    ref={this.editor}
+                    placeholder="Go ahead and jot something down..."
+                    autoCorrect={false}
+                    autoFocus={true}
+                    spellCheck={false}
+                    value={this.state.value}
+                    onChange={this.onChange}
+                    renderNode={this.renderNode}
+                    renderMark={this.renderMark as any}
+                  />
+                </SlateEditorContainer>
+              )}
             </EditorContainer>
           </ContentContainer>
-
           {/* {isHistorySidebarOpen && (
             <HistoryContainer>
               <HistoryHeaderContainer>
@@ -556,14 +586,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     return value.blocks.some(node => node.type == type);
   };
 
-  /**
-   * When a block button is clicked, toggle the block type.
-   *
-   * @param {Event} event
-   * @param {String} type
-   */
-
-  onClickBlock = (event, type) => {
+  //When a block button is clicked, toggle the block type.
+  onClickBlock = (event: Event, type: string) => {
     event.preventDefault();
 
     const editor = this.editor.current;
