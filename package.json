@@ -7,6 +7,7 @@
     "start:backend": "lerna run start --stream --scope backend",
     "start:frontend": "lerna run start --stream --scope frontend",
     "clean": "lerna run clean --stream",
+    "heroku-postbuild": "lerna run build --stream --scope backend",
     "prettier": "prettier --write '**/*.{ts,tsx,json,md}' --config .prettierrc"
   },
   "devDependencies": {

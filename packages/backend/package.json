@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node dist/index",
+    "start": "node dist/index",
     "watch": "ts-node-dev --respawn src/index.ts",
     "dev": "ts-node --project ./tsconfig.json src/index",
     "test": "jest",
