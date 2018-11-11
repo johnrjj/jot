@@ -193,7 +193,11 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   }
 
   onChange = ({ value, operations, ...rest }) => {
-    console.log('onChange:operations', operations && operations.toJS(), `from remote: ${rest.fromRemote}`);
+    console.log(
+      'onChange:operations',
+      operations && operations.toJS(),
+      `from: ${rest.fromRemote ? 'remote' : 'local'}`,
+    );
     this.setState({ value });
     this.selection = value.selection.toJS();
     const clientId = this.props.clientId;

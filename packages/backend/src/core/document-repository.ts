@@ -4,7 +4,7 @@ import { Publisher } from './redis-publisher';
 import { Subscriber } from './redis-subscriber';
 import { RedisBasicClient } from './redis-client';
 
-const DOC_EVENT_STREAM_TOPIC_WILDCARD = 'jot:doc:*';
+const DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD = 'jot:doc:*';
 const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 3600;
 const DOCUMENT_REDIS_TOPICS = {
   ACTIVE_USERS: 'active-users',
@@ -32,7 +32,6 @@ export interface DocSet {
 
 export interface IDocumentRepository {
   getDoc(id: string): Promise<CRDTDocument | null>;
-  serializeDoc(doc: CRDTDocument): string;
 }
 
 export class DocumentRepository implements IDocumentRepository {
@@ -70,10 +69,6 @@ export class DocumentRepository implements IDocumentRepository {
     this.log('verbose', `DocumentRepository:leaveDocument:User ${userId} left doc ${docId}`);
   };
 
-  public serializeDoc(doc: CRDTDocument): string {
-    return Automerge.save(doc);
-  }
-
   public async getDoc(id: string): Promise<CRDTDocument | null> {
     this.log('debug', `DocumentRepository:getDoc(${id}):Fetching doc`);
     const doc = this.docSet.getDoc(id);
@@ -101,7 +96,7 @@ export class DocumentRepository implements IDocumentRepository {
     // this.subscriber.getSubscriber().on('psubscribe', (pattern, _count) => {
     //   this.log('verbose', `Redis psubscription for DocumentRepository's Doc event stream setup using pattern ${pattern}`)
     // });
-    this.subscriber.getSubscriber().psubscribe(DOC_EVENT_STREAM_TOPIC_WILDCARD);
+    this.subscriber.getSubscriber().psubscribe(DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD);
   };
 
   private testPublishDocEventStream = () => {
@@ -145,3 +140,9 @@ export class DocumentRepository implements IDocumentRepository {
     this.logger.log(level, e, metadata);
   }
 }
+
+const serializeDoc = (doc: CRDTDocument): string => {
+  return Automerge.save(doc);
+};
+
+export { serializeDoc };

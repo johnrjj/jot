@@ -1,7 +1,7 @@
 import * as bodyParser from 'body-parser';
 import { Router } from 'express';
 import { Logger } from 'winston';
-import { IDocumentRepository } from './document-repository';
+import { IDocumentRepository, serializeDoc } from './document-repository';
 
 const v0ApiRouterFactory = (documentRepository: IDocumentRepository, logger: Logger) => {
   const router = Router();
@@ -15,7 +15,7 @@ const v0ApiRouterFactory = (documentRepository: IDocumentRepository, logger: Log
     if (!doc) {
       return res.sendStatus(404);
     }
-    const docString = documentRepository.serializeDoc(doc);
+    const docString = serializeDoc(doc);
     res.json({ serializedDocument: docString });
   });
 
