@@ -38,7 +38,7 @@ The dev frontend server is hosted at [`http://localhost:1234`](http://localhost:
 
 #### `@jot/backend`
 
-The dev backend server is hosted at [`http://localhost:3001`](`http://localhost:3001`). It will also live relod.
+The dev backend server is hosted at [`http://localhost:3001`](http://localhost:3001). It will also live relod.
 
 To confirm it's working, a GET request to [`http://localhost:3001/api/v0/healthcheck`](http://localhost:3001/api/v0/healthcheck) should return a status code 200 `OK`.
 
