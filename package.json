@@ -2,12 +2,12 @@
   "name": "jot",
   "private": true,
   "scripts": {
-    "build": "lerna run build  --stream",
+    "build": "wsrun --stages build",
     "start": "wsrun --done-criteria='Found 0 errors. Watching for file changes.' --stages watch",
     "start:backend": "lerna run start --stream --scope @jot/backend",
     "start:frontend": "lerna run start --stream --scope @jot/frontend",
     "clean": "lerna run clean --stream",
-    "heroku-postbuild": "yarn workspace @jot/backend build",
+    "heroku-postbuild": "wsrun --stages build",
     "prettier": "prettier --write '**/*.{ts,tsx,json,md}' --config .prettierrc"
   },
   "devDependencies": {
