@@ -4,6 +4,7 @@ import { Publisher } from './redis-publisher';
 import { Subscriber } from './redis-subscriber';
 import { RedisBasicClient } from './redis-client';
 
+const DOCUMENT_TOPIC_ROOT = 'jot:doc';
 const DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD = 'jot:doc:*';
 const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 3600;
 const DOCUMENT_REDIS_TOPICS = {
@@ -85,17 +86,21 @@ export class DocumentRepository implements IDocumentRepository {
     return this.docSet;
   };
 
-  private subscribeToRedisDocStream = async () => {
-    // Handler for getting pattern message from DOC_EVENT_STREAM_TOPIC_WILDCARD
-    this.subscriber.getSubscriber().on('pmessage', (pattern, channel, message) => {
-      this.log('verbose', `DocStream message received from channel ${channel} (triggered via pattern ${pattern})`);
-      this.log('silly', `Calling all ${this.docStreamListeners.size} docStreamListeners with message`);
-      this.docStreamListeners.forEach(f => f(message));
-    });
-    // Handler triggered on new redis psubscriptions
-    // this.subscriber.getSubscriber().on('psubscribe', (pattern, _count) => {
-    //   this.log('verbose', `Redis psubscription for DocumentRepository's Doc event stream setup using pattern ${pattern}`)
-    // });
+  private handleRedisDocStreamMessage = (pattern: string, channel: string, message: string) => {
+    if (!pattern.startsWith(DOCUMENT_TOPIC_ROOT)) {
+      this.log('warn', 'DocumentRepository Redis subscription recieved a message from an unrelated stream');
+      this.log('warn', 'This is not inherently bad, just ensure we are not crossing data topic streams poorly');
+      return;
+    }
+    this.log('verbose', `DocStream message received from channel ${channel} (triggered via pattern ${pattern})`);
+    this.log('silly', `Calling all ${this.docStreamListeners.size} docStreamListeners with message`);
+    this.docStreamListeners.forEach(f => f(message));
+  };
+
+  private subscribeToRedisDocStream = (): void => {
+    // Set up handler
+    this.subscriber.getSubscriber().on('pmessage', this.handleRedisDocStreamMessage);
+    // Initiate redis doc stream subscription
     this.subscriber.getSubscriber().psubscribe(DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD);
   };
 

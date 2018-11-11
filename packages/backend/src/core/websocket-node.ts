@@ -47,6 +47,11 @@ export class WebSocketNode {
     this.connectionAutomerge = new Map();
     this.id = `ws-node-${uuid()}`;
     this.log('verbose', `WebSocket Server node ${this.id} online`);
+    this.documentRepository.addDocStreamListener(this.handleDocStreamMessage);
+  }
+
+  private handleDocStreamMessage(msg: any) {
+    console.log('WEBSOCKET-NODE:handleDocStreamMessage', msg);
   }
 
   private getConnectionsCount() {
@@ -122,10 +127,18 @@ export class WebSocketNode {
           );
           break;
         case 'join-document':
-          this.log('debug', `WebSocket subscribe request received`, data);
+          this.log('debug', `Document subscription request received`, data);
           const joinDocumentRequestMessage = data;
-          const res = await this.handleReceiveJoinDocumentRequest(connectionContext, joinDocumentRequestMessage);
-          connectionContext.agentId = res.agentId;
+          const { agentId } = await this.handleReceiveJoinDocumentRequest(
+            connectionContext,
+            joinDocumentRequestMessage,
+          );
+          connectionContext.agentId = agentId;
+          break;
+        case 'leave-document':
+          this.log('debug', `WebSocket subscribe request received`, data);
+          const leaveDocumentRequestMessage = data;
+          await this.handleReceiveLeaveDocumentRequest(connectionContext, leaveDocumentRequestMessage);
           break;
         default:
           this.log('debug', `Unrecognized message received from client websocket ${connectionContext.agentId}`, data);
@@ -150,6 +163,10 @@ export class WebSocketNode {
     }
   }
 
+  private async handleReceiveLeaveDocumentRequest(a, b) {
+    this.log('error', '>>>>>> implement handleReceiveLeaveDocumentRequest');
+  }
+
   private async handleReceiveJoinDocumentRequest(
     connectionContext: ConnectionContext,
     joinRequestMessage: JoinDocumentRequestMessage,
@@ -164,7 +181,6 @@ export class WebSocketNode {
     } catch (e) {
       this.log('error', `error:join-document getting doc id ${docId} agentId:${agentId}`, e);
     }
-
     const joinSuccessAckMsg = WebSocketServerMessageCreator.createJoinDocumentSuccessMessage({
       docId,
       clientId,
