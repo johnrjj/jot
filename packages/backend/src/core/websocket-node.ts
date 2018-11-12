@@ -15,6 +15,7 @@ import {
   AutomergeUpdateToServerMessage,
   WebsocketServerMessages,
 } from '@jot/common/dist/websockets/websocket-actions';
+import { DocumentRedisMessages } from './redis-types';
 
 interface ConnectionContext {
   socket: WebSocket;
@@ -50,9 +51,17 @@ export class WebSocketNode {
     this.documentRepository.addDocStreamListener(this.handleDocStreamMessage);
   }
 
-  private handleDocStreamMessage(msg: any) {
-    console.log('WEBSOCKET-NODE:handleDocStreamMessage', msg);
-  }
+  private handleDocStreamMessage = (msg: DocumentRedisMessages) => {
+    switch (msg.type) {
+      case 'jot:doc:activeuserlist:update':
+        const activeUserListUpdate = msg;
+        this.log('warn', 'REEEEE WEBSOCKET-NODE:handleDocStreamMessage', activeUserListUpdate);
+        break;
+      default:
+        this.log('warn', '(ignore)WebSocketNode:handleDocStreamMessage:unidentified message type', msg);
+        break;
+    }
+  };
 
   private getConnectionsCount() {
     return this.connections.size;

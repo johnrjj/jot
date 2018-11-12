@@ -3,12 +3,14 @@ import { Logger } from 'winston';
 import { Publisher } from './redis-publisher';
 import { Subscriber } from './redis-subscriber';
 import { RedisBasicClient } from './redis-client';
+import { RedisMessageCreator } from './redis-types';
 
 const DOCUMENT_TOPIC_ROOT = 'jot:doc';
 const DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD = 'jot:doc:*';
 const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 3600;
 const DOCUMENT_REDIS_TOPICS = {
-  ACTIVE_USERS: 'active-users',
+  DOCUMENT_ACTIVE_USER_LIST_UPDATE: 'active-users:update',
+  DOCUMENT_ACTIVE_USERS_SET: '_state:active-users',
 };
 
 export type CRDTDocument = Automerge.AutomergeRoot;
@@ -41,7 +43,7 @@ export class DocumentRepository implements IDocumentRepository {
   subscriber: Subscriber;
   redisClient: RedisBasicClient;
   logger?: Logger;
-  docStreamListeners: Set<any>;
+  docStreamListeners: Set<(DocumentRedisMessages) => void>;
   constructor({ initialDocSet, logger, publisher, subscriber, redisClient }: IDocumentRepositoryConfig) {
     this.publisher = publisher;
     this.subscriber = subscriber;
@@ -54,10 +56,10 @@ export class DocumentRepository implements IDocumentRepository {
     this.testPublishDocEventStream();
   }
 
-  public addDocStreamListener = (cbFn: Function): Function => {
+  public addDocStreamListener = (cbFn: (DocumentRedisMessages) => void): (() => void) => {
     this.docStreamListeners.add(cbFn);
-    const removeFn = () => this.docStreamListeners.delete(cbFn);
-    return removeFn;
+    const unsubscribe = () => this.docStreamListeners.delete(cbFn);
+    return unsubscribe;
   };
 
   public joinDocument = async (docId: string, userId: string) => {
@@ -98,20 +100,29 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private subscribeToRedisDocStream = (): void => {
-    // Set up handler
+    // Set up redis handler
     this.subscriber.getSubscriber().on('pmessage', this.handleRedisDocStreamMessage);
     // Initiate redis doc stream subscription
     this.subscriber.getSubscriber().psubscribe(DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD);
   };
 
   private testPublishDocEventStream = () => {
-    setTimeout(() => this.publisher.publish('jot:doc:yeeeeet', { skirt: 'skurt' }), 500);
+    setTimeout(() => this.publisher.publish('jot:doc:baz', { foo: 'bar' }), 500);
   };
 
   private addUserToDocActiveList = async (docId: string, userId: string) => {
-    const topic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.ACTIVE_USERS}`;
-    await this.redisClient.sadd(topic, userId);
-    await this.redisClient.expire(topic, DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS);
+    const userListTopic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
+    await this.redisClient.sadd(userListTopic, userId);
+    await this.redisClient.expire(userListTopic, DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS);
+    const activeUserList = await this.redisClient.smembers(userListTopic);
+    const updateEventTopic = `${userListTopic}:update`;
+    const activeUserListUpdateMessage = RedisMessageCreator.createDocumentActiveUserListUpdateMessage({
+      docId,
+      addedIds: [userId],
+      activeIds: activeUserList || [],
+      channel: updateEventTopic,
+    });
+    this.publisher.publish(`${userListTopic}:update`, activeUserListUpdateMessage);
     this.log(
       'verbose',
       `DocumentRepository:addUserToDocActiveList:Added user ${userId} to active user list for doc ${docId}`,
@@ -119,7 +130,7 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private removeUserToDocActiveList = async (docId: string, userId: string) => {
-    const topic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.ACTIVE_USERS}`;
+    const topic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
     await this.redisClient.srem(topic, userId);
     this.log(
       'verbose',
@@ -128,7 +139,7 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private getActiveUserListForDoc = async (docId: string) => {
-    const topic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.ACTIVE_USERS}`;
+    const topic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
     return this.redisClient.smembers(topic);
   };
 
@@ -138,12 +149,12 @@ export class DocumentRepository implements IDocumentRepository {
     });
   }
 
-  private log(level: string, e: string, metadata?: any) {
+  private log = (level: string, e: string, metadata?: any) => {
     if (!this.logger) {
       return;
     }
     this.logger.log(level, e, metadata);
-  }
+  };
 }
 
 const serializeDoc = (doc: CRDTDocument): string => {
