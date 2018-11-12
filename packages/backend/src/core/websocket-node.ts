@@ -22,6 +22,8 @@ interface ConnectionContext {
   initialized: boolean;
   agentId?: string;
   isClientConnected: boolean;
+  subscribingDocumentIds: Set<string>;
+  subscribedDocumentIds: Set<string>;
 }
 
 export class WebSocketNode {
@@ -56,7 +58,6 @@ export class WebSocketNode {
       case 'jot:doc:activeuserlist:update':
         const activeUserListUpdate = msg;
         this.sendActiveUserUpdateToSubscribers(activeUserListUpdate);
-        this.log('warn', 'REEEEE WEBSOCKET-NODE:handleDocStreamMessage', activeUserListUpdate);
         break;
       default:
         this.log('warn', '(ignore)WebSocketNode:handleDocStreamMessage:unidentified message type', msg);
@@ -87,6 +88,8 @@ export class WebSocketNode {
       socket,
       initialized: false,
       isClientConnected: false,
+      subscribedDocumentIds: new Set(),
+      subscribingDocumentIds: new Set(),
     };
     socket.on('error', err => this.log('error', JSON.stringify(err)));
     socket.on('close', this.handleDisconnectFromClientSocket(connectionContext));
@@ -197,12 +200,14 @@ export class WebSocketNode {
     const subscribeRequest = joinRequestMessage;
     let { docId, clientId } = subscribeRequest.payload;
     const agentId: string = clientId;
+    connectionContext.subscribingDocumentIds.add(docId);
     this.log('debug', `join-request, for docId: ${docId} , agentId(sent as clientId): ${agentId}`);
     try {
       await this.documentRepository.getDoc(docId);
       await this.documentRepository.joinDocument(docId, clientId);
     } catch (e) {
       this.log('error', `error:join-document getting doc id ${docId} agentId:${agentId}`, e);
+      connectionContext.subscribingDocumentIds.delete(docId);
     }
     const joinSuccessAckMsg = WebSocketServerMessageCreator.createJoinDocumentSuccessMessage({
       docId,
@@ -210,6 +215,11 @@ export class WebSocketNode {
       agentId,
     });
     connectionContext.socket.send(JSON.stringify(joinSuccessAckMsg));
+
+    // Delete from connecting status
+    connectionContext.subscribingDocumentIds.delete(docId);
+    // Add to connected status
+    connectionContext.subscribedDocumentIds.add(docId);
 
     if (!this.connectionAutomerge.has(agentId)) {
       this.log('silly', `connectionAutomerge adding ${agentId}`);
@@ -260,6 +270,25 @@ export class WebSocketNode {
         (this.connectionAutomerge.get(context.agentId) as AutomergeConnection).close();
       }
       this.connections.delete(context);
+
+      context.subscribingDocumentIds.forEach(docId => {
+        if (!context.agentId) {
+          this.log('error', 'Unsubscribing without an agentId, when does this happen');
+          return;
+        }
+        this.documentRepository.leaveDocument(docId, context.agentId as string);
+      });
+      context.subscribingDocumentIds.clear();
+
+      context.subscribedDocumentIds.forEach(docId => {
+        if (!context.agentId) {
+          this.log('error', 'Unsubscribing without an agentId, when does this happen');
+          return;
+        }
+        this.documentRepository.leaveDocument(docId, context.agentId as string);
+      });
+      context.subscribedDocumentIds.clear();
+
       this.log(
         'debug',
         `WebSocket Server ${this.id}: ${this.getConnectionsCount()} total active connections remaining. (removed 1)`,

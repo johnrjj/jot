@@ -28,19 +28,15 @@ const createApp = async (config: AppConfig): Promise<Express> => {
   // Set up Redis
   // Create dedicated Redis Publisher instance
   logger.log('verbose', '🛠️ Setting up Redis instances');
-  const redisPublisher = config.REDIS_URL
-    ? createClient(config.REDIS_URL, { auth_pass: config.REDIS_PASSWORD })
-    : createClient();
+  const redisPublisher = config.REDIS_CONNECTION_STRING ? createClient(config.REDIS_CONNECTION_STRING) : createClient();
   logger.log('verbose', '🛠️ Redis publisher setup\t(1 of 3 redis instances)');
   // Create dedicated Redis Subscriber instance
-  const redisSubscriber = config.REDIS_URL
-    ? createClient(config.REDIS_URL, { auth_pass: config.REDIS_PASSWORD })
+  const redisSubscriber = config.REDIS_CONNECTION_STRING
+    ? createClient(config.REDIS_CONNECTION_STRING)
     : createClient();
   logger.log('verbose', '🛠️ Redis subscriber setup\t(2 of 3 redis instances)');
   // Create generic redis client for non pub/sub stuff (ZSET, SET, EXPIRES, etc)
-  const redisClient = config.REDIS_URL
-    ? createClient(config.REDIS_URL, { auth_pass: config.REDIS_PASSWORD })
-    : createClient();
+  const redisClient = config.REDIS_CONNECTION_STRING ? createClient(config.REDIS_CONNECTION_STRING) : createClient();
   logger.log('verbose', '🛠️ Redis basic client setup\t(3 of 3 redis instances)');
   logger.log('verbose', '🛠️ Redis instances setup and clients created');
 
