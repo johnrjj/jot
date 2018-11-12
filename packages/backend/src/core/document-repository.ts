@@ -7,7 +7,7 @@ import { RedisMessageCreator, DocumentRedisMessages } from './redis-types';
 
 const DOCUMENT_TOPIC_ROOT = 'jot:doc';
 const DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD = 'jot:doc:*';
-const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 3600;
+const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 60; // 3600 in prod
 const DOCUMENT_REDIS_TOPICS = {
   DOCUMENT_ACTIVE_USER_LIST_UPDATE: 'active-users:update',
   DOCUMENT_ACTIVE_USERS_SET: '_state:active-users',
@@ -139,8 +139,18 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private removeUserToDocActiveList = async (docId: string, userId: string) => {
-    const topic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
-    await this.redisClient.srem(topic, userId);
+    const userListTopic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
+    await this.redisClient.srem(userListTopic, userId);
+    const activeUserList = (await this.redisClient.smembers(userListTopic)) || [];
+    const updateEventTopic = `${userListTopic}:update`;
+    const activeUserListUpdateMessage = RedisMessageCreator.createDocumentActiveUserListUpdateMessage({
+      docId,
+      addedIds: [],
+      removedIds: [userId],
+      activeIds: activeUserList,
+      channel: updateEventTopic,
+    });
+    this.publisher.publish(`${userListTopic}:update`, activeUserListUpdateMessage);
     this.log(
       'verbose',
       `DocumentRepository:removeUserToDocActiveList:Removed user ${userId} from active user list for doc ${docId}`,
