@@ -15,7 +15,7 @@ import {
   AutomergeUpdateToServerMessage,
   WebsocketServerMessages,
 } from '@jot/common/dist/websockets/websocket-actions';
-import { DocumentRedisMessages } from './redis-types';
+import { DocumentRedisMessages, ActiveUserListUpdateMessage } from './redis-types';
 
 interface ConnectionContext {
   socket: WebSocket;
@@ -55,6 +55,7 @@ export class WebSocketNode {
     switch (msg.type) {
       case 'jot:doc:activeuserlist:update':
         const activeUserListUpdate = msg;
+        this.sendActiveUserUpdateToSubscribers(activeUserListUpdate);
         this.log('warn', 'REEEEE WEBSOCKET-NODE:handleDocStreamMessage', activeUserListUpdate);
         break;
       default:
@@ -62,6 +63,19 @@ export class WebSocketNode {
         break;
     }
   };
+
+  private sendActiveUserUpdateToSubscribers(redisMsg: ActiveUserListUpdateMessage) {
+    const { payload } = redisMsg;
+    const { activeIds, addedIds, docId, removedIds } = payload;
+    const websocketMessageToSend = WebSocketServerMessageCreator.createUpdateDocumentActiveUserListWSMessage({
+      activeIds,
+      addedIds,
+      docId,
+      removedIds,
+    });
+    // figure this out... who to send to
+    // this.send(websocketMessageToSend)
+  }
 
   private getConnectionsCount() {
     return this.connections.size;

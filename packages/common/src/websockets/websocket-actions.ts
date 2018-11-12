@@ -96,7 +96,8 @@ export type WebsocketServerMessages =
   | JoinDocumentSuccessMessage
   | LeaveDocumentSuccessMessage
   | RemoteAgentCursorUpdateFromServerMessage
-  | AutomergeUpdateFromServerMessage;
+  | AutomergeUpdateFromServerMessage
+  | UpdateDocumentActiveUserListWSMessage;
 
 export type WebsocketMessages = WebsocketServerMessages | WebsocketClientMessages;
 
@@ -213,6 +214,38 @@ const createLeaveDocumentSuccessMessage = ({
   };
 };
 
+export interface UpdateDocumentActiveUserListWSMessage {
+  type: 'update-active-user-list';
+  payload: {
+    docId: string;
+    addedIds: Array<string>;
+    removedIds: Array<string>;
+    activeIds: Array<string>;
+  };
+}
+
+const createUpdateDocumentActiveUserListWSMessage = ({
+  docId,
+  addedIds,
+  removedIds,
+  activeIds,
+}: {
+  docId: string;
+  addedIds: Array<string>;
+  removedIds: Array<string>;
+  activeIds: Array<string>;
+}): UpdateDocumentActiveUserListWSMessage => {
+  return {
+    type: 'update-active-user-list',
+    payload: {
+      docId,
+      addedIds,
+      removedIds,
+      activeIds,
+    },
+  };
+};
+
 const createUpdateClientSelectionMessage = ({
   clientId,
   docId,
@@ -250,6 +283,7 @@ const WebSocketServerMessageCreator = {
   createRemoteAgentCursorUpdateFromServerMessage,
   createJoinDocumentSuccessMessage,
   createLeaveDocumentSuccessMessage,
+  createUpdateDocumentActiveUserListWSMessage,
 };
 
 export { WebSocketClientMessageCreator, WebSocketServerMessageCreator };

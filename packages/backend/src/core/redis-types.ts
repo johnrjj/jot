@@ -4,6 +4,7 @@ export interface ActiveUserListUpdateMessage {
   payload: {
     docId: string;
     addedIds: Array<string>;
+    removedIds: Array<string>;
     activeIds: Array<string>;
   };
 }
@@ -13,6 +14,7 @@ export type DocumentRedisMessages = ActiveUserListUpdateMessage;
 const createDocumentActiveUserListUpdateMessage = ({
   docId,
   addedIds,
+  removedIds,
   activeIds,
   channel,
 }): ActiveUserListUpdateMessage => {
@@ -22,6 +24,7 @@ const createDocumentActiveUserListUpdateMessage = ({
     payload: {
       docId,
       addedIds,
+      removedIds,
       activeIds,
     },
   };
