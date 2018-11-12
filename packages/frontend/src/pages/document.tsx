@@ -39,6 +39,7 @@ import {
   AutomergeUpdateFromServerMessage,
   KeepaliveFromServerMessage,
   RemoteAgentCursorUpdateFromServerMessage,
+  UpdateDocumentActiveUserListWSMessage,
 } from '@jot/common/dist/websockets/websocket-actions';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
@@ -88,6 +89,7 @@ interface DocEditState {
   isConnectedToDocument: boolean;
   isSidebarOpen: boolean;
   isHistorySidebarOpen: boolean;
+  activeUserIds: string[];
   error?: Error | string;
 }
 
@@ -114,6 +116,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       isConnectedToDocument: false,
       isSidebarOpen: false,
       isHistorySidebarOpen: false,
+      activeUserIds: [],
     };
 
     this.docSet = new Automerge.DocSet();
@@ -333,6 +336,14 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
+  handleUpdateActiveUserListForDoc = (msg: UpdateDocumentActiveUserListWSMessage) => {
+    const { type, payload } = msg;
+    const { activeIds } = payload;
+    this.setState({
+      activeUserIds: activeIds,
+    });
+  };
+
   handleMessage = msg => {
     const msgJson: WebsocketServerMessages = JSON.parse(msg);
     switch (msgJson.type) {
@@ -352,8 +363,12 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         const serverUpdateMessage = msgJson;
         this.handleServerUpdateMessage(serverUpdateMessage);
         break;
+      case 'update-active-user-list':
+        const updateActiveUserListForDocMessage = msgJson;
+        this.handleUpdateActiveUserListForDoc(updateActiveUserListForDocMessage);
+        break;
       default:
-        console.error('error detecting type of websocket message', msgJson);
+        console.warn('error detecting type of websocket message', msgJson);
         break;
     }
   };
@@ -466,7 +481,14 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   };
 
   render() {
-    const { loading, error, isHistorySidebarOpen, isConnectedToDocument, isSyncedWithServer } = this.state;
+    const {
+      loading,
+      error,
+      isHistorySidebarOpen,
+      isConnectedToDocument,
+      isSyncedWithServer,
+      activeUserIds,
+    } = this.state;
     if (error) {
       return (
         <div>
@@ -497,6 +519,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   <EditorToolbarBackText>Back</EditorToolbarBackText>
                 </EditorToolbarLeftGroup>
                 <EditorToolbarRightGroup>
+                  {activeUserIds.length > 0 && <div>{activeUserIds.length}</div>}
                   <EditorToolbarButtonContainer onClick={this.toggleHistorySidebar}>
                     <EditorToolbarHistoryButtonIcon />
                     <span>History</span>

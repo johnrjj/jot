@@ -5,16 +5,7 @@
     "lib": [
       "es7"
     ],
-    "outDir": "dist",
-    "rootDir": "src",
     "strict": true,
     "noImplicitAny": false,
-    "moduleResolution": "node",
-    "baseUrl": "./",
-    "typeRoots": [
-      "node_modules/@types",
-      "src/types/*",
-    ],
-    "esModuleInterop": true
   }
 }

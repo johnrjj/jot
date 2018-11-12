@@ -73,8 +73,8 @@ export class WebSocketNode {
       docId,
       removedIds,
     });
-    // figure this out... who to send to
-    // this.send(websocketMessageToSend)
+    // todo - better system to notify (have finer-grained doc conneciton list)
+    this.connections.forEach(c => c.socket.send(JSON.stringify(websocketMessageToSend)));
   }
 
   private getConnectionsCount() {
