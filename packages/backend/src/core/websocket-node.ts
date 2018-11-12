@@ -262,11 +262,10 @@ export class WebSocketNode {
 
   private handleDisconnectFromClientSocket = (context: ConnectionContext) => {
     return (code: number, reason: string) => {
-      this.log('verbose', `WebSocket connection closed with code ${code}`, reason);
+      this.log('verbose', `WebSocket connection closed with code ${code}. Tearing down websocket context.`, reason);
       // Close automerge connection, or else will throw error
-      this.log('silly', `connectionAutomerge close connection for ${context.agentId}`);
       if (context.agentId && this.connectionAutomerge.has(context.agentId)) {
-        this.log('silly', `Cleaning up agentId ${context.agentId} automerge connection`);
+        this.log('silly', `Tearing down up agentId automerge connection`);
         (this.connectionAutomerge.get(context.agentId) as AutomergeConnection).close();
       }
       this.connections.delete(context);
