@@ -27,7 +27,7 @@ const config: AppConfig = {
   PG_APP_TABLE_NAME: 'app',
   PGPORT: parseInt(process.env.PGPORT || '', 10) || 5432,
   REDIS_CONNECTION_STRING:
-    process.env.REDIS_URL ||
+    process.env.REDIS_CONNECTION_STRING ||
     'redis://rediscloud:jOOsJSMB5WIxLDv7o4mqye167Spv2ubL@redis-11672.c60.us-west-1-2.ec2.cloud.redislabs.com:11672',
 };
 

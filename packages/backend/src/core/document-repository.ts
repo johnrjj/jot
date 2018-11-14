@@ -3,15 +3,9 @@ import { Logger } from 'winston';
 import { Publisher } from './redis-publisher';
 import { Subscriber } from './redis-subscriber';
 import { RedisBasicClient } from './redis-client';
-import { RedisMessageCreator, DocumentRedisMessages } from './redis-types';
+import { RedisMessageCreator, DocumentRedisMessages, RedisDocumentTopics } from './redis-types';
 
-const DOCUMENT_TOPIC_ROOT = 'jot:doc';
-const DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD = 'jot:doc:*';
 const DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS = 60; // 3600 in prod
-const DOCUMENT_REDIS_TOPICS = {
-  DOCUMENT_ACTIVE_USER_LIST_UPDATE: 'active-users:update',
-  DOCUMENT_ACTIVE_USERS_SET: '_state:active-users',
-};
 
 export type CRDTDocument = Automerge.AutomergeRoot;
 
@@ -89,21 +83,21 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private handleRedisDocStreamMessage = (pattern: string, channel: string, message: string) => {
-    if (!pattern.startsWith(DOCUMENT_TOPIC_ROOT)) {
+    if (!pattern.startsWith(RedisDocumentTopics.DOCUMENT_TOPIC_ROOT)) {
       this.log('warn', 'DocumentRepository Redis subscription recieved a message from an unrelated stream');
       this.log('warn', 'This is not inherently bad, just ensure we are not crossing data topic streams poorly');
       return;
     }
     this.log('verbose', `DocStream message received from channel ${channel} (triggered via pattern ${pattern})`);
-    this.log('silly', `Calling all ${this.docStreamListeners.size} docStreamListeners with message`);
-
     let msgJson: DocumentRedisMessages;
     try {
       msgJson = JSON.parse(message);
     } catch (e) {
-      this.log('error', 'Error parsing redis message', message);
+      this.log('error', 'Error parsing redis message:message', message);
+      this.log('error', 'Error parsing redis message:error', e);
       throw e;
     }
+    // notify all listeners
     this.docStreamListeners.forEach(f => f(msgJson));
   };
 
@@ -111,7 +105,7 @@ export class DocumentRepository implements IDocumentRepository {
     // Set up redis handler
     this.subscriber.getSubscriber().on('pmessage', this.handleRedisDocStreamMessage);
     // Initiate redis doc stream subscription
-    this.subscriber.getSubscriber().psubscribe(DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD);
+    this.subscriber.getSubscriber().psubscribe(RedisDocumentTopics.DOCUMENT_EVENT_STREAM_TOPIC_WILDCARD);
   };
 
   private testPublishDocEventStream = () => {
@@ -119,19 +113,19 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private addUserToDocActiveList = async (docId: string, userId: string) => {
-    const userListTopic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
-    await this.redisClient.sadd(userListTopic, userId);
-    await this.redisClient.expire(userListTopic, DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS);
-    const activeUserList = (await this.redisClient.smembers(userListTopic)) || [];
-    const updateEventTopic = `${userListTopic}:update`;
+    const userListSetTopic = RedisDocumentTopics.getActiveUserListSetTopic(docId);
+    await this.redisClient.sadd(userListSetTopic, userId);
+    await this.redisClient.expire(userListSetTopic, DEFAULT_DOC_INACTIVE_TIME_IN_SECONDS);
+    const activeUserList = (await this.redisClient.smembers(userListSetTopic)) || [];
+    const updateActiveUserListEventTopic = RedisDocumentTopics.getActiveUserListUpdateEventTopic(docId);
     const activeUserListUpdateMessage = RedisMessageCreator.createDocumentActiveUserListUpdateMessage({
       docId,
       addedIds: [userId],
       removedIds: [],
       activeIds: activeUserList,
-      channel: updateEventTopic,
+      channel: updateActiveUserListEventTopic,
     });
-    this.publisher.publish(`${userListTopic}:update`, activeUserListUpdateMessage);
+    this.publisher.publish(updateActiveUserListEventTopic, activeUserListUpdateMessage);
     this.log(
       'verbose',
       `DocumentRepository:addUserToDocActiveList:Added user ${userId} to active user list for doc ${docId}`,
@@ -139,10 +133,10 @@ export class DocumentRepository implements IDocumentRepository {
   };
 
   private removeUserToDocActiveList = async (docId: string, userId: string) => {
-    const userListTopic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
+    const userListTopic = RedisDocumentTopics.getActiveUserListSetTopic(docId);
     await this.redisClient.srem(userListTopic, userId);
     const activeUserList = (await this.redisClient.smembers(userListTopic)) || [];
-    const updateEventTopic = `${userListTopic}:update`;
+    const updateEventTopic = RedisDocumentTopics.getActiveUserListUpdateEventTopic(docId);
     const activeUserListUpdateMessage = RedisMessageCreator.createDocumentActiveUserListUpdateMessage({
       docId,
       addedIds: [],
@@ -150,15 +144,15 @@ export class DocumentRepository implements IDocumentRepository {
       activeIds: activeUserList,
       channel: updateEventTopic,
     });
-    this.publisher.publish(`${userListTopic}:update`, activeUserListUpdateMessage);
+    this.publisher.publish(updateEventTopic, activeUserListUpdateMessage);
     this.log(
       'verbose',
       `DocumentRepository:removeUserToDocActiveList:Removed user ${userId} from active user list for doc ${docId}`,
     );
   };
 
-  private getActiveUserListForDoc = async (docId: string) => {
-    const topic = `jot:doc:${docId}:${DOCUMENT_REDIS_TOPICS.DOCUMENT_ACTIVE_USERS_SET}`;
+  private getActiveUserListForDoc = async (docId: string): Promise<string[]> => {
+    const topic = RedisDocumentTopics.getActiveUserListSetTopic(docId);
     return this.redisClient.smembers(topic);
   };
 
