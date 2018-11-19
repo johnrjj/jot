@@ -26,9 +26,8 @@ const config: AppConfig = {
   PGDATABASE: 'jot',
   PG_APP_TABLE_NAME: 'app',
   PGPORT: parseInt(process.env.PGPORT || '', 10) || 5432,
-  REDIS_CONNECTION_STRING:
-    process.env.REDIS_CONNECTION_STRING ||
-    'redis://rediscloud:jOOsJSMB5WIxLDv7o4mqye167Spv2ubL@redis-11672.c60.us-west-1-2.ec2.cloud.redislabs.com:11672',
+  REDIS_CONNECTION_STRING: process.env.REDIS_CONNECTION_STRING || undefined,
+  // 'redis://rediscloud:jOOsJSMB5WIxLDv7o4mqye167Spv2ubL@redis-11672.c60.us-west-1-2.ec2.cloud.redislabs.com:11672',
 };
 
 export default config;

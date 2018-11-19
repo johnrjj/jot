@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Editor } from 'slate-react';
-import { Value } from 'slate';
+import { Value, Selection, Range, Mark, Decoration } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
 import Websocket from '../components/Websocket';
@@ -41,6 +41,8 @@ import {
   RemoteAgentCursorUpdateFromServerMessage,
   UpdateDocumentActiveUserListWSMessage,
 } from '@jot/common/dist/websockets/websocket-actions';
+import { Cursor } from '../components/Cursor';
+import { start } from 'repl';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
@@ -102,6 +104,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   selection: any;
   websocket: React.RefObject<any>;
   editor: React.RefObject<any>;
+  remoteCursorSet: Set<any>;
 
   constructor(props: DocEditProps) {
     super(props);
@@ -123,6 +126,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
     this.websocket = React.createRef();
     this.editor = React.createRef<any>();
+    this.remoteCursorSet = new Set();
   }
 
   async componentDidMount() {
@@ -197,9 +201,12 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
   onChange = ({ value, operations, ...rest }) => {
     console.log(
+      'value',
+      value.toJS(),
       'onChange:operations',
       operations && operations.toJS(),
       `from: ${rest.fromRemote ? 'remote' : 'local'}`,
+      rest,
     );
     this.setState({ value });
     this.selection = value.selection.toJS();
@@ -226,6 +233,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
       const decoration = {
         anchor: selection.anchor,
+        // focus: selection.focus.moveForward(1),
         focus: selection.focus,
         mark: {
           type: `remote-agent-setselection-${this.props.clientId}`,
@@ -250,7 +258,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
           docId: this.state.docId,
           decoration,
         });
-        this.websocket.current.sendJsonMessage(msg);
+        // needs to send _after_ an automerge update of insert text or something
+        setTimeout(() => this.websocket.current.sendJsonMessage(msg), 0);
       } else {
         console.log('not connected to a doc, not sending cursor/selection to webseockt');
       }
@@ -296,8 +305,47 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       console.log('received our own message from the server, skipping');
       return;
     }
-    let decoration = payload.message;
-    const decorations = [decoration];
+    const remoteSelectionDecorationNotNormalized = payload.message;
+    const remoteSelection = Selection.create(remoteSelectionDecorationNotNormalized);
+
+    let normalizedRemoteSelectionDecoration: any = remoteSelectionDecorationNotNormalized;
+
+    // if its collapsed, the selection iss techncially zero width (offset would be zero, for example)
+    // slate doesn't support that, so what we need to do is extend it by one so slate accepts it.
+    // ie; if the anchor was 0 and focus was 0, we'd increment the focus to 1.
+    // then we render a mark at the left of 0 showing the remote cursor.
+    // special case: if its at the end of a block, we go back by 1.
+    // we can figure this out by normalizing our guess (incrementing focus by 1) and if it
+    // gets normalized back, we can assume it does not exist, thus we are at the end of the line,
+    // and instead, lets decrement our anchor by 1, and show the cursor to the right instead.
+    if (remoteSelection.isCollapsed) {
+      let finalizedRemoteNormalizedSelection: Selection = remoteSelection;
+
+      const editor = this.editor.current;
+      // const node = editor.value.document.getNode(remoteSelection.focus.path);
+      const moveForward = remoteSelection.moveFocusForward(1) as Selection;
+      const normalizedMoveForward: Selection = editor.value.document.resolveSelection(moveForward);
+      finalizedRemoteNormalizedSelection = normalizedMoveForward;
+
+      let isCollapsedAtEnd = false;
+      if (normalizedMoveForward.anchor.offset === normalizedMoveForward.focus.offset) {
+        isCollapsedAtEnd = true;
+        const moveBackward = remoteSelection.moveAnchorBackward(1) as Selection;
+        const normalizedMoveBackward: Selection = editor.value.document.resolveSelection(moveBackward);
+        finalizedRemoteNormalizedSelection = normalizedMoveBackward;
+      }
+
+      const { mark } = remoteSelectionDecorationNotNormalized;
+      const markHydatedWithData = { ...mark, data: { isCollapsed: true, isCollapsedAtEnd: isCollapsedAtEnd } };
+      normalizedRemoteSelectionDecoration = { mark: markHydatedWithData, ...finalizedRemoteNormalizedSelection.toJS() };
+    } else {
+      // not collapsed
+      const { mark } = remoteSelectionDecorationNotNormalized;
+      const markHydatedWithData = { ...mark, data: { isCollapsed: false } };
+      normalizedRemoteSelectionDecoration = { ...normalizedRemoteSelectionDecoration, mark: markHydatedWithData };
+    }
+    console.log(normalizedRemoteSelectionDecoration);
+    let decorations = [normalizedRemoteSelectionDecoration];
     this.editor &&
       this.editor.current &&
       this.editor.current.change(change => {
@@ -374,7 +422,9 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   };
 
   renderNode = (props, next) => {
-    const { attributes, children, node } = props;
+    const { attributes, children, node, editor, ...rest } = props;
+    console.log(attributes, children, node.toJS(), editor, rest);
+    console.log(node.getMarks());
 
     switch (node.type) {
       case 'block-quote':
@@ -402,8 +452,15 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
+  decorateNode = (block): void => {
+    const text = block.getFirstText();
+    console.log('decorateNode', block.toJS(), text);
+  };
+
   renderMark = (props, next) => {
-    const { children, mark, attributes } = props;
+    const { children, mark, attributes, ...rest } = props;
+
+    console.log('marks', mark.toJS());
 
     if (mark.type === `remote-agent-setselection-${this.props.clientId}`) {
       return (
@@ -416,32 +473,45 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       mark.type.startsWith('remote-agent-setselection-') &&
       mark.type !== `remote-agent-setselection-${this.props.clientId}`
     ) {
+      const isCollapsed = mark.data.get('isCollapsed');
+      const isCollapsedAtEnd = mark.data.get('isCollapsedAtEnd');
+      if (isCollapsed) {
+        if (isCollapsedAtEnd) {
+          console.log('mark is at the end, render right');
+        } else {
+          console.log('mark is not at the end, render nroamlly');
+        }
+      } else {
+        console.log('not collapsed, render a range!');
+      }
+
       return (
         <span
           {...attributes}
           style={{
             position: 'relative',
-            backgroundColor: 'rgba(138,208,222,0.3)',
           }}
         >
           <div
             style={{
               position: 'absolute',
-              width: '100px',
-              height: '10px',
-              top: '-20px',
+              top: 0,
               left: 0,
-              fontSize: '12px',
+              right: 0,
+              bottom: 0,
               userSelect: 'none',
             }}
           >
-            <span
+            <Cursor
               style={{
+                overflow: 'hidden',
                 position: 'absolute',
-                width: '5px',
-                height: '10px',
+                width: '2px',
+                height: '100%',
                 top: '0',
                 left: '0',
+                bottom: '0',
+                right: 0,
                 backgroundColor: 'green',
               }}
             />
@@ -554,6 +624,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                 <SlateEditorContainer>
                   <FakeTitle>Welcome to the Jot Editor</FakeTitle>
                   <Editor
+                    decorateNode={this.decorateNode}
                     ref={this.editor}
                     placeholder="Go ahead and jot something down..."
                     autoCorrect={false}
