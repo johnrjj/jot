@@ -248,16 +248,16 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       };
       const decorations = [decoration];
 
-      this.editor &&
-        this.editor.current &&
-        this.editor.current.change(change => {
-          return change.withoutSaving(() => {
-            let c = change.setValue({ decorations });
-            c = change.fromRemote = true;
-            c = change.fromSetSelectionSelf = true;
-            return c;
-          });
-        });
+      // this.editor &&
+      //   this.editor.current &&
+      //   this.editor.current.change(change => {
+      //     return change.withoutSaving(() => {
+      //       let c = change.setValue({ decorations });
+      //       c = change.fromRemote = true;
+      //       c = change.fromSetSelectionSelf = true;
+      //       return c;
+      //     });
+      //   });
 
       if (this.state.isConnectedToDocument) {
         const msg: UpdateClientSelectionMessage = WebSocketClientMessageCreator.createUpdateClientSelectionMessage({
@@ -352,7 +352,17 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       normalizedRemoteSelectionDecoration = { ...normalizedRemoteSelectionDecoration, mark: markHydatedWithData };
     }
     console.log(normalizedRemoteSelectionDecoration);
-    let decorations = [normalizedRemoteSelectionDecoration];
+    const previousDecorations: Array<Decoration> = this.state.value.decorations.toJS();
+    const previousDecorationsFiltered = previousDecorations.filter(
+      x => x.mark.type !== remoteSelectionDecorationNotNormalized.mark.type,
+    );
+    let decorations = [...previousDecorationsFiltered, normalizedRemoteSelectionDecoration];
+    console.log(
+      'JOHN HERE, FIND THE DECORATIONS',
+      this.state.value.decorations,
+      this.state.value.decorations.toJS(),
+      this.editor.current,
+    );
     this.editor &&
       this.editor.current &&
       this.editor.current.change(change => {
