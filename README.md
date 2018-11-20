@@ -77,3 +77,27 @@ Prod backend healthcheck url: [`https://jot-api-prod.herokuapp.com/healthcheck`]
 ### `@jot/common`
 
 Does not need to be deployed.
+
+## Architecture
+
+### Websockets
+
+Realtime data is multiplexed over websockets.
+
+#### Document State
+
+Document state and data from the automerge CRDT is sent and recieved and always ensures that the information ends up being transmitted and confirmed.
+
+#### Remote Client Cursors
+
+Remote cursors are treated as UDP-esque networking, not mission critical, and if they drop or lose a packet, not the end of the world.
+
+#### Document channels/lobbies/event streams/figure out a standard name
+
+Document channels are joined and left via websockets as well. Client sends over a request to join, server either does not allow or allows. If server allows we send an ack, completing the handshake.
+
+What else do we send over websockets?
+
+### Redis
+
+All internal events should flow through redis event bus.

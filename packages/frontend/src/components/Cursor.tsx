@@ -15,7 +15,56 @@ const Cursor = styled.div`
   animation: ${blink} 1s linear infinite;
 `;
 
-export { Cursor };
+const RemoteCursorRangeMark = styled.div`
+  overflow: hidden;
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  top: 0;
+  left: ${props => (props.isCollapsedAtEnd ? '100%' : 0)};
+  bottom: 0;
+  background-color: green;
+`;
+
+const SpanRelativeAnchor = styled.span`
+  position: relative;
+`;
+
+const SpanRelativeAnchorWithBackgroundColor = styled.span`
+  position: relative;
+  background-color: rgba(138, 208, 222, 0.3);
+`;
+
+const AbsoluteFullWidth = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  user-select: none;
+`;
+
+const TinyGreenMarker = styled.span`
+  position: absolute;
+  width: 5px;
+  height: 10px;
+  top: 0;
+  left: 0;
+  background-color: green;
+`;
+
+const RemoteCursorCollaprsedMark = ({ children, ...rest }) => {
+  return <div>{children}</div>;
+};
+
+export {
+  TinyGreenMarker,
+  Cursor,
+  SpanRelativeAnchor,
+  AbsoluteFullWidth,
+  RemoteCursorRangeMark,
+  SpanRelativeAnchorWithBackgroundColor,
+};
 
 // export default class Cursor extends Component {
 

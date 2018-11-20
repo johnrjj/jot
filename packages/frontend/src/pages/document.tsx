@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Editor } from 'slate-react';
+import { Editor, RenderAttributes, RenderMarkProps } from 'slate-react';
 import { Value, Selection, Range, Mark, Decoration } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
@@ -41,7 +41,14 @@ import {
   RemoteAgentCursorUpdateFromServerMessage,
   UpdateDocumentActiveUserListWSMessage,
 } from '@jot/common/dist/websockets/websocket-actions';
-import { Cursor } from '../components/Cursor';
+import {
+  Cursor,
+  SpanRelativeAnchor,
+  AbsoluteFullWidth,
+  RemoteCursorRangeMark,
+  SpanRelativeAnchorWithBackgroundColor,
+  TinyGreenMarker,
+} from '../components/Cursor';
 import { start } from 'repl';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
@@ -421,6 +428,11 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
+  renderEditor = (_props: RenderAttributes, next) => {
+    const children = next();
+    return <>{children}</>;
+  };
+
   renderNode = (props, next) => {
     const { attributes, children, node, editor, ...rest } = props;
     console.log(attributes, children, node.toJS(), editor, rest);
@@ -452,15 +464,20 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
-  decorateNode = (block): void => {
-    const text = block.getFirstText();
-    console.log('decorateNode', block.toJS(), text);
+  decorateNode = (node, next?: Function): void => {
+    // in the next version the params are (node, editor, next)
+    next();
   };
 
-  renderMark = (props, next) => {
+  renderMark = (props: RenderMarkProps, next: Function) => {
+    // Note: You must spread the props.attributes onto the top-level DOM node you use to render the mark.
     const { children, mark, attributes, ...rest } = props;
-
+    console.log('RENDERING A MARK');
+    console.log('children', children);
     console.log('marks', mark.toJS());
+    console.log('attributes (what the hell are these?)', attributes);
+    console.log('...rest', rest);
+    console.log('END MARK INFO DUMP');
 
     if (mark.type === `remote-agent-setselection-${this.props.clientId}`) {
       return (
@@ -481,60 +498,31 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         } else {
           console.log('mark is not at the end, render nroamlly');
         }
+        return (
+          <SpanRelativeAnchor {...attributes}>
+            <AbsoluteFullWidth>
+              <RemoteCursorRangeMark isCollapsed={isCollapsed} isCollapsedAtEnd={isCollapsedAtEnd} />
+            </AbsoluteFullWidth>
+            {children}
+          </SpanRelativeAnchor>
+        );
       } else {
         console.log('not collapsed, render a range!');
+        return (
+          <SpanRelativeAnchorWithBackgroundColor {...attributes}>
+            <AbsoluteFullWidth>
+              <TinyGreenMarker />
+            </AbsoluteFullWidth>
+            {children}
+          </SpanRelativeAnchorWithBackgroundColor>
+        );
       }
-
-      return (
-        <span
-          {...attributes}
-          style={{
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              userSelect: 'none',
-            }}
-          >
-            <Cursor
-              style={{
-                overflow: 'hidden',
-                position: 'absolute',
-                width: '2px',
-                height: '100%',
-                top: '0',
-                left: '0',
-                bottom: '0',
-                right: 0,
-                backgroundColor: 'green',
-              }}
-            />
-          </div>
-          <span
-            style={{
-              opacity: 0.4,
-              height: '100%',
-              position: 'absolute',
-              width: '100%',
-              top: 0,
-              left: 0,
-            }}
-          />
-          {children}
-        </span>
-      );
     }
 
     switch (mark.type) {
       case 'bold':
         return (
-          <strong style={{ fontWeight: '700' }} {...attributes}>
+          <strong style={{ fontWeight: 700 }} {...attributes}>
             {children}
           </strong>
         );
@@ -632,6 +620,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                     spellCheck={false}
                     value={this.state.value}
                     onChange={this.onChange}
+                    renderEditor={this.renderEditor}
                     renderNode={this.renderNode}
                     renderMark={this.renderMark as any}
                   />
