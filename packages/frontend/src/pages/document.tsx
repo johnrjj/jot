@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Editor, RenderAttributes, RenderMarkProps } from 'slate-react';
-import { Value, Selection, Range, Mark, Decoration } from 'slate';
+import { Value, Selection, Range, Mark, Decoration, Point } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
 import Websocket from '../components/Websocket';
@@ -102,6 +102,14 @@ interface DocEditState {
   error?: Error | string;
 }
 
+export interface DecorationJS {
+  anchor: any;
+  focus: any;
+  mark: {
+    type: string;
+  };
+}
+
 const DEFAULT_NODE = 'paragraph';
 
 export default class DocApp extends Component<DocEditProps, DocEditState> {
@@ -111,7 +119,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   selection: any;
   websocket: React.RefObject<any>;
   editor: React.RefObject<any>;
-  remoteCursorSet: Set<any>;
+  activeRemoteCursorSet: Map<string, DecorationJS>;
 
   constructor(props: DocEditProps) {
     super(props);
@@ -133,11 +141,10 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
     this.websocket = React.createRef();
     this.editor = React.createRef<any>();
-    this.remoteCursorSet = new Set();
+    this.activeRemoteCursorSet = new Map();
   }
 
   async componentDidMount() {
-    console.log(this.props);
     const docIdToRequest = this.props.docId;
     try {
       const res = await fetch(`${this.props.apiEndpoint}/doc/${docIdToRequest}`);
@@ -207,14 +214,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   }
 
   onChange = ({ value, operations, ...rest }) => {
-    console.log(
-      'value',
-      value.toJS(),
-      'onChange:operations',
-      operations && operations.toJS(),
-      `from: ${rest.fromRemote ? 'remote' : 'local'}`,
-      rest,
-    );
+    console.log('onChange', 'operations:', operations.toJS());
     this.setState({ value });
     this.selection = value.selection.toJS();
     const clientId = this.props.clientId;
@@ -223,7 +223,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     if (rest.fromSetSelectionSelf) {
     }
 
-    // console.log(operations.toJS());
     if (rest.fromRemote) {
       // needed for programatic updates...
       // without this we get into a loop.
@@ -312,11 +311,15 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       console.log('received our own message from the server, skipping');
       return;
     }
+
     const remoteSelectionDecorationNotNormalized = payload.message;
+
+    // Save to active remote cursor set.
+    this.activeRemoteCursorSet.set(payload.message.mark.type, remoteSelectionDecorationNotNormalized);
+
+    // Need to do some hacks to work around a decoration being 'zero' width.
     const remoteSelection = Selection.create(remoteSelectionDecorationNotNormalized);
-
     let normalizedRemoteSelectionDecoration: any = remoteSelectionDecorationNotNormalized;
-
     // if its collapsed, the selection iss techncially zero width (offset would be zero, for example)
     // slate doesn't support that, so what we need to do is extend it by one so slate accepts it.
     // ie; if the anchor was 0 and focus was 0, we'd increment the focus to 1.
@@ -351,18 +354,12 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       const markHydatedWithData = { ...mark, data: { isCollapsed: false } };
       normalizedRemoteSelectionDecoration = { ...normalizedRemoteSelectionDecoration, mark: markHydatedWithData };
     }
-    console.log(normalizedRemoteSelectionDecoration);
     const previousDecorations: Array<Decoration> = this.state.value.decorations.toJS();
     const previousDecorationsFiltered = previousDecorations.filter(
       x => x.mark.type !== remoteSelectionDecorationNotNormalized.mark.type,
     );
     let decorations = [...previousDecorationsFiltered, normalizedRemoteSelectionDecoration];
-    console.log(
-      'JOHN HERE, FIND THE DECORATIONS',
-      this.state.value.decorations,
-      this.state.value.decorations.toJS(),
-      this.editor.current,
-    );
+
     this.editor &&
       this.editor.current &&
       this.editor.current.change(change => {
@@ -438,15 +435,25 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
+  // Placeholder when ready for gutter stuff
   renderEditor = (_props: RenderAttributes, next) => {
     const children = next();
     return <>{children}</>;
   };
 
+  hasSeenRemoteCursorMarkBefore = new Set();
   renderNode = (props, next) => {
     const { attributes, children, node, editor, ...rest } = props;
-    console.log(attributes, children, node.toJS(), editor, rest);
-    console.log(node.getMarks());
+    console.log('renderNode', props);
+
+    // Clear per node, only keep memory while rendering an individual node
+    // This is used to talk to renderMark because I couldn't find a good way otherwise.
+    // renderNode will run first, then all the marks inside the node will be rendered via renderMark
+    this.hasSeenRemoteCursorMarkBefore.clear();
+
+    const nodeKey = node.key;
+    const nodePath = node.path;
+    const previosNode = editor.value.document.getPreviousNode(nodePath);
 
     switch (node.type) {
       case 'block-quote':
@@ -481,13 +488,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
   renderMark = (props: RenderMarkProps, next: Function) => {
     // Note: You must spread the props.attributes onto the top-level DOM node you use to render the mark.
-    const { children, mark, attributes, ...rest } = props;
-    console.log('RENDERING A MARK');
-    console.log('children', children);
-    console.log('marks', mark.toJS());
-    console.log('attributes (what the hell are these?)', attributes);
-    console.log('...rest', rest);
-    console.log('END MARK INFO DUMP');
+    console.log('renderMark', props);
+    const { children, mark, marks, text, attributes, node, ...rest } = props;
 
     if (mark.type === `remote-agent-setselection-${this.props.clientId}`) {
       return (
@@ -500,14 +502,13 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       mark.type.startsWith('remote-agent-setselection-') &&
       mark.type !== `remote-agent-setselection-${this.props.clientId}`
     ) {
+      let hasSeenMarkBefore = this.hasSeenRemoteCursorMarkBefore.has(mark.type);
+      if (!hasSeenMarkBefore) {
+        this.hasSeenRemoteCursorMarkBefore.add(mark.type);
+      }
       const isCollapsed = mark.data.get('isCollapsed');
       const isCollapsedAtEnd = mark.data.get('isCollapsedAtEnd');
       if (isCollapsed) {
-        if (isCollapsedAtEnd) {
-          console.log('mark is at the end, render right');
-        } else {
-          console.log('mark is not at the end, render nroamlly');
-        }
         return (
           <SpanRelativeAnchor {...attributes}>
             <AbsoluteFullWidth>
@@ -517,12 +518,9 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
           </SpanRelativeAnchor>
         );
       } else {
-        console.log('not collapsed, render a range!');
         return (
           <SpanRelativeAnchorWithBackgroundColor {...attributes}>
-            <AbsoluteFullWidth>
-              <TinyGreenMarker />
-            </AbsoluteFullWidth>
+            <AbsoluteFullWidth>{!hasSeenMarkBefore && <TinyGreenMarker />}</AbsoluteFullWidth>
             {children}
           </SpanRelativeAnchorWithBackgroundColor>
         );

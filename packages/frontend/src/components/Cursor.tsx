@@ -32,6 +32,7 @@ const SpanRelativeAnchor = styled.span`
 
 const SpanRelativeAnchorWithBackgroundColor = styled.span`
   position: relative;
+  pointer-events: none;
   background-color: rgba(138, 208, 222, 0.3);
 `;
 
