@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Editor, RenderAttributes, RenderMarkProps } from 'slate-react';
+import { Editor, RenderAttributes, RenderMarkProps, SlateType } from 'slate-react';
 import { Value, Selection, Range, Mark, Decoration, Point } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
@@ -7,6 +7,7 @@ import Websocket from '../components/Websocket';
 import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
+import { isEqual } from 'lodash';
 import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
 import {
   EditorContainer,
@@ -316,6 +317,34 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
     // Save to active remote cursor set.
     this.activeRemoteCursorSet.set(payload.message.mark.type, remoteSelectionDecorationNotNormalized);
+
+    if (
+      !isEqual(remoteSelectionDecorationNotNormalized.anchor.path, remoteSelectionDecorationNotNormalized.focus.path)
+    ) {
+      console.error('multiple node selection range');
+      const selectionRange = Range.create(remoteSelectionDecorationNotNormalized);
+      const remoteSelection = Selection.create(remoteSelectionDecorationNotNormalized);
+      let normalizedRemoteSelectionDecoration: any = this.editor.current.value.document.resolveSelection(
+        remoteSelectionDecorationNotNormalized,
+      );
+      console.log('multiple node selection remote selection:', remoteSelection.toJS());
+
+      const editor = this.editor.current as Editor;
+      const document = editor.value.document;
+      console.log(selectionRange.toJS());
+
+      const blocks = document.getBlocksAtRange(selectionRange);
+      let startBlock = document.getClosestBlock(remoteSelection.anchor.path);
+      let endBlock = document.getClosestBlock(remoteSelection.focus.path);
+      console.log('new data', blocks.toJS(), startBlock.toJS(), endBlock.toJS());
+      // const startInline = document.getClosestInline(start.key)
+      // const endInline = document.getClosestInline(end.key)
+      // let startChild = startBlock.getFurthestAncestor(start.key)
+      // let endChild = endBlock.getFurthestAncestor(end.key)
+
+      console.log('multiple node normalized remote selection', normalizedRemoteSelectionDecoration.toJS());
+      this.editor.current.value.document.getClosestBlock;
+    }
 
     // Need to do some hacks to work around a decoration being 'zero' width.
     const remoteSelection = Selection.create(remoteSelectionDecorationNotNormalized);

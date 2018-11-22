@@ -18,11 +18,12 @@ import { initialAutomergeDocExample } from './test-data/initial-doc';
 import { AppConfig } from './config';
 import { RedisSubscriber } from './core/redis-subscriber';
 import { RedisPublisher } from './core/redis-publisher';
+import { generateSampleAutomergeDocFromIpsum } from './util/import-export';
 
 const createApp = async (config: AppConfig): Promise<Express> => {
   const logger: Logger = ConsoleLoggerFactory({ level: config.LOG_LEVEL });
   const docSet = new (Automerge as any).DocSet();
-  const { doc, docId: testDocId } = getSampleDoc();
+  const { doc, docId: testDocId } = generateSampleAutomergeDocFromIpsum('1');
   docSet.setDoc(testDocId, doc);
 
   // Set up Redis
