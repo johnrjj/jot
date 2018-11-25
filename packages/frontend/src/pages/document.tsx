@@ -321,17 +321,19 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     if (
       !isEqual(remoteSelectionDecorationNotNormalized.anchor.path, remoteSelectionDecorationNotNormalized.focus.path)
     ) {
-      console.error('multiple node selection range');
+      console.error(
+        'multiple block selection range: not implemented yet.\nDecorations dont work across blocks with custom logic. remote range wont look right',
+      );
       const selectionRange = Range.create(remoteSelectionDecorationNotNormalized);
       const remoteSelection = Selection.create(remoteSelectionDecorationNotNormalized);
       let normalizedRemoteSelectionDecoration: any = this.editor.current.value.document.resolveSelection(
         remoteSelectionDecorationNotNormalized,
       );
-      console.log('multiple node selection remote selection:', remoteSelection.toJS());
+      // console.log('multiple node selection remote selection:', remoteSelection.toJS());
 
       const editor = this.editor.current as Editor;
       const document = editor.value.document;
-      console.log(selectionRange.toJS());
+      // console.log(selectionRange.toJS());
 
       const blocks = document.getBlocksAtRange(selectionRange);
       let startBlock = document.getClosestBlock(remoteSelection.anchor.path);
@@ -343,7 +345,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       // let endChild = endBlock.getFurthestAncestor(end.key)
 
       console.log('multiple node normalized remote selection', normalizedRemoteSelectionDecoration.toJS());
-      this.editor.current.value.document.getClosestBlock;
     }
 
     // Need to do some hacks to work around a decoration being 'zero' width.
