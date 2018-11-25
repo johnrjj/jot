@@ -10,7 +10,7 @@
     "clean": "lerna run clean --stream",
     "deploy:frontend": "yarn run build:frontend && surge ./packages/frontend/dist jot-app.surge.sh",
     "heroku-postbuild": "wsrun --stages build",
-    "prettier": "prettier --write '**/*.{ts,tsx,json,md}' --config .prettierrc"
+    "prettier": "prettier --write '**/*.{ts,tsx,json,md,yml}' --config .prettierrc"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",

@@ -2,22 +2,28 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:10.12
-    working_directory: ~/repo
+      - image: circleci/node:10
+    working_directory: ~/jot-repo
     steps:
       - checkout
-      - run: echo 'export PATH=$HOME/CIRCLE_PROJECT_REPONAME/node_modules/.bin:$PATH' >> $BASH_ENV
-      - run:
-          name: install-yarn
-          command: sudo npm install --global yarn@1.9.4
       - restore_cache:
           keys:
-          - v2-dependencies-{{ checksum "yarn.lock" }}
+            - v3-dependencies-{{ checksum "yarn.lock" }}
+            - v3-dependency-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            - v3-dependency-cache-{{ .Branch }}
+            - v3-dependency-cache
       - run:
           name: yarn
           command: yarn --frozen-lockfile install || yarn --frozen-lockfile install
       - save_cache:
-            key: v2-dependencies-{{ checksum "yarn.lock" }}
-            paths:
-                - ~/repo
+          key: v3-dependency-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+            - packages/backend/node_modules
+            - packages/common/node_modules
+            - packages/frontend/node_modules
       - run: yarn build
+      - save_cache:
+          key: v3-repo-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/jot-repo
