@@ -4,7 +4,7 @@
 
 ## Overview
 
-Realtime collaboritve editor using CRDTs.
+Realtime collaborative editor using CRDTs, Websockets, and more.
 
 ## Getting started
 
