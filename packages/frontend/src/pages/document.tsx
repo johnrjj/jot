@@ -568,7 +568,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       const animal = generateItemFromHash(userId, ANIMALS);
       const highlightColor = generateItemFromHash(userId, COLORS);
 
-      console.warn(adjective, animal, highlightColor);
+      console.log(`User ${userId} assigned named alias '${adjective} ${animal}' with color: ${highlightColor}`);
 
       if (isCollapsed) {
         return (
