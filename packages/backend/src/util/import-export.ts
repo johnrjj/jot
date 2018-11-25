@@ -7,7 +7,8 @@ const IPSUM_PARAGRAPH_TEXT = `Lorem ipsum dolor sit amet, consectetur adipiscing
 
 import { slateCustomToJson } from '@jot/common/dist/adapter/slate-automerge-bridge';
 
-const serializePlainTextToSlateValue = (text: string, toJSON: boolean = false) => Plain.deserialize(ipsum, { toJSON });
+const serializePlainTextToSlateValue = (text: string, toJSON: boolean = false) =>
+  Plain.deserialize(IPSUM_PARAGRAPH_TEXT, { toJSON });
 
 const createAutomergeDocFromJson = (json: any): Automerge.AutomergeRoot => {
   const blankDoc = Automerge.init(SYSTEM_GENERATED_ACTOR_ID);

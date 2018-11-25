@@ -218,6 +218,7 @@ export class WebSocketNode {
 
     // Delete from connecting status
     connectionContext.subscribingDocumentIds.delete(docId);
+
     // Add to connected status
     connectionContext.subscribedDocumentIds.add(docId);
 

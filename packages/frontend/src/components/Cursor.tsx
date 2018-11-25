@@ -23,7 +23,7 @@ const RemoteCursorRangeMark = styled.div`
   top: 0;
   left: ${props => (props.isCollapsedAtEnd ? '100%' : 0)};
   bottom: 0;
-  background-color: green;
+  background-color: ${props => props.markerColor};
 `;
 
 const SpanRelativeAnchor = styled.span`
@@ -33,7 +33,7 @@ const SpanRelativeAnchor = styled.span`
 const SpanRelativeAnchorWithBackgroundColor = styled.span`
   position: relative;
   pointer-events: none;
-  background-color: rgba(138, 208, 222, 0.3);
+  background-color: ${props => props.markerColor};
 `;
 
 const AbsoluteFullWidth = styled.div`
@@ -45,13 +45,13 @@ const AbsoluteFullWidth = styled.div`
   user-select: none;
 `;
 
-const TinyGreenMarker = styled.span`
+const CursorMarker = styled.span`
   position: absolute;
   width: 5px;
   height: 10px;
   top: 0;
   left: 0;
-  background-color: green;
+  background-color: ${props => props.markerColor};
 `;
 
 const RemoteCursorCollaprsedMark = ({ children, ...rest }) => {
@@ -59,7 +59,7 @@ const RemoteCursorCollaprsedMark = ({ children, ...rest }) => {
 };
 
 export {
-  TinyGreenMarker,
+  CursorMarker,
   Cursor,
   SpanRelativeAnchor,
   AbsoluteFullWidth,

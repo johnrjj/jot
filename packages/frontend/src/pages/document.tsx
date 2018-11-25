@@ -4,7 +4,14 @@ import { Value, Selection, Range, Mark, Decoration, Point } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
 import Websocket from '../components/Websocket';
-import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
+import {
+  SlateAutomergeAdapter,
+  WebSocketClientMessageCreator,
+  generateItemFromHash,
+  ADJECTIVES,
+  ANIMALS,
+  COLORS,
+} from '@jot/common';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
 import { isEqual } from 'lodash';
@@ -48,9 +55,8 @@ import {
   AbsoluteFullWidth,
   RemoteCursorRangeMark,
   SpanRelativeAnchorWithBackgroundColor,
-  TinyGreenMarker,
+  CursorMarker,
 } from '../components/Cursor';
-import { start } from 'repl';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
@@ -376,12 +382,25 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       }
 
       const { mark } = remoteSelectionDecorationNotNormalized;
-      const markHydatedWithData = { ...mark, data: { isCollapsed: true, isCollapsedAtEnd: isCollapsedAtEnd } };
+      const markHydatedWithData = {
+        ...mark,
+        data: {
+          isCollapsed: true,
+          isCollapsedAtEnd: isCollapsedAtEnd,
+          userId: payload.clientId,
+        },
+      };
       normalizedRemoteSelectionDecoration = { mark: markHydatedWithData, ...finalizedRemoteNormalizedSelection.toJS() };
     } else {
       // not collapsed
       const { mark } = remoteSelectionDecorationNotNormalized;
-      const markHydatedWithData = { ...mark, data: { isCollapsed: false } };
+      const markHydatedWithData = {
+        ...mark,
+        data: {
+          isCollapsed: false,
+          userId: payload.clientId,
+        },
+      };
       normalizedRemoteSelectionDecoration = { ...normalizedRemoteSelectionDecoration, mark: markHydatedWithData };
     }
     const previousDecorations: Array<Decoration> = this.state.value.decorations.toJS();
@@ -538,19 +557,44 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       }
       const isCollapsed = mark.data.get('isCollapsed');
       const isCollapsedAtEnd = mark.data.get('isCollapsedAtEnd');
+
+      let userId = mark.data.get('userId');
+      if (!userId) {
+        console.warn(`remote selection data userId not set...`);
+        userId = '12345';
+      }
+      console.log(userId);
+      const adjective = generateItemFromHash(userId, ADJECTIVES);
+      const animal = generateItemFromHash(userId, ANIMALS);
+      const highlightColor = generateItemFromHash(userId, COLORS);
+
+      console.warn(adjective, animal, highlightColor);
+
       if (isCollapsed) {
         return (
           <SpanRelativeAnchor {...attributes}>
             <AbsoluteFullWidth>
-              <RemoteCursorRangeMark isCollapsed={isCollapsed} isCollapsedAtEnd={isCollapsedAtEnd} />
+              <RemoteCursorRangeMark
+                markerColor={highlightColor}
+                isCollapsed={isCollapsed}
+                isCollapsedAtEnd={isCollapsedAtEnd}
+              />
             </AbsoluteFullWidth>
             {children}
           </SpanRelativeAnchor>
         );
       } else {
         return (
-          <SpanRelativeAnchorWithBackgroundColor {...attributes}>
-            <AbsoluteFullWidth>{!hasSeenMarkBefore && <TinyGreenMarker />}</AbsoluteFullWidth>
+          <SpanRelativeAnchorWithBackgroundColor markerColor={highlightColor} {...attributes}>
+            <AbsoluteFullWidth>
+              {!hasSeenMarkBefore && (
+                <CursorMarker
+                  markerColor={highlightColor}
+                  isCollapsed={isCollapsed}
+                  isCollapsedAtEnd={isCollapsedAtEnd}
+                />
+              )}
+            </AbsoluteFullWidth>
             {children}
           </SpanRelativeAnchorWithBackgroundColor>
         );
@@ -648,7 +692,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
               )}
               {!isLoading && (
                 <SlateEditorContainer>
-                  <FakeTitle>Welcome to the Jot Editor</FakeTitle>
+                  {/* <FakeTitle>Welcome to the Jot Editor</FakeTitle> */}
                   <Editor
                     decorateNode={this.decorateNode}
                     ref={this.editor}
@@ -664,6 +708,9 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   />
                 </SlateEditorContainer>
               )}
+              {this.state.activeUserIds.map(x => (
+                <div key={x}>{x}</div>
+              ))}
             </EditorContainer>
           </ContentContainer>
           {/* {isHistorySidebarOpen && (
