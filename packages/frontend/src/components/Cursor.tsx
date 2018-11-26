@@ -33,6 +33,7 @@ const SpanRelativeAnchor = styled.span`
 const SpanRelativeAnchorWithBackgroundColor = styled.span`
   position: relative;
   pointer-events: none;
+  line-height: 2;
   background-color: ${props => props.markerColor};
 `;
 

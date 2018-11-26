@@ -7,7 +7,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
 import { isEqual } from 'lodash';
 import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
-
 import {
   SlateAutomergeAdapter,
   WebSocketClientMessageCreator,
@@ -16,11 +15,8 @@ import {
   ANIMALS,
   COLORS,
 } from '@jot/common';
-
 import Websocket from '../components/Websocket';
-
 import ToolTip from '../components/Tooltip';
-
 import {
   EditorContainer,
   EditorToolbar,
@@ -593,25 +589,21 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       } else {
         return (
           <SpanRelativeAnchorWithBackgroundColor markerColor={highlightColor} {...attributes}>
-            <AbsoluteFullWidth
-              id={`${remoteSelectionMarkId}-anchor-element`}
-              unselectable="on"
-              style={{ userSelect: 'none' }}
-            >
+            <AbsoluteFullWidth unselectable="on" style={{ userSelect: 'none' }}>
               {!hasSeenMarkBefore && (
                 <>
                   <ToolTip
                     active={true}
                     position="top"
                     align="left"
-                    arrow="center"
                     parent={`#${remoteSelectionMarkId}-anchor-element`}
                   >
                     <div>
-                      <p>tooltip</p>
+                      <p>portal tooltip</p>
                     </div>
                   </ToolTip>
                   <CursorMarker
+                    id={`${remoteSelectionMarkId}-anchor-element`}
                     markerColor={highlightColor}
                     isCollapsed={isCollapsed}
                     isCollapsedAtEnd={isCollapsedAtEnd}
@@ -663,7 +655,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
     const isLoading = loading || !isConnectedToDocument || !isSyncedWithServer;
 
-    // const history = Automerge.getHistory(this.doc);
     return (
       <FullViewportAppContainer>
         <MainContainer>
@@ -683,7 +674,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   <EditorToolbarBackText>Back</EditorToolbarBackText>
                 </EditorToolbarLeftGroup>
                 <EditorToolbarRightGroup>
-                  {activeUserIds.length > 0 && <div>{activeUserIds.length}</div>}
+                  {activeUserIds.length && <div>{activeUserIds.length}</div>}
                   <EditorToolbarButtonContainer onClick={this.toggleHistorySidebar}>
                     <EditorToolbarHistoryButtonIcon />
                     <span>History</span>
