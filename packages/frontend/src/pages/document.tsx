@@ -3,7 +3,11 @@ import { Editor, RenderAttributes, RenderMarkProps, SlateType } from 'slate-reac
 import { Value, Selection, Range, Mark, Decoration, Point } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
-import Websocket from '../components/Websocket';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Router, Link } from '@reach/router';
+import { isEqual } from 'lodash';
+import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
+
 import {
   SlateAutomergeAdapter,
   WebSocketClientMessageCreator,
@@ -12,10 +16,11 @@ import {
   ANIMALS,
   COLORS,
 } from '@jot/common';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Router, Link } from '@reach/router';
-import { isEqual } from 'lodash';
-import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
+
+import Websocket from '../components/Websocket';
+
+import ToolTip from '../components/Tooltip';
+
 import {
   EditorContainer,
   EditorToolbar,
@@ -558,12 +563,14 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       const isCollapsed = mark.data.get('isCollapsed');
       const isCollapsedAtEnd = mark.data.get('isCollapsedAtEnd');
 
+      const remoteSelectionMarkId = mark.type;
       let userId = mark.data.get('userId');
       if (!userId) {
         console.warn(`remote selection data userId not set...`);
         userId = '12345';
       }
       console.log(userId);
+
       const adjective = generateItemFromHash(userId, ADJECTIVES);
       const animal = generateItemFromHash(userId, ANIMALS);
       const highlightColor = generateItemFromHash(userId, COLORS);
@@ -586,13 +593,30 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       } else {
         return (
           <SpanRelativeAnchorWithBackgroundColor markerColor={highlightColor} {...attributes}>
-            <AbsoluteFullWidth>
+            <AbsoluteFullWidth
+              id={`${remoteSelectionMarkId}-anchor-element`}
+              unselectable="on"
+              style={{ userSelect: 'none' }}
+            >
               {!hasSeenMarkBefore && (
-                <CursorMarker
-                  markerColor={highlightColor}
-                  isCollapsed={isCollapsed}
-                  isCollapsedAtEnd={isCollapsedAtEnd}
-                />
+                <>
+                  <ToolTip
+                    active={true}
+                    position="top"
+                    align="left"
+                    arrow="center"
+                    parent={`#${remoteSelectionMarkId}-anchor-element`}
+                  >
+                    <div>
+                      <p>tooltip</p>
+                    </div>
+                  </ToolTip>
+                  <CursorMarker
+                    markerColor={highlightColor}
+                    isCollapsed={isCollapsed}
+                    isCollapsedAtEnd={isCollapsedAtEnd}
+                  />
+                </>
               )}
             </AbsoluteFullWidth>
             {children}
