@@ -23,6 +23,8 @@ jobs:
             - packages/common/node_modules
             - packages/frontend/node_modules
       - run: yarn build
+      # TODO: Surge env vars have been added, need to filter a deploy step to master only
+      # - run: yarn deploy:frontend
       - save_cache:
           key: v3-repo-{{ .Environment.CIRCLE_SHA1 }}
           paths:
