@@ -573,6 +573,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
       console.log(`User ${userId} assigned named alias '${adjective} ${animal}' with color: ${highlightColor}`);
       const remoteCursorKey = `${remoteSelectionMarkId}-anchor-element`;
+      const remoteCursorIdAlias = `${adjective} ${animal}`;
 
       if (isCollapsed) {
         return (
@@ -601,7 +602,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                     parent={`#${remoteCursorKey}`}
                   >
                     <div>
-                      <p>portal tooltip</p>
+                      <p style={{ textTransform: 'lowercase' }}>{remoteCursorIdAlias}</p>
                     </div>
                   </ToolTip>
                   <CursorMarker
