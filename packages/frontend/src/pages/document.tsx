@@ -572,6 +572,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       const highlightColor = generateItemFromHash(userId, COLORS);
 
       console.log(`User ${userId} assigned named alias '${adjective} ${animal}' with color: ${highlightColor}`);
+      const remoteCursorKey = `${remoteSelectionMarkId}-anchor-element`;
 
       if (isCollapsed) {
         return (
@@ -595,15 +596,16 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   <ToolTip
                     active={true}
                     position="top"
+                    group={remoteCursorKey}
                     align="left"
-                    parent={`#${remoteSelectionMarkId}-anchor-element`}
+                    parent={`#${remoteCursorKey}`}
                   >
                     <div>
                       <p>portal tooltip</p>
                     </div>
                   </ToolTip>
                   <CursorMarker
-                    id={`${remoteSelectionMarkId}-anchor-element`}
+                    id={remoteCursorKey}
                     markerColor={highlightColor}
                     isCollapsed={isCollapsed}
                     isCollapsedAtEnd={isCollapsedAtEnd}
