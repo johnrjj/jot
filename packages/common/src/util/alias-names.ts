@@ -479,7 +479,4 @@ function generateItemFromHash<T>(id: string, collection: Array<T>): T {
   return collection[hashIdx];
 }
 
-// const color = generateItemFromHash(userId, CSS_COLORS);
-// const name = generateItemFromHash(userId, ANIMALS);
-
 export { ANIMALS, ADJECTIVES, COLORS, generateItemFromHash };

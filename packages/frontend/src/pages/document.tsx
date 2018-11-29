@@ -9,7 +9,7 @@ import { isEqual } from 'lodash';
 import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
 import {
   SlateAutomergeAdapter,
-  WebSocketClientMessageCreator,
+  WebSocketClientMessageFactory,
   generateItemFromHash,
   ADJECTIVES,
   ANIMALS,
@@ -191,7 +191,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     setTimeout(
       () =>
         this.websocket.current.sendJsonMessage(
-          WebSocketClientMessageCreator.createJoinDocumentRequestMessage({
+          WebSocketClientMessageFactory.createJoinDocumentRequestMessage({
             docId: this.state.docId,
             clientId: this.props.clientId,
           }),
@@ -203,7 +203,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   componentDidUpdate(prevProps: DocEditProps, prevState: DocEditState) {
     if (!prevState.isConnectedToDocument && this.state.isConnectedToDocument) {
       this.connection = new Automerge.Connection(this.docSet, data => {
-        const message = WebSocketClientMessageCreator.createAutomergeUpdateToServerMessage({
+        const message = WebSocketClientMessageFactory.createAutomergeUpdateToServerMessage({
           clientId: this.props.clientId,
           docId: this.state.docId,
           message: data,
@@ -267,7 +267,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       //   });
 
       if (this.state.isConnectedToDocument) {
-        const msg: UpdateClientSelectionMessage = WebSocketClientMessageCreator.createUpdateClientSelectionMessage({
+        const msg: UpdateClientSelectionMessage = WebSocketClientMessageFactory.createUpdateClientSelectionMessage({
           clientId: this.props.clientId,
           docId: this.state.docId,
           decoration,
