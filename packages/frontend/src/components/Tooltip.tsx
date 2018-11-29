@@ -6,15 +6,31 @@ import ReactDOM, { unstable_renderSubtreeIntoContainer as renderSubtreeIntoConta
 const FG_SIZE = 8;
 const BG_SIZE = 9;
 
-class Card extends Component {
-  static propTypes = {
-    active: PropTypes.bool,
-    position: PropTypes.oneOf(['top', 'right', 'bottom', 'left']),
-    arrow: PropTypes.oneOf([null, 'center', 'top', 'right', 'bottom', 'left']),
-    align: PropTypes.oneOf([null, 'center', 'right', 'left']),
-    style: PropTypes.object,
-    useHover: PropTypes.bool,
+interface CardProps {
+  active: boolean;
+  position: 'top' | 'right' | 'bottom' | 'left';
+  arrow?: 'center' | 'top' | 'right' | 'bottom' | 'left';
+  align?: 'center' | 'right' | 'left';
+  style: any;
+  useHover: boolean;
+  parentEl: any;
+}
+
+interface CardState {
+  hover: boolean;
+  transition: 'opacity' | 'all';
+  width: number;
+  height: number;
+}
+
+class Card extends Component<CardProps, CardState> {
+  MARGIN_SPACING = 15;
+
+  defaultArrowStyle = {
+    color: '#fff',
+    borderColor: 'rgba(0,0,0,.4)',
   };
+
   static defaultProps = {
     active: false,
     position: 'right',
@@ -23,17 +39,17 @@ class Card extends Component {
     style: { style: {}, arrowStyle: {} },
     useHover: true,
   };
-  state = {
-    hover: false,
-    transition: 'opacity',
-    width: 0,
-    height: 0,
-  };
-  margin = 15;
-  defaultArrowStyle = {
-    color: '#fff',
-    borderColor: 'rgba(0,0,0,.4)',
-  };
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      hover: false,
+      transition: 'opacity',
+      width: 0,
+      height: 0,
+    };
+  }
+
   getGlobalStyle() {
     if (!this.props.parentEl) {
       return { display: 'none' };
@@ -62,8 +78,8 @@ class Card extends Component {
     };
   }
   getArrowStyle() {
-    let fgStyle = this.getBaseArrowStyle();
-    let bgStyle = this.getBaseArrowStyle();
+    let fgStyle: any = this.getBaseArrowStyle();
+    let bgStyle: any = this.getBaseArrowStyle();
     fgStyle.zIndex = 60;
     bgStyle.zIndex = 55;
 
@@ -101,14 +117,14 @@ class Card extends Component {
       }
 
       if (arrow === 'top') {
-        fgStyle.top = this.margin;
-        bgStyle.top = this.margin;
+        fgStyle.top = this.MARGIN_SPACING;
+        bgStyle.top = this.MARGIN_SPACING;
       }
       if (arrow === 'bottom') {
         fgStyle.top = null;
-        fgStyle.bottom = this.margin - 7;
+        fgStyle.bottom = this.MARGIN_SPACING - 7;
         bgStyle.top = null;
-        bgStyle.bottom = this.margin - 8;
+        bgStyle.bottom = this.MARGIN_SPACING - 8;
       }
     } else {
       fgStyle.left = Math.round(this.state.width / 2 - FG_SIZE);
@@ -134,13 +150,13 @@ class Card extends Component {
 
       if (arrow === 'right') {
         fgStyle.left = null;
-        fgStyle.right = this.margin + 1 - FG_SIZE;
+        fgStyle.right = this.MARGIN_SPACING + 1 - FG_SIZE;
         bgStyle.left = null;
-        bgStyle.right = this.margin - FG_SIZE;
+        bgStyle.right = this.MARGIN_SPACING - FG_SIZE;
       }
       if (arrow === 'left') {
-        fgStyle.left = this.margin + 1 - FG_SIZE;
-        bgStyle.left = this.margin - FG_SIZE;
+        fgStyle.left = this.MARGIN_SPACING + 1 - FG_SIZE;
+        bgStyle.left = this.MARGIN_SPACING - FG_SIZE;
       }
     }
 
@@ -172,7 +188,7 @@ class Card extends Component {
     let scrollX = window.scrollX !== undefined ? window.scrollX : window.pageXOffset;
     let top = scrollY + tooltipPosition.top;
     let left = scrollX + tooltipPosition.left;
-    let style = {};
+    let style = {} as any;
 
     const parentSize = {
       width: parent.offsetWidth,
@@ -194,34 +210,36 @@ class Card extends Component {
     const stylesFromPosition = {
       left: () => {
         style.top = top + parentSize.height / 2 - this.state.height / 2;
-        style.left = left - this.state.width - this.margin;
+        style.left = left - this.state.width; //- this.MARGIN_SPACING;
       },
       right: () => {
         style.top = top + parentSize.height / 2 - this.state.height / 2;
-        style.left = left + parentSize.width + this.margin;
+        style.left = left + parentSize.width; //+ this.MARGIN_SPACING;
       },
       top: () => {
-        style.left = left - this.state.width / 2 + parentSize.width / 2 + alignOffset;
-        style.top = top - this.state.height - this.margin;
+        // style.left = left - this.state.width / 2 + parentSize.width / 2 + alignOffset;
+        // style.top = top - this.state.height - this.MARGIN_SPACING;
+        style.left = left;
+        style.top = top - this.state.height;
       },
       bottom: () => {
-        style.left = left - this.state.width / 2 + parentSize.width / 2 + alignOffset;
-        style.top = top + parentSize.height + this.margin;
+        style.left = left - this.state.width / 2 + parentSize.width / 2; //+ alignOffset;
+        style.top = top + parentSize.height; //+ this.MARGIN_SPACING;
       },
     };
 
     const stylesFromArrow = {
       left: () => {
-        style.left = left + parentSize.width / 2 - this.margin + alignOffset;
+        style.left = left + parentSize.width / 2 - this.MARGIN_SPACING + alignOffset;
       },
       right: () => {
-        style.left = left - this.state.width + parentSize.width / 2 + this.margin + alignOffset;
+        style.left = left - this.state.width + parentSize.width / 2 + this.MARGIN_SPACING + alignOffset;
       },
       top: () => {
-        style.top = top + parentSize.height / 2 - this.margin;
+        style.top = top + parentSize.height / 2 - this.MARGIN_SPACING;
       },
       bottom: () => {
-        style.top = top + parentSize.height / 2 - this.state.height + this.margin;
+        style.top = top + parentSize.height / 2 - this.state.height + this.MARGIN_SPACING;
       },
     };
 
@@ -241,7 +259,7 @@ class Card extends Component {
           if (!bgStyleRight) {
             bgStyleRight = tooltipWidth / 2 - BG_SIZE;
           }
-          const newBgRight = Math.round(bgStyleRight - style.left + this.margin);
+          const newBgRight = Math.round(bgStyleRight - style.left + this.MARGIN_SPACING);
           arrowStyle = {
             ...arrowStyle,
             bgStyle: {
@@ -256,12 +274,12 @@ class Card extends Component {
             },
           };
         }
-        style.left = this.margin;
+        style.left = this.MARGIN_SPACING;
       } else {
         let rightOffset = style.left + this.state.width - window.innerWidth;
         if (rightOffset > 0) {
           let originalLeft = style.left;
-          style.left = window.innerWidth - this.state.width - this.margin;
+          style.left = window.innerWidth - this.state.width - this.MARGIN_SPACING;
           arrowStyle.fgStyle.marginLeft += originalLeft - style.left;
           arrowStyle.bgStyle.marginLeft += originalLeft - style.left;
         }
@@ -285,7 +303,7 @@ class Card extends Component {
     });
   }
   updateSize() {
-    let self = ReactDOM.findDOMNode(this);
+    let self: any = ReactDOM.findDOMNode(this);
     this.setState({
       width: self.offsetWidth,
       height: self.offsetHeight,
@@ -310,15 +328,22 @@ class Card extends Component {
 
 var portalNodes = {};
 
-export default class ToolTip extends Component<any, any> {
-  static propTypes = {
-    parent: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
-    active: PropTypes.bool,
-    group: PropTypes.string,
-    tooltipTimeout: PropTypes.number,
-  };
+interface ToolTipProps {
+  parent: string | object;
+  active: boolean;
+  position?: string;
+  align?: string;
+  group: string;
+  tooltipTimeout: number;
+  autoHide: boolean;
+}
+
+interface ToolTipState {}
+
+export default class ToolTip extends Component<ToolTipProps, ToolTipState> {
   static defaultProps = {
     active: false,
+    autoHide: false,
     group: 'main',
     tooltipTimeout: 500,
   };
@@ -394,45 +419,45 @@ const executeFunctionIfExist = (object, key) => {
   }
 };
 
-export class StatefulToolTip extends Component {
-  static propTypes = {
-    className: PropTypes.string,
-  };
+// export class StatefulToolTip extends Component {
+//   static propTypes = {
+//     className: PropTypes.string,
+//   };
 
-  static defaultProps = {
-    className: '',
-  };
+//   static defaultProps = {
+//     className: '',
+//   };
 
-  state = {
-    tooltipVisible: false,
-  };
+//   state = {
+//     tooltipVisible: false,
+//   };
 
-  onMouseEnter = () => {
-    this.setState({ tooltipVisible: true });
-  };
+//   onMouseEnter = () => {
+//     this.setState({ tooltipVisible: true });
+//   };
 
-  onMouseLeave = () => {
-    this.setState({ tooltipVisible: false });
-  };
+//   onMouseLeave = () => {
+//     this.setState({ tooltipVisible: false });
+//   };
 
-  render() {
-    const { children, className, parent, ...props } = this.props;
+//   render() {
+//     const { children, className, parent, ...props } = this.props;
 
-    return [
-      <span
-        className={className}
-        onMouseEnter={this.onMouseEnter}
-        onMouseLeave={this.onMouseLeave}
-        ref={p => (this.parent = p)}
-        key="parent"
-      >
-        {this.props.parent}
-      </span>,
-      this.parent ? (
-        <ToolTip {...props} active={this.state.tooltipVisible} parent={this.parent} key="tooltip">
-          {this.props.children}
-        </ToolTip>
-      ) : null,
-    ];
-  }
-}
+//     return [
+//       <span
+//         className={className}
+//         onMouseEnter={this.onMouseEnter}
+//         onMouseLeave={this.onMouseLeave}
+//         ref={p => (this.parent = p)}
+//         key="parent"
+//       >
+//         {this.props.parent}
+//       </span>,
+//       this.parent ? (
+//         <ToolTip {...props} active={this.state.tooltipVisible} parent={this.parent} key="tooltip">
+//           {this.props.children}
+//         </ToolTip>
+//       ) : null,
+//     ];
+//   }
+// }

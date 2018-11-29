@@ -5,7 +5,7 @@ import Automerge from 'automerge';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
-import { isEqual } from 'lodash';
+import { isEqual, debounce } from 'lodash';
 import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
 import {
   SlateAutomergeAdapter,
@@ -15,6 +15,15 @@ import {
   ANIMALS,
   COLORS,
 } from '@jot/common';
+import {
+  WebsocketServerMessages,
+  UpdateClientSelectionMessage,
+  JoinDocumentSuccessMessage,
+  AutomergeUpdateFromServerMessage,
+  KeepaliveFromServerMessage,
+  RemoteAgentCursorUpdateFromServerMessage,
+  UpdateDocumentActiveUserListWSMessage,
+} from '@jot/common/dist/websockets/websocket-actions';
 import Websocket from '../components/Websocket';
 import ToolTip from '../components/Tooltip';
 import {
@@ -38,18 +47,7 @@ import {
   HistoryCloseButton,
   HistoryItem,
 } from '../components/History';
-import '../reset.css';
-import '../global.css';
 import { Toolbar, Button } from '../components/Toolbar';
-import {
-  WebsocketServerMessages,
-  UpdateClientSelectionMessage,
-  JoinDocumentSuccessMessage,
-  AutomergeUpdateFromServerMessage,
-  KeepaliveFromServerMessage,
-  RemoteAgentCursorUpdateFromServerMessage,
-  UpdateDocumentActiveUserListWSMessage,
-} from '@jot/common/dist/websockets/websocket-actions';
 import {
   Cursor,
   SpanRelativeAnchor,
@@ -58,6 +56,9 @@ import {
   SpanRelativeAnchorWithBackgroundColor,
   CursorMarker,
 } from '../components/Cursor';
+import '../reset.css';
+import '../global.css';
+import { string } from 'prop-types';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
@@ -108,6 +109,7 @@ interface DocEditState {
   isHistorySidebarOpen: boolean;
   activeUserIds: string[];
   error?: Error | string;
+  showTooltip: boolean;
 }
 
 export interface DecorationJS {
@@ -127,6 +129,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   selection: any;
   websocket: React.RefObject<any>;
   editor: React.RefObject<any>;
+  remoteCursorTimers: Map<string, Function>;
   activeRemoteCursorSet: Map<string, DecorationJS>;
 
   constructor(props: DocEditProps) {
@@ -143,6 +146,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       isSidebarOpen: false,
       isHistorySidebarOpen: false,
       activeUserIds: [],
+      showTooltip: false,
     };
 
     this.docSet = new Automerge.DocSet();
@@ -150,6 +154,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     this.websocket = React.createRef();
     this.editor = React.createRef<any>();
     this.activeRemoteCursorSet = new Map();
+    this.remoteCursorTimers = new Map();
   }
 
   async componentDidMount() {
@@ -315,9 +320,26 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     const { payload } = msg;
     const clientId = payload.clientId;
 
+    if (!clientId) {
+      console.warn('no clientId found in remote agent selection');
+      return;
+    }
+
     if (clientId === this.props.clientId) {
       console.log('received our own message from the server, skipping');
       return;
+    }
+
+    if (this.remoteCursorTimers.has(clientId)) {
+      console.log('has');
+      const debounceFn = this.remoteCursorTimers.get(clientId);
+      debounceFn();
+    } else {
+      console.log('doesnt have');
+      this.setState({ showTooltip: true });
+      const fnToCall = () => this.remoteCursorTimers.delete(clientId) && this.setState({ showTooltip: false });
+      const debounceFn = debounce(fnToCall, 1500);
+      this.remoteCursorTimers.set(clientId, debounceFn);
     }
 
     const remoteSelectionDecorationNotNormalized = payload.message;
@@ -589,17 +611,20 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
           </SpanRelativeAnchor>
         );
       } else {
+        const show = this.remoteCursorTimers.has(userId);
+        console.log('yeeeeeeet1', show);
         return (
           <SpanRelativeAnchorWithBackgroundColor markerColor={highlightColor} {...attributes}>
             <AbsoluteFullWidth unselectable="on" style={{ userSelect: 'none' }}>
-              {!hasSeenMarkBefore && (
+              {!hasSeenMarkBefore && this.state.showTooltip && (
                 <>
                   <ToolTip
-                    active={true}
+                    active={this.state.showTooltip}
                     position="top"
                     group={remoteCursorKey}
                     align="left"
                     parent={`#${remoteCursorKey}`}
+                    autoHide={true}
                   >
                     <div>
                       <p style={{ textTransform: 'lowercase' }}>{remoteCursorIdAlias}</p>
