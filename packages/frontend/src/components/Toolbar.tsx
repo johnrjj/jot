@@ -1,17 +1,37 @@
 import React from 'react';
 import styled from 'styled-components';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faFont,
+  faQuoteRight,
+  faBold,
+  faItalic,
+  faCode,
+  faUnderline,
+  faUndo,
+  faRedo,
+} from '@fortawesome/free-solid-svg-icons';
+
+const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
+const QuoteIcon = props => <FontAwesomeIcon icon={faQuoteRight} {...props} />;
+const BoldIcon = props => <FontAwesomeIcon icon={faBold} {...props} />;
+const ItalicIcon = props => <FontAwesomeIcon icon={faItalic} {...props} />;
+const CodeIcon = props => <FontAwesomeIcon icon={faCode} {...props} />;
+const UnderlineIcon = props => <FontAwesomeIcon icon={faUnderline} {...props} />;
+const UndoIcon = props => <FontAwesomeIcon icon={faUndo} {...props} />;
+const RedoIcon = props => <FontAwesomeIcon icon={faRedo} {...props} />;
 
 const Button = styled('span')`
   cursor: pointer;
   color: ${props => (props.reversed ? (props.active ? 'white' : '#aaa') : props.active ? 'black' : '#ccc')};
 `;
 
-const Icon = styled(({ className, ...rest }) => {
-  return <span className={`material-icons ${className}`} {...rest} />;
-})`
-  font-size: 18px;
-  vertical-align: text-bottom;
-`;
+// const Icon = styled(({ className, ...rest }) => {
+//   return <span className={`material-icons ${className}`} {...rest} />;
+// })`
+//   font-size: 18px;
+//   vertical-align: text-bottom;
+// `;
 
 const Menu = styled('div')`
   & > * {
@@ -31,4 +51,16 @@ const Toolbar = styled(Menu)`
   margin-bottom: 20px;
 `;
 
-export { Button, Icon, Menu, Toolbar };
+export {
+  Button,
+  Menu,
+  Toolbar,
+  FontIcon,
+  QuoteIcon,
+  BoldIcon,
+  ItalicIcon,
+  CodeIcon,
+  UnderlineIcon,
+  RedoIcon,
+  UndoIcon,
+};

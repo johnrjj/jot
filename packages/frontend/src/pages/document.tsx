@@ -1,21 +1,10 @@
 import React, { Component } from 'react';
-import { Editor, RenderAttributes, RenderMarkProps, SlateType } from 'slate-react';
-import { Value, Selection, Range, Mark, Decoration, Point } from 'slate';
+import { Editor, RenderAttributes, RenderMarkProps } from 'slate-react';
+import { Value, Selection, Range, Mark, Decoration } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
 import { isEqual, debounce } from 'lodash';
-import {
-  faFont,
-  faQuoteRight,
-  faBold,
-  faItalic,
-  faCode,
-  faUnderline,
-  faRedo,
-  faUndo,
-} from '@fortawesome/free-solid-svg-icons';
 import {
   SlateAutomergeAdapter,
   WebSocketClientMessageFactory,
@@ -56,9 +45,19 @@ import {
   HistoryCloseButton,
   HistoryItem,
 } from '../components/History';
-import { Toolbar, Button } from '../components/Toolbar';
 import {
-  Cursor,
+  Toolbar,
+  Button,
+  UndoIcon,
+  RedoIcon,
+  FontIcon,
+  QuoteIcon,
+  BoldIcon,
+  UnderlineIcon,
+  CodeIcon,
+  ItalicIcon,
+} from '../components/Toolbar';
+import {
   SpanRelativeAnchor,
   AbsoluteFullWidth,
   RemoteCursorRangeMark,
@@ -69,15 +68,6 @@ import '../reset.css';
 import '../global.css';
 import invariant from 'invariant';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
-
-const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
-const QuoteIcon = props => <FontAwesomeIcon icon={faQuoteRight} {...props} />;
-const BoldIcon = props => <FontAwesomeIcon icon={faBold} {...props} />;
-const ItalicIcon = props => <FontAwesomeIcon icon={faItalic} {...props} />;
-const CodeIcon = props => <FontAwesomeIcon icon={faCode} {...props} />;
-const UnderlineIcon = props => <FontAwesomeIcon icon={faUnderline} {...props} />;
-const UndoIcon = props => <FontAwesomeIcon icon={faUndo} {...props} />;
-const RedoIcon = props => <FontAwesomeIcon icon={faRedo} {...props} />;
 
 const FullViewportAppContainer = styled.div`
   display: flex;
@@ -105,7 +95,7 @@ interface DocEditProps {
   apiEndpoint: string;
   path: string;
   clientId: string;
-  docId?: string; // needs to be optional otherwise typescript complains w/ reach router typings
+  docId?: string;
 }
 
 interface DocEditState {
@@ -159,70 +149,12 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       activeUserIds: [],
       showTooltip: false,
     };
-
     this.docSet = new Automerge.DocSet();
-
     this.websocket = React.createRef();
     this.editor = React.createRef<any>();
     this.activeRemoteCursorSet = new Map();
     this.remoteCursorTimers = new Map();
   }
-
-  private canUndo = () => {
-    return Automerge.canUndo(this.doc);
-  };
-
-  private canRedo = () => {
-    return Automerge.canRedo(this.doc);
-  };
-
-  handleUndo = () => {
-    const docBeforeUndo = this.doc;
-    if (!Automerge.canUndo(docBeforeUndo)) {
-      console.warn('cant undo, nothing to undo, block this in ui');
-      return;
-    }
-    const docAfterUndo = Automerge.undo(docBeforeUndo, 'undo');
-    const diffOps = Automerge.diff(docBeforeUndo, docAfterUndo);
-    const _changes = Automerge.getChanges(docBeforeUndo, docAfterUndo);
-    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
-
-    const slateOps = convertAutomergeToSlateOps(diffOps);
-    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
-    this.editor.current.change(change => {
-      const appliedChanges = change.applyOperations(slateOps);
-      // data key for onchange handler to know its from a remote source
-      appliedChanges.fromRemote = true;
-      return appliedChanges;
-    });
-    // This also kicks off the Automerge.connection instance
-    this.docSet.setDoc(this.state.docId, docAfterUndo);
-    this.doc = docAfterUndo;
-  };
-
-  handleRedo = () => {
-    const docBeforeRedo = this.doc;
-    if (!Automerge.canRedo(docBeforeRedo)) {
-      console.warn('cant redo, nothing to undo, block this in ui');
-      return;
-    }
-    const docAfterRedo = Automerge.redo(docBeforeRedo, 'undo');
-    const diffOps = Automerge.diff(docBeforeRedo, docAfterRedo);
-    const _changes = Automerge.getChanges(docBeforeRedo, docAfterRedo);
-    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
-
-    const slateOps = convertAutomergeToSlateOps(diffOps);
-    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
-    this.editor.current.change(change => {
-      const appliedChanges = change.applyOperations(slateOps);
-      // data key for onchange handler to know its from a remote source
-      appliedChanges.fromRemote = true;
-      return appliedChanges;
-    });
-    // This also kicks off the Automerge.connection instance
-    this.docSet.setDoc(this.state.docId, docAfterRedo);
-    this.doc = docAfterRedo;
-  };
 
   async componentDidMount() {
     const docIdToRequest = this.props.docId;
@@ -272,7 +204,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     );
   }
 
-  componentDidUpdate(prevProps: DocEditProps, prevState: DocEditState) {
+  componentDidUpdate(_prevProps: DocEditProps, prevState: DocEditState) {
     if (!prevState.isConnectedToDocument && this.state.isConnectedToDocument) {
       this.connection = new Automerge.Connection(this.docSet, data => {
         const message = WebSocketClientMessageFactory.createAutomergeUpdateToServerMessage({
@@ -286,7 +218,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   }
 
-  componentDidCatch(e, stack) {
+  componentDidCatch(e: string | Error, stack: any) {
     console.error(e, stack);
     this.setState({
       error: e,
@@ -320,7 +252,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       if (!agentId) {
         console.warn('Trying to send a selection range to the server but agentId not set');
       }
-
       if (agentId && this.state.isConnectedToDocument) {
         const decoration = createRemoteCursorDecoration(selection, agentId);
         const msg: UpdateClientSelectionMessage = WebSocketClientMessageFactory.createUpdateClientSelectionMessage({
@@ -558,6 +489,62 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
+  handleUndo = () => {
+    const docBeforeUndo = this.doc;
+    if (!Automerge.canUndo(docBeforeUndo)) {
+      console.warn('cant undo, nothing to undo, block this in ui');
+      return;
+    }
+    const docAfterUndo = Automerge.undo(docBeforeUndo, 'undo');
+    const diffOps = Automerge.diff(docBeforeUndo, docAfterUndo);
+    const _changes = Automerge.getChanges(docBeforeUndo, docAfterUndo);
+    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
+
+    const slateOps = convertAutomergeToSlateOps(diffOps);
+    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
+    this.editor.current.change(change => {
+      const appliedChanges = change.applyOperations(slateOps);
+      // data key for onchange handler to know its from a remote source
+      appliedChanges.fromRemote = true;
+      return appliedChanges;
+    });
+    // This also kicks off the Automerge.connection instance
+    this.docSet.setDoc(this.state.docId, docAfterUndo);
+    this.doc = docAfterUndo;
+  };
+
+  handleRedo = () => {
+    const docBeforeRedo = this.doc;
+    if (!Automerge.canRedo(docBeforeRedo)) {
+      console.warn('cant redo, nothing to undo, block this in ui');
+      return;
+    }
+    const docAfterRedo = Automerge.redo(docBeforeRedo, 'undo');
+    const diffOps = Automerge.diff(docBeforeRedo, docAfterRedo);
+    const _changes = Automerge.getChanges(docBeforeRedo, docAfterRedo);
+    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
+
+    const slateOps = convertAutomergeToSlateOps(diffOps);
+    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
+    this.editor.current.change(change => {
+      const appliedChanges = change.applyOperations(slateOps);
+      // data key for onchange handler to know its from a remote source
+      appliedChanges.fromRemote = true;
+      return appliedChanges;
+    });
+    // This also kicks off the Automerge.connection instance
+    this.docSet.setDoc(this.state.docId, docAfterRedo);
+    this.doc = docAfterRedo;
+  };
+
+  private canUndo = () => {
+    return Automerge.canUndo(this.doc);
+  };
+
+  private canRedo = () => {
+    return Automerge.canRedo(this.doc);
+  };
+
   // Placeholder when ready for gutter stuff
   renderEditor = (_props: RenderAttributes, next) => {
     const children = next();
@@ -604,7 +591,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
-  decorateNode = (node, next?: Function): void => {
+  decorateNode = (_node, next?: Function): void => {
     // in the next version the params are (node, editor, next)
     next();
   };
@@ -732,6 +719,10 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
 
     const isLoading = loading || !isConnectedToDocument || !isSyncedWithServer;
+
+    if (!loading && this.doc) {
+      Automerge.getHistory(this.doc);
+    }
 
     return (
       <FullViewportAppContainer>

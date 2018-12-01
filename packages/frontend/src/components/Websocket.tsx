@@ -22,7 +22,7 @@ class Websocket extends React.Component<WebsocketPropTypes, WebsocketState> {
 
   static defaultProps = { debug: false, reconnect: true };
 
-  constructor(props) {
+  constructor(props: Readonly<WebsocketPropTypes>) {
     super(props);
     this.state = {
       ws: new WebSocket(this.props.url, this.props.protocol),
@@ -30,13 +30,13 @@ class Websocket extends React.Component<WebsocketPropTypes, WebsocketState> {
     };
   }
 
-  logging(logline) {
+  logging(logline: string) {
     if (this.props.debug === true) {
       console.log(logline);
     }
   }
 
-  generateInterval(k) {
+  generateInterval(k: number) {
     if (this.props.reconnectIntervalInMilliSeconds > 0) {
       return this.props.reconnectIntervalInMilliSeconds;
     }

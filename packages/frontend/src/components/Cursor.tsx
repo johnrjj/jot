@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
+import { lighten, desaturate, opacify, transparentize, getLuminance, darken } from 'polished';
 
-// blink
 const blink = keyframes`
     0% { opacity:1; }
     49% { opacity:1; }
@@ -9,12 +9,6 @@ const blink = keyframes`
     99% { opacity:0; }
     100% { opacity:1; }
 `;
-
-const Cursor = styled.div`
-  opacity: 1;
-  animation: ${blink} 1s linear infinite;
-`;
-import { lighten, desaturate, opacify, transparentize, getLuminance, darken } from 'polished';
 
 const RemoteCursorRangeMark = styled.div`
   overflow: hidden;
@@ -64,7 +58,6 @@ const RemoteCursorCollaprsedMark = ({ children, ...rest }) => {
 
 export {
   CursorMarker,
-  Cursor,
   SpanRelativeAnchor,
   AbsoluteFullWidth,
   RemoteCursorRangeMark,

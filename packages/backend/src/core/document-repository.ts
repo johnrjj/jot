@@ -50,7 +50,7 @@ export class DocumentRepository implements IDocumentRepository {
     this.testPublishDocEventStream();
   }
 
-  public addDocStreamListener = (cbFn: (DocumentRedisMessages) => void): (() => void) => {
+  public addDocStreamListener = (cbFn: (msg: DocumentRedisMessages) => void): (() => void) => {
     this.docStreamListeners.add(cbFn);
     const unsubscribe = () => this.docStreamListeners.delete(cbFn);
     return unsubscribe;
