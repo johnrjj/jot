@@ -37,7 +37,7 @@
     "rimraf": "^2.6.2",
     "surge": "^0.20.1",
     "ts-node": "^7.0.1",
-    "typescript": "^3.1.1",
+    "typescript": "^3.2.1",
     "wsrun": "^3.3.5"
   },
   "workspaces": [
