@@ -93,7 +93,7 @@ export class WebSocketNode {
     };
     socket.on('error', err => this.log('error', JSON.stringify(err)));
     socket.on('close', this.handleDisconnectFromClientSocket(connectionContext));
-    socket.on('message', this.onMessageFromClientSocket(connectionContext));
+    socket.on('message', this.handleMessageFromClientSocket(connectionContext));
     this.connections.add(connectionContext);
     this.log('debug', `WebsocketNode: Connection added. ${this.getConnectionsCount()} total connections.`);
   }
@@ -115,7 +115,7 @@ export class WebSocketNode {
     return connectionContext;
   };
 
-  private onMessageFromClientSocket(ctx: ConnectionContext) {
+  private handleMessageFromClientSocket(ctx: ConnectionContext) {
     let connectionContext = ctx;
     return async (message: string | object) => {
       // initialize

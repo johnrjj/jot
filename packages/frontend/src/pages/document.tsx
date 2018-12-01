@@ -157,6 +157,54 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     this.remoteCursorTimers = new Map();
   }
 
+  handleUndo = () => {
+    const docBeforeUndo = this.doc;
+    if (!Automerge.canUndo(docBeforeUndo)) {
+      console.warn('cant undo, nothing to undo, block this in ui');
+      return;
+    }
+    const docAfterUndo = Automerge.undo(docBeforeUndo, 'undo');
+    const diffOps = Automerge.diff(docBeforeUndo, docAfterUndo);
+    const _changes = Automerge.getChanges(docBeforeUndo, docAfterUndo);
+    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
+
+    const slateOps = convertAutomergeToSlateOps(diffOps);
+    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
+    this.editor.current.change(change => {
+      const appliedChanges = change.applyOperations(slateOps);
+      // data key for onchange handler to know its from a remote source
+      appliedChanges.fromRemote = true;
+      return appliedChanges;
+    });
+    // This also kicks off the Automerge.connection instance
+    this.docSet.setDoc(this.state.docId, docAfterUndo);
+    this.doc = docAfterUndo;
+  };
+
+  handleRedo = () => {
+    const docBeforeRedo = this.doc;
+    if (!Automerge.canRedo(docBeforeRedo)) {
+      console.warn('cant redo, nothing to undo, block this in ui');
+      return;
+    }
+    const docAfterRedo = Automerge.redo(docBeforeRedo, 'undo');
+    const diffOps = Automerge.diff(docBeforeRedo, docAfterRedo);
+    const _changes = Automerge.getChanges(docBeforeRedo, docAfterRedo);
+    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
+
+    const slateOps = convertAutomergeToSlateOps(diffOps);
+    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
+    this.editor.current.change(change => {
+      const appliedChanges = change.applyOperations(slateOps);
+      // data key for onchange handler to know its from a remote source
+      appliedChanges.fromRemote = true;
+      return appliedChanges;
+    });
+    // This also kicks off the Automerge.connection instance
+    this.docSet.setDoc(this.state.docId, docAfterRedo);
+    this.doc = docAfterRedo;
+  };
+
   async componentDidMount() {
     const docIdToRequest = this.props.docId;
     try {
@@ -688,6 +736,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
         <MainContainer>
           {/* <Sidebar /> */}
           <ContentContainer>
+            {/* <button onClick={this.handleUndo}>undo</button> */}
+            {/* <button onClick={this.handleRedo}>redo</button> */}
             <EditorContainer>
               <Websocket
                 ref={this.websocket}
