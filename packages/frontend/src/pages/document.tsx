@@ -6,7 +6,16 @@ import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
 import { isEqual, debounce } from 'lodash';
-import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
+import {
+  faFont,
+  faQuoteRight,
+  faBold,
+  faItalic,
+  faCode,
+  faUnderline,
+  faRedo,
+  faUndo,
+} from '@fortawesome/free-solid-svg-icons';
 import {
   SlateAutomergeAdapter,
   WebSocketClientMessageFactory,
@@ -67,6 +76,8 @@ const BoldIcon = props => <FontAwesomeIcon icon={faBold} {...props} />;
 const ItalicIcon = props => <FontAwesomeIcon icon={faItalic} {...props} />;
 const CodeIcon = props => <FontAwesomeIcon icon={faCode} {...props} />;
 const UnderlineIcon = props => <FontAwesomeIcon icon={faUnderline} {...props} />;
+const UndoIcon = props => <FontAwesomeIcon icon={faUndo} {...props} />;
+const RedoIcon = props => <FontAwesomeIcon icon={faRedo} {...props} />;
 
 const FullViewportAppContainer = styled.div`
   display: flex;
@@ -156,6 +167,14 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     this.activeRemoteCursorSet = new Map();
     this.remoteCursorTimers = new Map();
   }
+
+  private canUndo = () => {
+    return Automerge.canUndo(this.doc);
+  };
+
+  private canRedo = () => {
+    return Automerge.canRedo(this.doc);
+  };
 
   handleUndo = () => {
     const docBeforeUndo = this.doc;
@@ -756,6 +775,12 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   {this.renderBlockButton('heading-one', 'h1_icon')}
                   {this.renderBlockButton('heading-two', 'h2_icon')}
                   {this.renderBlockButton('block-quote', 'quote_icon')}
+                  <Button active={this.canUndo()} onMouseDown={this.handleUndo}>
+                    <UndoIcon size="lg" />
+                  </Button>
+                  <Button active={this.canRedo()} onMouseDown={this.handleRedo}>
+                    <RedoIcon size="lg" />
+                  </Button>
                   {/* {this.renderBlockButton(
                         'numbered-list',
                         'format_list_numbered',

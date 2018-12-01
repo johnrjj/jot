@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-export const Button = styled('span')`
+
+const Button = styled('span')`
   cursor: pointer;
   color: ${props => (props.reversed ? (props.active ? 'white' : '#aaa') : props.active ? 'black' : '#ccc')};
 `;
@@ -29,4 +30,5 @@ const Toolbar = styled(Menu)`
   border-bottom: 2px solid #eee;
   margin-bottom: 20px;
 `;
-export { Icon, Menu, Toolbar };
+
+export { Button, Icon, Menu, Toolbar };
