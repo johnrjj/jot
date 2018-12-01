@@ -14,6 +14,7 @@ const Cursor = styled.div`
   opacity: 1;
   animation: ${blink} 1s linear infinite;
 `;
+import { lighten, desaturate, opacify, transparentize, getLuminance, darken } from 'polished';
 
 const RemoteCursorRangeMark = styled.div`
   overflow: hidden;
@@ -23,7 +24,7 @@ const RemoteCursorRangeMark = styled.div`
   top: 0;
   left: ${props => (props.isCollapsedAtEnd ? '100%' : 0)};
   bottom: 0;
-  background-color: ${props => props.markerColor};
+  background-color: ${props => darken(0.3, props.markerColor)};
 `;
 
 const SpanRelativeAnchor = styled.span`
@@ -34,7 +35,7 @@ const SpanRelativeAnchorWithBackgroundColor = styled.span`
   position: relative;
   pointer-events: none;
   line-height: 2;
-  background-color: ${props => props.markerColor};
+  background-color: ${props => transparentize(0.3, props.markerColor)};
 `;
 
 const AbsoluteFullWidth = styled.div`
@@ -46,13 +47,15 @@ const AbsoluteFullWidth = styled.div`
   user-select: none;
 `;
 
+const MARKER_HEIGHT = 12;
+const MARKET_WIDTH = 6;
 const CursorMarker = styled.span`
   position: absolute;
-  width: 5px;
-  height: 10px;
-  top: 0;
-  left: 0;
-  background-color: ${props => props.markerColor};
+  width: ${MARKET_WIDTH};
+  height: ${MARKER_HEIGHT};
+  top: -${MARKER_HEIGHT / 2};
+  left: -${MARKET_WIDTH / 2};
+  background-color: ${props => darken(0.2, props.markerColor)};
 `;
 
 const RemoteCursorCollaprsedMark = ({ children, ...rest }) => {

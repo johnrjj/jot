@@ -22,6 +22,7 @@
     "emotion": "^9.2.12",
     "immutable": "^3.8.2",
     "lodash": "^4.17.11",
+    "polished": "^2.3.0",
     "react": "^16.7.0-alpha.2",
     "react-dom": "^16.7.0-alpha.2",
     "react-emotion": "^9.2.12",
