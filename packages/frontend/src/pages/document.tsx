@@ -649,6 +649,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
               {!hasSeenMarkBefore && this.state.showTooltip && (
                 <>
                   <ToolTip
+                    tooltipContainerStyles={{ backgroundColor: highlightColor }}
                     active={this.state.showTooltip}
                     position="top"
                     group={remoteCursorKey}
@@ -657,7 +658,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                     autoHide={true}
                   >
                     <div>
-                      <p style={{ textTransform: 'lowercase' }}>{remoteCursorIdAlias}</p>
+                      <p style={{ textTransform: 'lowercase', color: '#ffffff' }}>{remoteCursorIdAlias}</p>
                     </div>
                   </ToolTip>
                   <CursorMarker

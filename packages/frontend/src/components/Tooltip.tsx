@@ -1,12 +1,11 @@
 // from react-portal-tooltip
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import ReactDOM, { unstable_renderSubtreeIntoContainer as renderSubtreeIntoContainer } from 'react-dom';
 
 const FG_SIZE = 8;
 const BG_SIZE = 9;
 
-interface CardProps {
+interface TooltipContainerProps {
   active: boolean;
   position: 'top' | 'right' | 'bottom' | 'left';
   arrow?: 'center' | 'top' | 'right' | 'bottom' | 'left';
@@ -14,16 +13,17 @@ interface CardProps {
   style: any;
   useHover: boolean;
   parentEl: any;
+  tooltipContainerStyles: any;
 }
 
-interface CardState {
+interface TooltipContainerState {
   hover: boolean;
   transition: 'opacity' | 'all';
   width: number;
   height: number;
 }
 
-class Card extends Component<CardProps, CardState> {
+class TooltipContainer extends Component<TooltipContainerProps, TooltipContainerState> {
   MARGIN_SPACING = 15;
 
   defaultArrowStyle = {
@@ -310,16 +310,14 @@ class Card extends Component<CardProps, CardState> {
     });
   }
   render() {
-    let { style, arrowStyle } = this.checkWindowPosition(this.getGlobalStyle(), this.getArrowStyle());
+    let { style } = this.checkWindowPosition(this.getGlobalStyle(), this.getArrowStyle());
 
     return (
-      <div style={style} onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave}>
-        {this.props.arrow ? (
-          <div>
-            <span style={arrowStyle.fgStyle} />
-            <span style={arrowStyle.bgStyle} />
-          </div>
-        ) : null}
+      <div
+        style={{ ...style, ...this.props.tooltipContainerStyles }}
+        onMouseEnter={this.handleMouseEnter}
+        onMouseLeave={this.handleMouseLeave}
+      >
         {this.props.children}
       </div>
     );
@@ -336,6 +334,7 @@ interface ToolTipProps {
   group: string;
   tooltipTimeout: number;
   autoHide: boolean;
+  tooltipContainerStyles: any;
 }
 
 interface ToolTipState {}
@@ -403,7 +402,11 @@ export default class ToolTip extends Component<ToolTipProps, ToolTipState> {
     }
     let { parent, ...other } = props;
     let parentEl = typeof parent === 'string' ? document.querySelector(parent) : parent;
-    renderSubtreeIntoContainer(this, <Card parentEl={parentEl} {...other} />, portalNodes[this.props.group].node);
+    renderSubtreeIntoContainer(
+      this,
+      <TooltipContainer parentEl={parentEl} {...other} />,
+      portalNodes[this.props.group].node,
+    );
   }
   shouldComponentUpdate() {
     return false;
@@ -418,46 +421,3 @@ const executeFunctionIfExist = (object, key) => {
     object[key]();
   }
 };
-
-// export class StatefulToolTip extends Component {
-//   static propTypes = {
-//     className: PropTypes.string,
-//   };
-
-//   static defaultProps = {
-//     className: '',
-//   };
-
-//   state = {
-//     tooltipVisible: false,
-//   };
-
-//   onMouseEnter = () => {
-//     this.setState({ tooltipVisible: true });
-//   };
-
-//   onMouseLeave = () => {
-//     this.setState({ tooltipVisible: false });
-//   };
-
-//   render() {
-//     const { children, className, parent, ...props } = this.props;
-
-//     return [
-//       <span
-//         className={className}
-//         onMouseEnter={this.onMouseEnter}
-//         onMouseLeave={this.onMouseLeave}
-//         ref={p => (this.parent = p)}
-//         key="parent"
-//       >
-//         {this.props.parent}
-//       </span>,
-//       this.parent ? (
-//         <ToolTip {...props} active={this.state.tooltipVisible} parent={this.parent} key="tooltip">
-//           {this.props.children}
-//         </ToolTip>
-//       ) : null,
-//     ];
-//   }
-// }
