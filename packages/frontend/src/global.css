@@ -3,6 +3,7 @@ html {
   font-family: 'Nunito Sans', sans-serif;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
 
@@ -13,5 +14,6 @@ body {
   font-family: 'Nunito Sans', sans-serif;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }

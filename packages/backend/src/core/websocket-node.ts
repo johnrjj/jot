@@ -4,7 +4,7 @@ import { Logger } from 'winston';
 import Automerge from 'automerge';
 import uuid from 'uuid/v4';
 import { DocumentRepository } from './document-repository';
-import { WebSocketServerMessageCreator } from '@jot/common';
+import { WebSocketServerMessageFactory } from '@jot/common';
 import { AutomergeConnection } from '@jot/common/src/types/automerge';
 import {
   WebsocketClientMessages,
@@ -68,7 +68,7 @@ export class WebSocketNode {
   private sendActiveUserUpdateToSubscribers(redisMsg: ActiveUserListUpdateMessage) {
     const { payload } = redisMsg;
     const { activeIds, addedIds, docId, removedIds } = payload;
-    const websocketMessageToSend = WebSocketServerMessageCreator.createUpdateDocumentActiveUserListWSMessage({
+    const websocketMessageToSend = WebSocketServerMessageFactory.createUpdateDocumentActiveUserListWSMessage({
       activeIds,
       addedIds,
       docId,
@@ -93,7 +93,7 @@ export class WebSocketNode {
     };
     socket.on('error', err => this.log('error', JSON.stringify(err)));
     socket.on('close', this.handleDisconnectFromClientSocket(connectionContext));
-    socket.on('message', this.onMessageFromClientSocket(connectionContext));
+    socket.on('message', this.handleMessageFromClientSocket(connectionContext));
     this.connections.add(connectionContext);
     this.log('debug', `WebsocketNode: Connection added. ${this.getConnectionsCount()} total connections.`);
   }
@@ -115,7 +115,7 @@ export class WebSocketNode {
     return connectionContext;
   };
 
-  private onMessageFromClientSocket(ctx: ConnectionContext) {
+  private handleMessageFromClientSocket(ctx: ConnectionContext) {
     let connectionContext = ctx;
     return async (message: string | object) => {
       // initialize
@@ -180,7 +180,7 @@ export class WebSocketNode {
   ) {
     if (isClientConnected && agentId) {
       this.log('verbose', `${agentId} sent websocket server a set selection, going to broadcast cursor selection`);
-      const msg: RemoteAgentCursorUpdateFromServerMessage = WebSocketServerMessageCreator.createRemoteAgentCursorUpdateFromServerMessage(
+      const msg: RemoteAgentCursorUpdateFromServerMessage = WebSocketServerMessageFactory.createRemoteAgentCursorUpdateFromServerMessage(
         setSelectionMessage.payload,
       );
       this.connections.forEach(c => {
@@ -209,7 +209,7 @@ export class WebSocketNode {
       this.log('error', `error:join-document getting doc id ${docId} agentId:${agentId}`, e);
       connectionContext.subscribingDocumentIds.delete(docId);
     }
-    const joinSuccessAckMsg = WebSocketServerMessageCreator.createJoinDocumentSuccessMessage({
+    const joinSuccessAckMsg = WebSocketServerMessageFactory.createJoinDocumentSuccessMessage({
       docId,
       clientId,
       agentId,
@@ -218,6 +218,7 @@ export class WebSocketNode {
 
     // Delete from connecting status
     connectionContext.subscribingDocumentIds.delete(docId);
+
     // Add to connected status
     connectionContext.subscribedDocumentIds.add(docId);
 
@@ -225,7 +226,7 @@ export class WebSocketNode {
       this.log('silly', `connectionAutomerge adding ${agentId}`);
       const connection = new (Automerge as any).Connection(this.documentRepository.getDocSet(), (message: any) => {
         this.log('silly', `websocket node ${this.id}: connectionAutomerge sending message to ${agentId}`);
-        const msg: AutomergeUpdateFromServerMessage = WebSocketServerMessageCreator.createAutomergeUpdateFromServerMessage(
+        const msg: AutomergeUpdateFromServerMessage = WebSocketServerMessageFactory.createAutomergeUpdateFromServerMessage(
           message,
         );
         connectionContext.socket.send(JSON.stringify(msg));
@@ -296,7 +297,7 @@ export class WebSocketNode {
   };
 
   private sendKeepAlive(connectionContext: ConnectionContext): void {
-    const msg = WebSocketServerMessageCreator.createKeepaliveFromServerMessage();
+    const msg = WebSocketServerMessageFactory.createKeepaliveFromServerMessage();
     this.sendMessage(connectionContext, msg);
   }
 

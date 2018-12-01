@@ -270,14 +270,14 @@ const createUpdateClientSelectionMessage = ({
   };
 };
 
-const WebSocketClientMessageCreator = {
+const WebSocketClientMessageFactory = {
   createAutomergeUpdateToServerMessage,
   createJoinDocumentRequestMessage,
   createLeaveDocumentRequestMessage,
   createUpdateClientSelectionMessage,
 };
 
-const WebSocketServerMessageCreator = {
+const WebSocketServerMessageFactory = {
   createKeepaliveFromServerMessage,
   createAutomergeUpdateFromServerMessage,
   createRemoteAgentCursorUpdateFromServerMessage,
@@ -286,4 +286,4 @@ const WebSocketServerMessageCreator = {
   createUpdateDocumentActiveUserListWSMessage,
 };
 
-export { WebSocketClientMessageCreator, WebSocketServerMessageCreator };
+export { WebSocketClientMessageFactory, WebSocketServerMessageFactory };

@@ -1,13 +1,31 @@
 import React, { Component } from 'react';
-import { Editor } from 'slate-react';
-import { Value } from 'slate';
+import { Editor, RenderAttributes, RenderMarkProps, SlateType } from 'slate-react';
+import { Value, Selection, Range, Mark, Decoration, Point } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
-import Websocket from '../components/Websocket';
-import { SlateAutomergeAdapter, WebSocketClientMessageCreator } from '@jot/common';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Router, Link } from '@reach/router';
+import { isEqual, debounce } from 'lodash';
 import { faFont, faQuoteRight, faBold, faItalic, faCode, faUnderline } from '@fortawesome/free-solid-svg-icons';
+import {
+  SlateAutomergeAdapter,
+  WebSocketClientMessageFactory,
+  generateItemFromHash,
+  ADJECTIVES,
+  ANIMALS,
+  COLORS,
+} from '@jot/common';
+import {
+  WebsocketServerMessages,
+  UpdateClientSelectionMessage,
+  JoinDocumentSuccessMessage,
+  AutomergeUpdateFromServerMessage,
+  KeepaliveFromServerMessage,
+  RemoteAgentCursorUpdateFromServerMessage,
+  UpdateDocumentActiveUserListWSMessage,
+} from '@jot/common/dist/websockets/websocket-actions';
+import Websocket from '../components/Websocket';
+import ToolTip from '../components/Tooltip';
 import {
   EditorContainer,
   EditorToolbar,
@@ -29,18 +47,18 @@ import {
   HistoryCloseButton,
   HistoryItem,
 } from '../components/History';
-import '../reset.css';
-import '../global.css';
 import { Toolbar, Button } from '../components/Toolbar';
 import {
-  WebsocketServerMessages,
-  UpdateClientSelectionMessage,
-  JoinDocumentSuccessMessage,
-  AutomergeUpdateFromServerMessage,
-  KeepaliveFromServerMessage,
-  RemoteAgentCursorUpdateFromServerMessage,
-  UpdateDocumentActiveUserListWSMessage,
-} from '@jot/common/dist/websockets/websocket-actions';
+  Cursor,
+  SpanRelativeAnchor,
+  AbsoluteFullWidth,
+  RemoteCursorRangeMark,
+  SpanRelativeAnchorWithBackgroundColor,
+  CursorMarker,
+} from '../components/Cursor';
+import '../reset.css';
+import '../global.css';
+import { string } from 'prop-types';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
@@ -91,6 +109,15 @@ interface DocEditState {
   isHistorySidebarOpen: boolean;
   activeUserIds: string[];
   error?: Error | string;
+  showTooltip: boolean;
+}
+
+export interface DecorationJS {
+  anchor: any;
+  focus: any;
+  mark: {
+    type: string;
+  };
 }
 
 const DEFAULT_NODE = 'paragraph';
@@ -102,6 +129,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   selection: any;
   websocket: React.RefObject<any>;
   editor: React.RefObject<any>;
+  remoteCursorTimers: Map<string, Function>;
+  activeRemoteCursorSet: Map<string, DecorationJS>;
 
   constructor(props: DocEditProps) {
     super(props);
@@ -117,16 +146,66 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       isSidebarOpen: false,
       isHistorySidebarOpen: false,
       activeUserIds: [],
+      showTooltip: false,
     };
 
     this.docSet = new Automerge.DocSet();
 
     this.websocket = React.createRef();
     this.editor = React.createRef<any>();
+    this.activeRemoteCursorSet = new Map();
+    this.remoteCursorTimers = new Map();
   }
 
+  handleUndo = () => {
+    const docBeforeUndo = this.doc;
+    if (!Automerge.canUndo(docBeforeUndo)) {
+      console.warn('cant undo, nothing to undo, block this in ui');
+      return;
+    }
+    const docAfterUndo = Automerge.undo(docBeforeUndo, 'undo');
+    const diffOps = Automerge.diff(docBeforeUndo, docAfterUndo);
+    const _changes = Automerge.getChanges(docBeforeUndo, docAfterUndo);
+    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
+
+    const slateOps = convertAutomergeToSlateOps(diffOps);
+    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
+    this.editor.current.change(change => {
+      const appliedChanges = change.applyOperations(slateOps);
+      // data key for onchange handler to know its from a remote source
+      appliedChanges.fromRemote = true;
+      return appliedChanges;
+    });
+    // This also kicks off the Automerge.connection instance
+    this.docSet.setDoc(this.state.docId, docAfterUndo);
+    this.doc = docAfterUndo;
+  };
+
+  handleRedo = () => {
+    const docBeforeRedo = this.doc;
+    if (!Automerge.canRedo(docBeforeRedo)) {
+      console.warn('cant redo, nothing to undo, block this in ui');
+      return;
+    }
+    const docAfterRedo = Automerge.redo(docBeforeRedo, 'undo');
+    const diffOps = Automerge.diff(docBeforeRedo, docAfterRedo);
+    const _changes = Automerge.getChanges(docBeforeRedo, docAfterRedo);
+    console.log('automerge.diff (ops)', diffOps, JSON.stringify(diffOps));
+
+    const slateOps = convertAutomergeToSlateOps(diffOps);
+    console.log('undo:slateOps', slateOps, JSON.stringify(slateOps));
+    this.editor.current.change(change => {
+      const appliedChanges = change.applyOperations(slateOps);
+      // data key for onchange handler to know its from a remote source
+      appliedChanges.fromRemote = true;
+      return appliedChanges;
+    });
+    // This also kicks off the Automerge.connection instance
+    this.docSet.setDoc(this.state.docId, docAfterRedo);
+    this.doc = docAfterRedo;
+  };
+
   async componentDidMount() {
-    console.log(this.props);
     const docIdToRequest = this.props.docId;
     try {
       const res = await fetch(`${this.props.apiEndpoint}/doc/${docIdToRequest}`);
@@ -165,7 +244,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     setTimeout(
       () =>
         this.websocket.current.sendJsonMessage(
-          WebSocketClientMessageCreator.createJoinDocumentRequestMessage({
+          WebSocketClientMessageFactory.createJoinDocumentRequestMessage({
             docId: this.state.docId,
             clientId: this.props.clientId,
           }),
@@ -177,7 +256,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   componentDidUpdate(prevProps: DocEditProps, prevState: DocEditState) {
     if (!prevState.isConnectedToDocument && this.state.isConnectedToDocument) {
       this.connection = new Automerge.Connection(this.docSet, data => {
-        const message = WebSocketClientMessageCreator.createAutomergeUpdateToServerMessage({
+        const message = WebSocketClientMessageFactory.createAutomergeUpdateToServerMessage({
           clientId: this.props.clientId,
           docId: this.state.docId,
           message: data,
@@ -196,11 +275,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   }
 
   onChange = ({ value, operations, ...rest }) => {
-    console.log(
-      'onChange:operations',
-      operations && operations.toJS(),
-      `from: ${rest.fromRemote ? 'remote' : 'local'}`,
-    );
+    console.log('onChange', 'operations:', operations.toJS());
     this.setState({ value });
     this.selection = value.selection.toJS();
     const clientId = this.props.clientId;
@@ -209,7 +284,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     if (rest.fromSetSelectionSelf) {
     }
 
-    // console.log(operations.toJS());
     if (rest.fromRemote) {
       // needed for programatic updates...
       // without this we get into a loop.
@@ -226,6 +300,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
       const decoration = {
         anchor: selection.anchor,
+        // focus: selection.focus.moveForward(1),
         focus: selection.focus,
         mark: {
           type: `remote-agent-setselection-${this.props.clientId}`,
@@ -233,24 +308,25 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       };
       const decorations = [decoration];
 
-      this.editor &&
-        this.editor.current &&
-        this.editor.current.change(change => {
-          return change.withoutSaving(() => {
-            let c = change.setValue({ decorations });
-            c = change.fromRemote = true;
-            c = change.fromSetSelectionSelf = true;
-            return c;
-          });
-        });
+      // this.editor &&
+      //   this.editor.current &&
+      //   this.editor.current.change(change => {
+      //     return change.withoutSaving(() => {
+      //       let c = change.setValue({ decorations });
+      //       c = change.fromRemote = true;
+      //       c = change.fromSetSelectionSelf = true;
+      //       return c;
+      //     });
+      //   });
 
       if (this.state.isConnectedToDocument) {
-        const msg: UpdateClientSelectionMessage = WebSocketClientMessageCreator.createUpdateClientSelectionMessage({
+        const msg: UpdateClientSelectionMessage = WebSocketClientMessageFactory.createUpdateClientSelectionMessage({
           clientId: this.props.clientId,
           docId: this.state.docId,
           decoration,
         });
-        this.websocket.current.sendJsonMessage(msg);
+        // needs to send _after_ an automerge update of insert text or something
+        setTimeout(() => this.websocket.current.sendJsonMessage(msg), 0);
       } else {
         console.log('not connected to a doc, not sending cursor/selection to webseockt');
       }
@@ -292,12 +368,118 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     const { payload } = msg;
     const clientId = payload.clientId;
 
+    if (!clientId) {
+      console.warn('no clientId found in remote agent selection');
+      return;
+    }
+
     if (clientId === this.props.clientId) {
       console.log('received our own message from the server, skipping');
       return;
     }
-    let decoration = payload.message;
-    const decorations = [decoration];
+
+    if (this.remoteCursorTimers.has(clientId)) {
+      console.log('has');
+      const debounceFn = this.remoteCursorTimers.get(clientId);
+      debounceFn();
+    } else {
+      console.log('doesnt have');
+      this.setState({ showTooltip: true });
+      const fnToCall = () => this.remoteCursorTimers.delete(clientId) && this.setState({ showTooltip: false });
+      const debounceFn = debounce(fnToCall, 1500);
+      this.remoteCursorTimers.set(clientId, debounceFn);
+    }
+
+    const remoteSelectionDecorationNotNormalized = payload.message;
+
+    // Save to active remote cursor set.
+    this.activeRemoteCursorSet.set(payload.message.mark.type, remoteSelectionDecorationNotNormalized);
+
+    if (
+      !isEqual(remoteSelectionDecorationNotNormalized.anchor.path, remoteSelectionDecorationNotNormalized.focus.path)
+    ) {
+      console.error(
+        'multiple block selection range: not implemented yet.\nDecorations dont work across blocks with custom logic. remote range wont look right',
+      );
+      const selectionRange = Range.create(remoteSelectionDecorationNotNormalized);
+      const remoteSelection = Selection.create(remoteSelectionDecorationNotNormalized);
+      let normalizedRemoteSelectionDecoration: any = this.editor.current.value.document.resolveSelection(
+        remoteSelectionDecorationNotNormalized,
+      );
+      // console.log('multiple node selection remote selection:', remoteSelection.toJS());
+
+      const editor = this.editor.current as Editor;
+      const document = editor.value.document;
+      // console.log(selectionRange.toJS());
+
+      const blocks = document.getBlocksAtRange(selectionRange);
+      let startBlock = document.getClosestBlock(remoteSelection.anchor.path);
+      let endBlock = document.getClosestBlock(remoteSelection.focus.path);
+      console.log('new data', blocks.toJS(), startBlock.toJS(), endBlock.toJS());
+      // const startInline = document.getClosestInline(start.key)
+      // const endInline = document.getClosestInline(end.key)
+      // let startChild = startBlock.getFurthestAncestor(start.key)
+      // let endChild = endBlock.getFurthestAncestor(end.key)
+
+      console.log('multiple node normalized remote selection', normalizedRemoteSelectionDecoration.toJS());
+    }
+
+    // Need to do some hacks to work around a decoration being 'zero' width.
+    const remoteSelection = Selection.create(remoteSelectionDecorationNotNormalized);
+    let normalizedRemoteSelectionDecoration: any = remoteSelectionDecorationNotNormalized;
+    // if its collapsed, the selection iss techncially zero width (offset would be zero, for example)
+    // slate doesn't support that, so what we need to do is extend it by one so slate accepts it.
+    // ie; if the anchor was 0 and focus was 0, we'd increment the focus to 1.
+    // then we render a mark at the left of 0 showing the remote cursor.
+    // special case: if its at the end of a block, we go back by 1.
+    // we can figure this out by normalizing our guess (incrementing focus by 1) and if it
+    // gets normalized back, we can assume it does not exist, thus we are at the end of the line,
+    // and instead, lets decrement our anchor by 1, and show the cursor to the right instead.
+    if (remoteSelection.isCollapsed) {
+      let finalizedRemoteNormalizedSelection: Selection = remoteSelection;
+
+      const editor = this.editor.current;
+      // const node = editor.value.document.getNode(remoteSelection.focus.path);
+      const moveForward = remoteSelection.moveFocusForward(1) as Selection;
+      const normalizedMoveForward: Selection = editor.value.document.resolveSelection(moveForward);
+      finalizedRemoteNormalizedSelection = normalizedMoveForward;
+
+      let isCollapsedAtEnd = false;
+      if (normalizedMoveForward.anchor.offset === normalizedMoveForward.focus.offset) {
+        isCollapsedAtEnd = true;
+        const moveBackward = remoteSelection.moveAnchorBackward(1) as Selection;
+        const normalizedMoveBackward: Selection = editor.value.document.resolveSelection(moveBackward);
+        finalizedRemoteNormalizedSelection = normalizedMoveBackward;
+      }
+
+      const { mark } = remoteSelectionDecorationNotNormalized;
+      const markHydatedWithData = {
+        ...mark,
+        data: {
+          isCollapsed: true,
+          isCollapsedAtEnd: isCollapsedAtEnd,
+          userId: payload.clientId,
+        },
+      };
+      normalizedRemoteSelectionDecoration = { mark: markHydatedWithData, ...finalizedRemoteNormalizedSelection.toJS() };
+    } else {
+      // not collapsed
+      const { mark } = remoteSelectionDecorationNotNormalized;
+      const markHydatedWithData = {
+        ...mark,
+        data: {
+          isCollapsed: false,
+          userId: payload.clientId,
+        },
+      };
+      normalizedRemoteSelectionDecoration = { ...normalizedRemoteSelectionDecoration, mark: markHydatedWithData };
+    }
+    const previousDecorations: Array<Decoration> = this.state.value.decorations.toJS();
+    const previousDecorationsFiltered = previousDecorations.filter(
+      x => x.mark.type !== remoteSelectionDecorationNotNormalized.mark.type,
+    );
+    let decorations = [...previousDecorationsFiltered, normalizedRemoteSelectionDecoration];
+
     this.editor &&
       this.editor.current &&
       this.editor.current.change(change => {
@@ -373,8 +555,25 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
+  // Placeholder when ready for gutter stuff
+  renderEditor = (_props: RenderAttributes, next) => {
+    const children = next();
+    return <>{children}</>;
+  };
+
+  hasSeenRemoteCursorMarkBefore = new Set();
   renderNode = (props, next) => {
-    const { attributes, children, node } = props;
+    const { attributes, children, node, editor, ...rest } = props;
+    console.log('renderNode', props);
+
+    // Clear per node, only keep memory while rendering an individual node
+    // This is used to talk to renderMark because I couldn't find a good way otherwise.
+    // renderNode will run first, then all the marks inside the node will be rendered via renderMark
+    this.hasSeenRemoteCursorMarkBefore.clear();
+
+    const nodeKey = node.key;
+    const nodePath = node.path;
+    const previosNode = editor.value.document.getPreviousNode(nodePath);
 
     switch (node.type) {
       case 'block-quote':
@@ -402,8 +601,15 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
   };
 
-  renderMark = (props, next) => {
-    const { children, mark, attributes } = props;
+  decorateNode = (node, next?: Function): void => {
+    // in the next version the params are (node, editor, next)
+    next();
+  };
+
+  renderMark = (props: RenderMarkProps, next: Function) => {
+    // Note: You must spread the props.attributes onto the top-level DOM node you use to render the mark.
+    console.log('renderMark', props);
+    const { children, mark, marks, text, attributes, node, ...rest } = props;
 
     if (mark.type === `remote-agent-setselection-${this.props.clientId}`) {
       return (
@@ -416,55 +622,81 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       mark.type.startsWith('remote-agent-setselection-') &&
       mark.type !== `remote-agent-setselection-${this.props.clientId}`
     ) {
-      return (
-        <span
-          {...attributes}
-          style={{
-            position: 'relative',
-            backgroundColor: 'rgba(138,208,222,0.3)',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              width: '100px',
-              height: '10px',
-              top: '-20px',
-              left: 0,
-              fontSize: '12px',
-              userSelect: 'none',
-            }}
-          >
-            <span
-              style={{
-                position: 'absolute',
-                width: '5px',
-                height: '10px',
-                top: '0',
-                left: '0',
-                backgroundColor: 'green',
-              }}
-            />
-          </div>
-          <span
-            style={{
-              opacity: 0.4,
-              height: '100%',
-              position: 'absolute',
-              width: '100%',
-              top: 0,
-              left: 0,
-            }}
-          />
-          {children}
-        </span>
-      );
+      let hasSeenMarkBefore = this.hasSeenRemoteCursorMarkBefore.has(mark.type);
+      if (!hasSeenMarkBefore) {
+        this.hasSeenRemoteCursorMarkBefore.add(mark.type);
+      }
+      const isCollapsed = mark.data.get('isCollapsed');
+      const isCollapsedAtEnd = mark.data.get('isCollapsedAtEnd');
+
+      const remoteSelectionMarkId = mark.type;
+      let userId = mark.data.get('userId');
+      if (!userId) {
+        console.warn(`remote selection data userId not set...`);
+        userId = '12345';
+      }
+      console.log(userId);
+
+      const adjective = generateItemFromHash(userId, ADJECTIVES);
+      const animal = generateItemFromHash(userId, ANIMALS);
+      const highlightColor = generateItemFromHash(userId, COLORS);
+
+      console.log(`User ${userId} assigned named alias '${adjective} ${animal}' with color: ${highlightColor}`);
+      const remoteCursorKey = `${remoteSelectionMarkId}-anchor-element`;
+      const remoteCursorIdAlias = `${adjective} ${animal}`;
+
+      if (isCollapsed) {
+        return (
+          <SpanRelativeAnchor {...attributes}>
+            <AbsoluteFullWidth>
+              <RemoteCursorRangeMark
+                markerColor={highlightColor}
+                isCollapsed={isCollapsed}
+                isCollapsedAtEnd={isCollapsedAtEnd}
+              />
+            </AbsoluteFullWidth>
+            {children}
+          </SpanRelativeAnchor>
+        );
+      } else {
+        const show = this.remoteCursorTimers.has(userId);
+        console.log('yeeeeeeet1', show);
+        return (
+          <SpanRelativeAnchorWithBackgroundColor markerColor={highlightColor} {...attributes}>
+            <AbsoluteFullWidth unselectable="on" style={{ userSelect: 'none' }}>
+              {!hasSeenMarkBefore && this.state.showTooltip && (
+                <>
+                  <ToolTip
+                    active={this.state.showTooltip}
+                    position="top"
+                    group={remoteCursorKey}
+                    align="left"
+                    parent={`#${remoteCursorKey}`}
+                    autoHide={true}
+                  >
+                    <div>
+                      <p style={{ textTransform: 'lowercase' }}>{remoteCursorIdAlias}</p>
+                    </div>
+                  </ToolTip>
+                  <CursorMarker
+                    id={remoteCursorKey}
+                    markerColor={highlightColor}
+                    isCollapsed={isCollapsed}
+                    isCollapsedAtEnd={isCollapsedAtEnd}
+                  />
+                </>
+              )}
+            </AbsoluteFullWidth>
+            {children}
+          </SpanRelativeAnchorWithBackgroundColor>
+        );
+      }
     }
 
     switch (mark.type) {
       case 'bold':
         return (
-          <strong style={{ fontWeight: '700' }} {...attributes}>
+          <strong style={{ fontWeight: 700 }} {...attributes}>
             {children}
           </strong>
         );
@@ -499,12 +731,13 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
 
     const isLoading = loading || !isConnectedToDocument || !isSyncedWithServer;
 
-    // const history = Automerge.getHistory(this.doc);
     return (
       <FullViewportAppContainer>
         <MainContainer>
           {/* <Sidebar /> */}
           <ContentContainer>
+            {/* <button onClick={this.handleUndo}>undo</button> */}
+            {/* <button onClick={this.handleRedo}>redo</button> */}
             <EditorContainer>
               <Websocket
                 ref={this.websocket}
@@ -519,7 +752,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   <EditorToolbarBackText>Back</EditorToolbarBackText>
                 </EditorToolbarLeftGroup>
                 <EditorToolbarRightGroup>
-                  {activeUserIds.length > 0 && <div>{activeUserIds.length}</div>}
+                  {activeUserIds.length && <div>{activeUserIds.length}</div>}
                   <EditorToolbarButtonContainer onClick={this.toggleHistorySidebar}>
                     <EditorToolbarHistoryButtonIcon />
                     <span>History</span>
@@ -552,8 +785,9 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
               )}
               {!isLoading && (
                 <SlateEditorContainer>
-                  <FakeTitle>Welcome to the Jot Editor</FakeTitle>
+                  {/* <FakeTitle>Welcome to the Jot Editor</FakeTitle> */}
                   <Editor
+                    decorateNode={this.decorateNode}
                     ref={this.editor}
                     placeholder="Go ahead and jot something down..."
                     autoCorrect={false}
@@ -561,11 +795,15 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                     spellCheck={false}
                     value={this.state.value}
                     onChange={this.onChange}
+                    renderEditor={this.renderEditor}
                     renderNode={this.renderNode}
                     renderMark={this.renderMark as any}
                   />
                 </SlateEditorContainer>
               )}
+              {this.state.activeUserIds.map(x => (
+                <div key={x}>{x}</div>
+              ))}
             </EditorContainer>
           </ContentContainer>
           {/* {isHistorySidebarOpen && (

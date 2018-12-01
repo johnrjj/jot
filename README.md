@@ -2,6 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/johnrjj/jot.svg?style=svg&circle-token=f3d5f772f89eee9e33f32c1c273e7164d3635567)](https://circleci.com/gh/johnrjj/jot) [![Greenkeeper badge](https://badges.greenkeeper.io/johnrjj/jot.svg?token=c7ecb37b97912ada6cb220f095fcf1e64193d4bb32db380702b3cb6e2550ce4e&ts=1540698479566)](https://greenkeeper.io/)
 
+<iframe src="https://open.spotify.com/embed/track/4PTPZeJlK1rYlYr6bf11hk" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
 ## Overview
 
 Realtime collaborative editor using CRDTs, Websockets, and more.
@@ -77,3 +78,27 @@ Prod backend healthcheck url: [`https://jot-api-prod.herokuapp.com/healthcheck`]
 ### `@jot/common`
 
 Does not need to be deployed.
+
+## Architecture
+
+### Websockets
+
+Realtime data is multiplexed over websockets.
+
+#### Document State
+
+Document state and data from the automerge CRDT is sent and recieved and always ensures that the information ends up being transmitted and confirmed.
+
+#### Remote Client Cursors
+
+Remote cursors are treated as UDP-esque networking, not mission critical, and if they drop or lose a packet, not the end of the world.
+
+#### Document channels/lobbies/event streams/figure out a standard name
+
+Document channels are joined and left via websockets as well. Client sends over a request to join, server either does not allow or allows. If server allows we send an ack, completing the handshake.
+
+What else do we send over websockets?
+
+### Redis
+
+All internal events should flow through redis event bus.

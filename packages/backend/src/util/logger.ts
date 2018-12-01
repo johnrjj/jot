@@ -30,10 +30,10 @@ export function JSONLoggerFactory(options?: any): winston.Logger {
 }
 
 export const NullLogger = {
-  log(level: string, message: string, meta?: any): void {
+  log(_level: string, _message: string, _meta?: any): void {
     /* no-op */
   },
-  error(err: Error): void {
+  error(_err: Error): void {
     /* no-op */
   },
 };

@@ -4,7 +4,7 @@ const prefix: string = 'Invariant failed';
 // Throw an error if the condition fails
 // Strip out error messages for production
 // > Not providing an inline default argument for message as the result is smaller
-const invariant = (condition: boolean, message?: string) => {
+const invariant = (condition: boolean, message?: string): void => {
   if (condition) {
     return;
   }
