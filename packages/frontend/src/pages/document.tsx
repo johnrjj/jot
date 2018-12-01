@@ -58,7 +58,7 @@ import {
 } from '../components/Cursor';
 import '../reset.css';
 import '../global.css';
-import { string } from 'prop-types';
+import invariant from 'invariant';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FontIcon = props => <FontAwesomeIcon icon={faFont} {...props} />;
@@ -279,7 +279,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     this.setState({ value });
     this.selection = value.selection.toJS();
     const clientId = this.props.clientId;
-    const message = clientId ? `Client ${clientId}` : 'Change log';
+    const automergeCommitMessage = clientId ? `Client ${clientId} change` : 'Unknown clientId change';
 
     if (rest.fromSetSelectionSelf) {
     }
@@ -296,30 +296,14 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     const selectionOps = operations.filter(op => op.type === 'set_selection');
 
     if (selectionOps.count) {
-      const selection = value.selection;
+      const selection: Selection = value.selection;
+      const agentId = this.props.clientId;
+      if (!agentId) {
+        console.warn('Trying to send a selection range to the server but agentId not set');
+      }
 
-      const decoration = {
-        anchor: selection.anchor,
-        // focus: selection.focus.moveForward(1),
-        focus: selection.focus,
-        mark: {
-          type: `remote-agent-setselection-${this.props.clientId}`,
-        },
-      };
-      const decorations = [decoration];
-
-      // this.editor &&
-      //   this.editor.current &&
-      //   this.editor.current.change(change => {
-      //     return change.withoutSaving(() => {
-      //       let c = change.setValue({ decorations });
-      //       c = change.fromRemote = true;
-      //       c = change.fromSetSelectionSelf = true;
-      //       return c;
-      //     });
-      //   });
-
-      if (this.state.isConnectedToDocument) {
+      if (agentId && this.state.isConnectedToDocument) {
+        const decoration = createRemoteCursorDecoration(selection, agentId);
         const msg: UpdateClientSelectionMessage = WebSocketClientMessageFactory.createUpdateClientSelectionMessage({
           clientId: this.props.clientId,
           docId: this.state.docId,
@@ -333,7 +317,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
 
     // We need to apply local changes to the automerge document
-    const docNew = Automerge.change(this.doc, message, doc => {
+    const docNew = Automerge.change(this.doc, automergeCommitMessage, doc => {
       // Use the Slate operations to modify the Automerge document.
       applySlateOperationsHelper(doc, operations);
     });
@@ -630,13 +614,11 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       const isCollapsedAtEnd = mark.data.get('isCollapsedAtEnd');
 
       const remoteSelectionMarkId = mark.type;
-      let userId = mark.data.get('userId');
+      let userId: string | null | undefined = mark.data.get('userId');
       if (!userId) {
-        console.warn(`remote selection data userId not set...`);
-        userId = '12345';
+        console.error(`remote selection data userId not set...`, userId, mark.data.toJS());
+        userId = 'need_to_fix_this_if_it_happens';
       }
-      console.log(userId);
-
       const adjective = generateItemFromHash(userId, ADJECTIVES);
       const animal = generateItemFromHash(userId, ANIMALS);
       const highlightColor = generateItemFromHash(userId, COLORS);
@@ -937,3 +919,16 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     );
   };
 }
+
+const createRemoteCursorDecoration = (selection: Selection, agentId: string) => {
+  invariant(!!agentId, 'selection for remote cursor range missing');
+  invariant(!!agentId, 'remote cursor agentId missing');
+  const decoration = {
+    anchor: selection.anchor,
+    focus: selection.focus,
+    mark: {
+      type: `remote-agent-setselection-${agentId}`,
+    },
+  };
+  return decoration;
+};
