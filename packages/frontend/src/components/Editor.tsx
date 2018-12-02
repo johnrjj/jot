@@ -80,7 +80,7 @@ export const FakeTitle = styled.div`
 `;
 
 export const SlateEditorContainer = styled.div`
-  overflow-y: scroll;
+  overflow-y: auto;
   line-height: 2;
   color: ${theme.editor.primaryTextColor};
   font-size: 20px;

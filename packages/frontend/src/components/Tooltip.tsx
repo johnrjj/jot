@@ -202,9 +202,11 @@ class TooltipContainer extends Component<TooltipContainerProps, TooltipContainer
     }
 
     if (align === 'left') {
-      alignOffset = -parentSize.width / 2 + FG_SIZE;
+      // alignOffset = -parentSize.width / 2 + FG_SIZE;
+      alignOffset = 0;
     } else if (align === 'right') {
-      alignOffset = parentSize.width / 2 - FG_SIZE;
+      alignOffset = 0;
+      // alignOffset = parentSize.width / 2 - FG_SIZE;
     }
 
     const stylesFromPosition = {
@@ -219,11 +221,12 @@ class TooltipContainer extends Component<TooltipContainerProps, TooltipContainer
       top: () => {
         // style.left = left - this.state.width / 2 + parentSize.width / 2 + alignOffset;
         // style.top = top - this.state.height - this.MARGIN_SPACING;
-        style.left = left;
+        style.left = left - alignOffset;
+        // if ()
         style.top = top - this.state.height;
       },
       bottom: () => {
-        style.left = left - this.state.width / 2 + parentSize.width / 2; //+ alignOffset;
+        style.left = left - this.state.width / 2 + parentSize.width / 2 - alignOffset; //+ alignOffset;
         style.top = top + parentSize.height; //+ this.MARGIN_SPACING;
       },
     };
@@ -297,7 +300,9 @@ class TooltipContainer extends Component<TooltipContainerProps, TooltipContainer
   componentDidMount() {
     this.updateSize();
   }
-  componentWillReceiveProps() {
+  componentWillReceiveProps(newProps) {
+    console.log('tooltip getting new props', newProps);
+
     this.setState({ transition: this.state.hover || this.props.active ? 'all' : 'opacity' }, () => {
       this.updateSize();
     });
@@ -372,7 +377,7 @@ export default class ToolTip extends Component<ToolTipProps, ToolTipState> {
         this.renderPortal(props);
       }, this.props.tooltipTimeout);
     }
-
+    console.log(newProps);
     this.renderPortal(newProps);
   }
   componentWillUnmount() {

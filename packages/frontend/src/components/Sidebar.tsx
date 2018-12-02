@@ -123,7 +123,7 @@ export const SidebarContentContainer = styled.div`
   display: flex;
   flex: 1;
   flex-direction: column;
-  overflow-y: scroll;
+  overflow-y: auto;
 `;
 
 export const Sidebar = () => (

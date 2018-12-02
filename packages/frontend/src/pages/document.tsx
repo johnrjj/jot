@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Editor, RenderAttributes, RenderMarkProps } from 'slate-react';
-import { Value, Selection, Range, Mark, Decoration } from 'slate';
+import { Value, Selection, Range, Mark, Decoration, PathUtils, Path } from 'slate';
 import Automerge from 'automerge';
 import styled from 'styled-components';
 import { Router, Link } from '@reach/router';
@@ -63,10 +63,13 @@ import {
   RemoteCursorRangeMark,
   SpanRelativeAnchorWithBackgroundColor,
   CursorMarker,
+  ActiveMenu,
 } from '../components/Cursor';
 import '../reset.css';
 import '../global.css';
 import invariant from 'invariant';
+import { any } from 'prop-types';
+import { position } from 'polished';
 const { automergeJsonToSlate, applySlateOperationsHelper, convertAutomergeToSlateOps } = SlateAutomergeAdapter;
 
 const FullViewportAppContainer = styled.div`
@@ -313,11 +316,9 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     }
 
     if (this.remoteCursorTimers.has(clientId)) {
-      console.log('has');
       const debounceFn = this.remoteCursorTimers.get(clientId);
       debounceFn();
     } else {
-      console.log('doesnt have');
       this.setState({ showTooltip: true });
       const fnToCall = () => this.remoteCursorTimers.delete(clientId) && this.setState({ showTooltip: false });
       const debounceFn = debounce(fnToCall, 1500);
@@ -492,7 +493,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   handleUndo = () => {
     const docBeforeUndo = this.doc;
     if (!Automerge.canUndo(docBeforeUndo)) {
-      console.warn('cant undo, nothing to undo, block this in ui');
       return;
     }
     const docAfterUndo = Automerge.undo(docBeforeUndo, 'undo');
@@ -508,7 +508,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       appliedChanges.fromRemote = true;
       return appliedChanges;
     });
-    // This also kicks off the Automerge.connection instance
+    // This also kicks off the Automerge.connection update
     this.docSet.setDoc(this.state.docId, docAfterUndo);
     this.doc = docAfterUndo;
   };
@@ -516,7 +516,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   handleRedo = () => {
     const docBeforeRedo = this.doc;
     if (!Automerge.canRedo(docBeforeRedo)) {
-      console.warn('cant redo, nothing to undo, block this in ui');
       return;
     }
     const docAfterRedo = Automerge.redo(docBeforeRedo, 'undo');
@@ -532,7 +531,7 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       appliedChanges.fromRemote = true;
       return appliedChanges;
     });
-    // This also kicks off the Automerge.connection instance
+    // This also kicks off the Automerge.connection update
     this.docSet.setDoc(this.state.docId, docAfterRedo);
     this.doc = docAfterRedo;
   };
@@ -561,9 +560,10 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     // renderNode will run first, then all the marks inside the node will be rendered via renderMark
     this.hasSeenRemoteCursorMarkBefore.clear();
 
-    const nodeKey = node.key;
+    const _nodeKey = node.key;
     const nodePath = node.path;
-    const previosNode = editor.value.document.getPreviousNode(nodePath);
+    const _previosNode = editor.value.document.getPreviousNode(nodePath);
+    console.log('PREVNODE', _previosNode);
 
     switch (node.type) {
       case 'block-quote':
@@ -599,7 +599,62 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
   renderMark = (props: RenderMarkProps, next: Function) => {
     // Note: You must spread the props.attributes onto the top-level DOM node you use to render the mark.
     console.log('renderMark', props);
-    const { children, mark, marks, text, attributes, node, ...rest } = props;
+    const { children, mark, marks, text, attributes, node, editor, offset } = props;
+
+    const compare = (path: Path, target: Path): number => {
+      // typings are off. they have size and get()
+      const m = Math.min((path as any).size, (target as any).size);
+
+      for (let i = 0; i < m; i++) {
+        const pv = (path as any).get(i);
+        const tv = (target as any).get(i);
+
+        // If the path's value is ever less than the target's, it's before.
+        if (pv < tv) return -1;
+
+        // If the target's value is ever less than the path's, it's after.
+        if (pv > tv) return 1;
+      }
+
+      // Paths should now be equal, otherwise something is wrong
+      return (path as any).size === (target as any).size ? 0 : null;
+    };
+
+    const decoration = editor.value.decorations.filter(x => x.mark.type === mark.type).first();
+    const path = editor.value.document.getPath(node.key);
+    const isBackward = decoration.isBackward;
+    const isCollapsed = decoration.isCollapsed;
+
+    const pathCompareStart = compare(path, decoration.start.path);
+    const pathCompareEnd = compare(path, decoration.end.path);
+    console.log('pathCompareStart', pathCompareStart, pathCompareEnd);
+
+    const start = offset;
+    const end = offset + text.length;
+
+    const decorationStartOffset = decoration.start.offset;
+    const decorationEndOffset = decoration.end.offset;
+    console.log(text);
+
+    // if (isBackward) {
+    //   decoration.
+    // } else {
+
+    // }
+
+    let alignMark = 'left';
+    const shouldShowMark: boolean = pathCompareStart === 0;
+    if (pathCompareStart === 0) {
+      if (decorationStartOffset === start) {
+        if (isBackward) {
+          console.log('show remote cursor tag to the left align');
+        } else {
+          alignMark = 'right';
+          console.log('show remote cursor tag to the right align');
+        }
+      }
+    }
+    console.log(isBackward, decoration.toJS(), path.toString(), start.toString(), end.toString());
 
     if (mark.type === `remote-agent-setselection-${this.props.clientId}`) {
       return (
@@ -623,36 +678,61 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       let userId: string | null | undefined = mark.data.get('userId');
       if (!userId) {
         console.error(`remote selection data userId not set...`, userId, mark.data.toJS());
-        userId = 'need_to_fix_this_if_it_happens';
+        userId = 'need_to_fix_this';
       }
       const adjective = generateItemFromHash(userId, ADJECTIVES);
       const animal = generateItemFromHash(userId, ANIMALS);
       const highlightColor = generateItemFromHash(userId, COLORS);
 
-      console.log(`User ${userId} assigned named alias '${adjective} ${animal}' with color: ${highlightColor}`);
       const remoteCursorKey = `${remoteSelectionMarkId}-anchor-element`;
       const remoteCursorIdAlias = `${adjective} ${animal}`;
+      console.log(
+        `User ${userId} assigned named alias '${remoteCursorIdAlias}' with color: ${highlightColor}`,
+        remoteSelectionMarkId,
+      );
 
       if (isCollapsed) {
         return (
           <SpanRelativeAnchor {...attributes}>
-            <AbsoluteFullWidth>
+            <AbsoluteFullWidth unselectable="on">
               <RemoteCursorRangeMark
                 markerColor={highlightColor}
                 isCollapsed={isCollapsed}
                 isCollapsedAtEnd={isCollapsedAtEnd}
               />
+              {shouldShowMark && this.state.showTooltip && (
+                <>
+                  <ToolTip
+                    tooltipContainerStyles={{ backgroundColor: highlightColor }}
+                    active={this.state.showTooltip}
+                    position="top"
+                    group={remoteCursorKey}
+                    align={isCollapsedAtEnd ? 'right' : 'left'}
+                    parent={`#${remoteCursorKey}`}
+                    autoHide={true}
+                  >
+                    <div>
+                      <p style={{ textTransform: 'lowercase', color: '#ffffff' }}>{remoteCursorIdAlias}</p>
+                    </div>
+                  </ToolTip>
+                  <CursorMarker
+                    id={remoteCursorKey}
+                    markerColor={highlightColor}
+                    isCollapsed={isCollapsed}
+                    isCollapsedAtEnd={isCollapsedAtEnd}
+                  />
+                </>
+              )}
             </AbsoluteFullWidth>
             {children}
           </SpanRelativeAnchor>
         );
       } else {
         const show = this.remoteCursorTimers.has(userId);
-        console.log('yeeeeeeet1', show);
         return (
           <SpanRelativeAnchorWithBackgroundColor markerColor={highlightColor} {...attributes}>
-            <AbsoluteFullWidth unselectable="on" style={{ userSelect: 'none' }}>
-              {!hasSeenMarkBefore && this.state.showTooltip && (
+            <AbsoluteFullWidth alignRight={true} unselectable="on">
+              {shouldShowMark && isBackward && this.state.showTooltip && (
                 <>
                   <ToolTip
                     tooltipContainerStyles={{ backgroundColor: highlightColor }}
@@ -677,6 +757,41 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
               )}
             </AbsoluteFullWidth>
             {children}
+            {shouldShowMark && !isBackward && this.state.showTooltip && (
+              <span style={{ position: 'relative', width: 0, height: 'auto' }}>
+                <span>
+                  <ToolTip
+                    tooltipContainerStyles={{ backgroundColor: highlightColor }}
+                    active={this.state.showTooltip}
+                    position="top"
+                    group={remoteCursorKey}
+                    align="left"
+                    parent={`#${remoteCursorKey}`}
+                    autoHide={true}
+                  >
+                    <div>
+                      <p style={{ textTransform: 'lowercase', color: '#ffffff' }}>{remoteCursorIdAlias}</p>
+                    </div>
+                  </ToolTip>
+                  <CursorMarker
+                    id={remoteCursorKey}
+                    markerColor={highlightColor}
+                    isCollapsed={isCollapsed}
+                    isCollapsedAtEnd={isCollapsedAtEnd}
+                  />
+                </span>
+              </span>
+            )
+
+            // <span style={{ position: 'absolute', width: '10px', height: '10px', backgroundColor: 'blue'}}></span>
+            }
+            {/* <AbsoluteFullWidthTest unselectable="on">
+              {shouldShowMark && !isBackward && this.state.showTooltip && (
+                <>
+                  <div style={{ width: '10px', height: '10px', backgroundColor: 'green' }}></div>
+                </>
+              )}
+            </AbsoluteFullWidthTest> */}
           </SpanRelativeAnchorWithBackgroundColor>
         );
       }
@@ -767,10 +882,10 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
                   {this.renderBlockButton('heading-two', 'h2_icon')}
                   {this.renderBlockButton('block-quote', 'quote_icon')}
                   <Button active={this.canUndo()} onMouseDown={this.handleUndo}>
-                    <UndoIcon size="lg" />
+                    <UndoIcon />
                   </Button>
                   <Button active={this.canRedo()} onMouseDown={this.handleRedo}>
-                    <RedoIcon size="lg" />
+                    <RedoIcon />
                   </Button>
                   {/* {this.renderBlockButton(
                         'numbered-list',

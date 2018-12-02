@@ -1,7 +1,11 @@
 import React, { Component, ReactChildren } from 'react';
-import { Link, Redirect } from '@reach/router';
+import { Link } from '@reach/router';
 
-export default class Documents extends Component<any, any> {
+const DocLink = ({ id, children }: { id: string; children?: ReactChildren | string }) => (
+  <Link to={`/docs/${id}`}>{children}</Link>
+);
+
+class Documents extends Component<any, any> {
   render() {
     return (
       <div>
@@ -12,6 +16,4 @@ export default class Documents extends Component<any, any> {
   }
 }
 
-const DocLink = ({ id, children }: { id: string; children?: ReactChildren | string }) => (
-  <Link to={`/docs/${id}`}>{children}</Link>
-);
+export default Documents;
