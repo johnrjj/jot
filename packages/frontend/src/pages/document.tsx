@@ -550,15 +550,8 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
     return <>{children}</>;
   };
 
-  hasSeenRemoteCursorMarkBefore = new Set();
   renderNode = (props, next) => {
     const { attributes, children, node, editor, ...rest } = props;
-    console.log('renderNode', props);
-
-    // Clear per node, only keep memory while rendering an individual node
-    // This is used to talk to renderMark because I couldn't find a good way otherwise.
-    // renderNode will run first, then all the marks inside the node will be rendered via renderMark
-    this.hasSeenRemoteCursorMarkBefore.clear();
 
     const _nodeKey = node.key;
     const nodePath = node.path;
@@ -667,10 +660,6 @@ export default class DocApp extends Component<DocEditProps, DocEditState> {
       mark.type.startsWith('remote-agent-setselection-') &&
       mark.type !== `remote-agent-setselection-${this.props.clientId}`
     ) {
-      let hasSeenMarkBefore = this.hasSeenRemoteCursorMarkBefore.has(mark.type);
-      if (!hasSeenMarkBefore) {
-        this.hasSeenRemoteCursorMarkBefore.add(mark.type);
-      }
       const isCollapsed = mark.data.get('isCollapsed');
       const isCollapsedAtEnd = mark.data.get('isCollapsedAtEnd');
 
